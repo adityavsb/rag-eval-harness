@@ -1,7 +1,8 @@
 """Configuration loader and schema validation using Pydantic."""
 
 from pathlib import Path
-from typing import List, Literal, Optional
+from typing import Literal
+
 import yaml
 from pydantic import BaseModel, Field
 
@@ -30,7 +31,7 @@ class VectorStoreConfig(BaseModel):
 class RetrieverConfig(BaseModel):
     top_k: int = Field(default=4, gt=0)
     use_reranker: bool = False
-    reranker_model: Optional[str] = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     reranker_top_n: int = Field(default=4, gt=0)
 
 
@@ -44,7 +45,7 @@ class GenerationConfig(BaseModel):
 class EvaluationConfig(BaseModel):
     golden_qa_path: str = "data/golden_qa.json"
     judge_model: str = "gpt-4o-mini"
-    metrics: List[str] = Field(
+    metrics: list[str] = Field(
         default_factory=lambda: [
             "hit_rate_at_k",
             "mrr_at_k",
@@ -78,6 +79,6 @@ class PipelineConfig(BaseModel):
         config_path = Path(path)
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         return cls(**data)

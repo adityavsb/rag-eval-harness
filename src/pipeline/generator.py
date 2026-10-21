@@ -2,8 +2,9 @@
 
 import os
 import time
-from typing import List, Optional
+
 from pydantic import BaseModel, Field
+
 from src.pipeline.retriever import RetrievedChunk
 from src.utils.config import GenerationConfig
 
@@ -13,7 +14,7 @@ class GenerationResult(BaseModel):
 
     query: str
     answer: str
-    cited_chunk_ids: List[str] = Field(default_factory=list)
+    cited_chunk_ids: list[str] = Field(default_factory=list)
     generation_latency_ms: float = 0.0
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -50,7 +51,7 @@ class RAGGenerator:
         self.config = config
         self._llm = None
 
-    def _format_context(self, chunks: List[RetrievedChunk]) -> str:
+    def _format_context(self, chunks: list[RetrievedChunk]) -> str:
         """Formats retrieved chunks with structured ID tags for citation attribution."""
         if not chunks:
             return "No relevant context found."
@@ -60,7 +61,7 @@ class RAGGenerator:
             formatted_pieces.append(f"[{chunk.chunk_id}]\n{chunk.content}")
         return "\n\n".join(formatted_pieces)
 
-    def generate(self, query: str, chunks: List[RetrievedChunk]) -> GenerationResult:
+    def generate(self, query: str, chunks: list[RetrievedChunk]) -> GenerationResult:
         """Generates a grounded answer from query and retrieved chunks."""
         context_str = self._format_context(chunks)
 
@@ -87,7 +88,7 @@ class RAGGenerator:
                 answer_text = response.choices[0].message.content or ""
                 prompt_tokens = response.usage.prompt_tokens if response.usage else 0
                 completion_tokens = response.usage.completion_tokens if response.usage else 0
-            except Exception as e:
+            except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
                 answer_text = f"Error during LLM generation: {e}"
                 prompt_tokens, completion_tokens = 0, 0
         else:
@@ -96,9 +97,7 @@ class RAGGenerator:
                 answer_text = "Based on the provided documentation, there is insufficient information to answer this question."
             else:
                 top_chunk = chunks[0]
-                answer_text = (
-                    f"According to [{top_chunk.chunk_id}], {top_chunk.content[:200]}..."
-                )
+                answer_text = f"According to [{top_chunk.chunk_id}], {top_chunk.content[:200]}..."
             prompt_tokens = len(prompt.split())
             completion_tokens = len(answer_text.split())
 

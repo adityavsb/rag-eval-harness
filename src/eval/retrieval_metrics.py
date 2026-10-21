@@ -7,7 +7,8 @@ Implements standard IR metrics:
 - Context Recall@K
 """
 
-from typing import Iterable, List, Sequence
+from collections.abc import Iterable, Sequence
+
 from pydantic import BaseModel, Field
 
 
@@ -37,7 +38,11 @@ def is_chunk_relevant(retrieved_id: str, ground_truth_ids: Iterable[str]) -> boo
     '02_dependency_injection_c002'), or vice-versa.
     """
     for gt_id in ground_truth_ids:
-        if retrieved_id == gt_id or retrieved_id.startswith(gt_id) or gt_id.startswith(retrieved_id):
+        if (
+            retrieved_id == gt_id
+            or retrieved_id.startswith(gt_id)
+            or gt_id.startswith(retrieved_id)
+        ):
             return True
     return False
 
@@ -125,7 +130,7 @@ def evaluate_retrieval(
     )
 
 
-def aggregate_retrieval_metrics(metrics_list: List[RetrievalMetrics]) -> AggregateRetrievalMetrics:
+def aggregate_retrieval_metrics(metrics_list: list[RetrievalMetrics]) -> AggregateRetrievalMetrics:
     """Aggregates a list of query-level metrics into dataset-level averages."""
     n = len(metrics_list)
     if n == 0:

@@ -1,9 +1,11 @@
 """Single-stage and two-stage (Cross-Encoder) retrieval pipeline."""
 
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
+
 from pydantic import BaseModel, Field
 from sentence_transformers import CrossEncoder
+
 from src.pipeline.indexing import VectorIndexer
 from src.utils.config import RetrieverConfig
 
@@ -13,7 +15,7 @@ class RetrievedChunk(BaseModel):
 
     chunk_id: str
     content: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     score: float
     rank: int
 
@@ -22,7 +24,7 @@ class RetrievalResult(BaseModel):
     """Encapsulates retrieved chunks along with execution profiling metadata."""
 
     query: str
-    chunks: List[RetrievedChunk]
+    chunks: list[RetrievedChunk]
     retrieval_latency_ms: float
     stage: str  # "dense" or "two_stage_rerank"
 
@@ -33,17 +35,17 @@ class RAGRetriever:
     def __init__(self, indexer: VectorIndexer, config: RetrieverConfig):
         self.indexer = indexer
         self.config = config
-        self._reranker: Optional[CrossEncoder] = None
+        self._reranker: CrossEncoder | None = None
 
     @property
-    def reranker(self) -> Optional[CrossEncoder]:
+    def reranker(self) -> CrossEncoder | None:
         """Lazy-loaded CrossEncoder reranker model."""
         if self.config.use_reranker and self._reranker is None:
             model_name = self.config.reranker_model or "cross-encoder/ms-marco-MiniLM-L-6-v2"
             self._reranker = CrossEncoder(model_name)
         return self._reranker
 
-    def _dense_retrieve(self, query: str, top_k: int) -> List[RetrievedChunk]:
+    def _dense_retrieve(self, query: str, top_k: int) -> list[RetrievedChunk]:
         """Executes dense vector similarity search in ChromaDB."""
         collection = self.indexer.get_or_create_collection()
         total_docs = collection.count()
@@ -62,7 +64,7 @@ class RAGRetriever:
             include=["documents", "metadatas", "distances"],
         )
 
-        chunks: List[RetrievedChunk] = []
+        chunks: list[RetrievedChunk] = []
         if not results or not results["ids"] or not results["ids"][0]:
             return chunks
 
@@ -71,7 +73,9 @@ class RAGRetriever:
         metas = results["metadatas"][0] if results["metadatas"] else [{}] * len(ids)
         distances = results["distances"][0] if results["distances"] else [0.0] * len(ids)
 
-        for rank, (chunk_id, doc, meta, dist) in enumerate(zip(ids, docs, metas, distances), start=1):
+        for rank, (chunk_id, doc, meta, dist) in enumerate(
+            zip(ids, docs, metas, distances), start=1
+        ):
             # Chroma returns cosine distance (1 - cosine_similarity); convert to similarity score
             sim_score = max(0.0, 1.0 - float(dist))
             chunks.append(
@@ -86,7 +90,9 @@ class RAGRetriever:
 
         return chunks
 
-    def _rerank(self, query: str, candidates: List[RetrievedChunk], top_n: int) -> List[RetrievedChunk]:
+    def _rerank(
+        self, query: str, candidates: list[RetrievedChunk], top_n: int
+    ) -> list[RetrievedChunk]:
         """Scores candidate chunks using a Cross-Encoder and returns the top-N reordered chunks."""
         if not candidates or not self.reranker:
             return candidates[:top_n]
@@ -96,11 +102,11 @@ class RAGRetriever:
         scores = self.reranker.predict(pairs)
 
         # Pair candidates with cross-encoder scores
-        scored_candidates: List[Tuple[RetrievedChunk, float]] = list(zip(candidates, scores))
+        scored_candidates: list[tuple[RetrievedChunk, float]] = list(zip(candidates, scores))
         # Sort descending by cross-encoder score
         scored_candidates.sort(key=lambda x: x[1], reverse=True)
 
-        reranked_chunks: List[RetrievedChunk] = []
+        reranked_chunks: list[RetrievedChunk] = []
         for rank, (chunk, ce_score) in enumerate(scored_candidates[:top_n], start=1):
             reranked_chunks.append(
                 RetrievedChunk(

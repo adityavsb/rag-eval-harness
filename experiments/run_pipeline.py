@@ -1,8 +1,8 @@
 """Interactive and ad-hoc CLI query tool for the RAG pipeline."""
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Ensure repository root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+
 from src.pipeline.generator import RAGGenerator
 from src.pipeline.indexing import VectorIndexer
 from src.pipeline.ingestion import chunk_documents, load_raw_documents
@@ -20,7 +21,9 @@ console = Console()
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Query the RAG pipeline interactively or with a prompt.")
+    parser = argparse.ArgumentParser(
+        description="Query the RAG pipeline interactively or with a prompt."
+    )
     parser.add_argument(
         "--config",
         type=str,
@@ -89,7 +92,9 @@ def main():
     if args.query:
         process_query(args.query, retriever, generator)
     else:
-        console.print("[bold green]Entering interactive RAG shell. Type 'exit' to quit.[/bold green]")
+        console.print(
+            "[bold green]Entering interactive RAG shell. Type 'exit' to quit.[/bold green]"
+        )
         while True:
             try:
                 user_input = console.input("\n[bold cyan]Ask a question > [/bold cyan]").strip()

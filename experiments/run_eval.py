@@ -1,13 +1,14 @@
 """CLI entrypoint to execute batch RAG evaluation benchmarks."""
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Ensure repository root is on sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from rich.console import Console
+
 from src.eval.runner import EvaluationRunner
 from src.utils.config import PipelineConfig
 
@@ -15,7 +16,9 @@ console = Console()
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run RAG Evaluation Benchmark against Golden Q&A set.")
+    parser = argparse.ArgumentParser(
+        description="Run RAG Evaluation Benchmark against Golden Q&A set."
+    )
     parser.add_argument(
         "--config",
         type=str,

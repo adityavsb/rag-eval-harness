@@ -1,10 +1,11 @@
 """Vector store indexing using local Hugging Face embeddings and ChromaDB."""
 
 from pathlib import Path
-from typing import List, Optional
+
 import chromadb
 from chromadb.api.models.Collection import Collection
 from sentence_transformers import SentenceTransformer
+
 from src.pipeline.ingestion import DocumentChunk
 from src.utils.config import EmbeddingConfig, VectorStoreConfig
 
@@ -15,8 +16,8 @@ class VectorIndexer:
     def __init__(self, embed_config: EmbeddingConfig, store_config: VectorStoreConfig):
         self.embed_config = embed_config
         self.store_config = store_config
-        self._embedder: Optional[SentenceTransformer] = None
-        self._client: Optional[chromadb.PersistentClient] = None
+        self._embedder: SentenceTransformer | None = None
+        self._client: chromadb.PersistentClient | None = None
 
     @property
     def embedder(self) -> SentenceTransformer:
@@ -44,7 +45,7 @@ class VectorIndexer:
             metadata={"hnsw:space": "cosine"},
         )
 
-    def index_chunks(self, chunks: List[DocumentChunk], batch_size: int = 64) -> int:
+    def index_chunks(self, chunks: list[DocumentChunk], batch_size: int = 64) -> int:
         """Encodes and indexes document chunks into the ChromaDB collection."""
         if not chunks:
             return 0

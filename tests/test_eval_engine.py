@@ -16,12 +16,18 @@ def test_judge_faithfulness_refusal():
 
 def test_judge_faithfulness_heuristic():
     judge = LLMJudge()
-    context = "Redis 7.2 Cluster has 6 horizontally sharded master nodes with lookup latencies of 1-3ms."
+    context = (
+        "Redis 7.2 Cluster has 6 horizontally sharded master nodes with lookup latencies of 1-3ms."
+    )
     grounded_answer = "The Redis cluster has 6 horizontally sharded master nodes."
     ungrounded_answer = "MongoDB Atlas uses 3 replica sets across Azure us-east regions."
 
-    grounded_eval = judge.evaluate_faithfulness("How many nodes in Redis?", context, grounded_answer)
-    ungrounded_eval = judge.evaluate_faithfulness("How many nodes in Redis?", context, ungrounded_answer)
+    grounded_eval = judge.evaluate_faithfulness(
+        "How many nodes in Redis?", context, grounded_answer
+    )
+    ungrounded_eval = judge.evaluate_faithfulness(
+        "How many nodes in Redis?", context, ungrounded_answer
+    )
 
     assert grounded_eval.score >= 0.8
     assert ungrounded_eval.score <= 0.3
