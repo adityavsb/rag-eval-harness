@@ -30,15 +30,26 @@ class AggregateRetrievalMetrics(BaseModel):
     sample_count: int = Field(ge=0)
 
 
+def is_chunk_relevant(retrieved_id: str, ground_truth_ids: Iterable[str]) -> bool:
+    """Checks whether a retrieved chunk ID satisfies any ground truth ID reference.
+
+    Matches exact chunk ID, prefix stem (e.g. matching '02_dependency_injection' with
+    '02_dependency_injection_c002'), or vice-versa.
+    """
+    for gt_id in ground_truth_ids:
+        if retrieved_id == gt_id or retrieved_id.startswith(gt_id) or gt_id.startswith(retrieved_id):
+            return True
+    return False
+
+
 def compute_hit_rate_at_k(
     retrieved_ids: Sequence[str], ground_truth_ids: Iterable[str], k: int
 ) -> float:
     """Returns 1.0 if at least one ground-truth ID appears in the top-K retrieved IDs."""
     if not ground_truth_ids:
         return 0.0
-    gt_set = set(ground_truth_ids)
     top_k = retrieved_ids[:k]
-    return 1.0 if any(doc_id in gt_set for doc_id in top_k) else 0.0
+    return 1.0 if any(is_chunk_relevant(doc_id, ground_truth_ids) for doc_id in top_k) else 0.0
 
 
 def compute_mrr_at_k(
@@ -51,9 +62,8 @@ def compute_mrr_at_k(
     """
     if not ground_truth_ids:
         return 0.0
-    gt_set = set(ground_truth_ids)
     for rank, doc_id in enumerate(retrieved_ids[:k], start=1):
-        if doc_id in gt_set:
+        if is_chunk_relevant(doc_id, ground_truth_ids):
             return 1.0 / rank
     return 0.0
 
@@ -68,7 +78,6 @@ def compute_context_precision_at_k(
     """
     if not ground_truth_ids:
         return 0.0
-    gt_set = set(ground_truth_ids)
     top_k = retrieved_ids[:k]
     if not top_k:
         return 0.0
@@ -77,7 +86,7 @@ def compute_context_precision_at_k(
     precision_sum = 0.0
 
     for i, doc_id in enumerate(top_k, start=1):
-        if doc_id in gt_set:
+        if is_chunk_relevant(doc_id, ground_truth_ids):
             relevant_hits += 1
             precision_sum += relevant_hits / i
 
@@ -93,12 +102,15 @@ def compute_context_recall_at_k(
 
     Proportion of ground-truth relevant chunks that were successfully retrieved in top-K.
     """
-    gt_set = set(ground_truth_ids)
-    if not gt_set:
+    gt_list = list(ground_truth_ids)
+    if not gt_list:
         return 0.0
-    top_k = set(retrieved_ids[:k])
-    recalled_count = len(gt_set.intersection(top_k))
-    return recalled_count / len(gt_set)
+
+    top_k = retrieved_ids[:k]
+    matched_gt = sum(
+        1 for gt_id in gt_list if any(is_chunk_relevant(doc_id, [gt_id]) for doc_id in top_k)
+    )
+    return matched_gt / len(gt_list)
 
 
 def evaluate_retrieval(
