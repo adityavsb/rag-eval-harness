@@ -1,0 +1,45 @@
+run_name: "rerank-two-stage-rag"
+description: "Two-stage retrieval: Retrieve top 15 with Bi-Encoder, Cross-Encoder rerank to top 4"
+
+corpus:
+  data_dir: "data/raw"
+  file_pattern: "*.md"
+
+chunking:
+  strategy: "recursive"
+  chunk_size: 400
+  chunk_overlap: 50
+
+embedding:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  device: "cpu"
+
+vector_store:
+  persist_directory: "chroma_db/rerank_optimized"
+  collection_name: "rerank_optimized_collection"
+
+retriever:
+  top_k: 15
+  use_reranker: true
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  reranker_top_n: 4
+
+generation:
+  model_name: "gpt-4o-mini"
+  temperature: 0.0
+  max_tokens: 500
+  prompt_style: "grounded"
+
+evaluation:
+  golden_qa_path: "data/golden_qa.json"
+  judge_model: "gpt-4o-mini"
+  metrics:
+    - "hit_rate_at_k"
+    - "mrr_at_k"
+    - "context_recall"
+    - "faithfulness"
+    - "answer_correctness"
+
+tracking:
+  experiment_name: "rag-evaluation-benchmark"
+  tracking_uri: "mlruns"
