@@ -2,12 +2,13 @@
 
 import json
 from pathlib import Path
-import time
-from typing import Any, Dict, List
+from typing import Any
+
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
+
 from src.eval.llm_judge import LLMJudge
 from src.eval.retrieval_metrics import (
     aggregate_retrieval_metrics,
@@ -27,8 +28,8 @@ class EvaluationRecord(BaseModel):
     query_id: str
     query: str
     query_type: str
-    ground_truth_context_ids: List[str]
-    retrieved_chunk_ids: List[str]
+    ground_truth_context_ids: list[str]
+    retrieved_chunk_ids: list[str]
     retrieval_hit_rate: float
     retrieval_mrr: float
     retrieval_precision: float
@@ -47,8 +48,8 @@ class EvaluationReport(BaseModel):
 
     run_name: str
     total_samples: int
-    metrics: Dict[str, float]
-    records: List[EvaluationRecord]
+    metrics: dict[str, float]
+    records: list[EvaluationRecord]
 
 
 class EvaluationRunner:
@@ -79,21 +80,23 @@ class EvaluationRunner:
         self.console.print(f"[green]Successfully indexed {count} chunks into ChromaDB.[/green]")
         return count
 
-    def load_golden_set(self) -> List[Dict[str, Any]]:
+    def load_golden_set(self) -> list[dict[str, Any]]:
         """Loads benchmark Q&A evaluation dataset."""
         path = Path(self.config.evaluation.golden_qa_path)
         if not path.exists():
             raise FileNotFoundError(f"Golden QA dataset not found at {path}")
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
 
     def run_benchmark(self, force_reindex: bool = False) -> EvaluationReport:
         """Executes full evaluation benchmark, outputs summary table, and logs to MLflow."""
         self.prepare_index(force_reindex=force_reindex)
         golden_set = self.load_golden_set()
-        records: List[EvaluationRecord] = []
+        records: list[EvaluationRecord] = []
 
-        self.console.print(f"\n[bold]Evaluating run: [yellow]{self.config.run_name}[/yellow] ({len(golden_set)} queries)[/bold]")
+        self.console.print(
+            f"\n[bold]Evaluating run: [yellow]{self.config.run_name}[/yellow] ({len(golden_set)} queries)[/bold]"
+        )
 
         with self.tracker.start_run():
             for item in golden_set:
@@ -106,13 +109,17 @@ class EvaluationRunner:
                 # 1. Retrieval
                 retrieval_res = self.retriever.retrieve(query)
                 retrieved_ids = [c.chunk_id for c in retrieval_res.chunks]
-                ret_metrics = evaluate_retrieval(retrieved_ids, gt_ids, k=self.config.retriever.top_k)
+                ret_metrics = evaluate_retrieval(
+                    retrieved_ids, gt_ids, k=self.config.retriever.top_k
+                )
 
                 # 2. Generation
                 gen_res = self.generator.generate(query, retrieval_res.chunks)
 
                 # 3. LLM-as-a-Judge Evaluation
-                context_str = "\n".join([f"[{c.chunk_id}] {c.content}" for c in retrieval_res.chunks])
+                context_str = "\n".join(
+                    [f"[{c.chunk_id}] {c.content}" for c in retrieval_res.chunks]
+                )
                 faith_res = self.judge.evaluate_faithfulness(query, context_str, gen_res.answer)
                 corr_res = self.judge.evaluate_correctness(query, gen_res.answer, gt_ans)
 
@@ -139,7 +146,11 @@ class EvaluationRunner:
             # Compute Aggregate Metrics
             agg_retrieval = aggregate_retrieval_metrics(
                 [
-                    evaluate_retrieval(r.retrieved_chunk_ids, r.ground_truth_context_ids, k=self.config.retriever.top_k)
+                    evaluate_retrieval(
+                        r.retrieved_chunk_ids,
+                        r.ground_truth_context_ids,
+                        k=self.config.retriever.top_k,
+                    )
                     for r in records
                 ]
             )
@@ -152,8 +163,12 @@ class EvaluationRunner:
                 "mrr_at_k": round(agg_retrieval.mean_mrr, 4),
                 "context_precision_at_k": round(agg_retrieval.mean_context_precision, 4),
                 "context_recall_at_k": round(agg_retrieval.mean_context_recall, 4),
-                "mean_faithfulness": round(float(np.mean([r.faithfulness_score for r in records])), 4),
-                "mean_correctness": round(float(np.mean([r.correctness_score for r in records])), 4),
+                "mean_faithfulness": round(
+                    float(np.mean([r.faithfulness_score for r in records])), 4
+                ),
+                "mean_correctness": round(
+                    float(np.mean([r.correctness_score for r in records])), 4
+                ),
                 "mean_rubric_grade": round(float(np.mean([r.rubric_grade for r in records])), 2),
                 "p95_retrieval_latency_ms": round(float(np.percentile(ret_latencies, 95)), 2),
                 "p95_generation_latency_ms": round(float(np.percentile(gen_latencies, 95)), 2),
@@ -167,12 +182,14 @@ class EvaluationRunner:
                 metrics=metrics_summary,
                 records=records,
             )
-            self.tracker.log_artifact_dict(report.model_dump(), f"eval_report_{self.config.run_name}.json")
+            self.tracker.log_artifact_dict(
+                report.model_dump(), f"eval_report_{self.config.run_name}.json"
+            )
 
             self._print_summary_table(metrics_summary)
             return report
 
-    def _print_summary_table(self, metrics: Dict[str, float]) -> None:
+    def _print_summary_table(self, metrics: dict[str, float]) -> None:
         """Renders benchmark summary table to console."""
         table = Table(title=f"Evaluation Benchmark: {self.config.run_name}")
         table.add_column("Metric", style="cyan", no_wrap=True)
@@ -185,7 +202,11 @@ class EvaluationRunner:
         table.add_row("Context Recall@K", f"{metrics['context_recall_at_k']:.2%}", ">= 80.0%")
         table.add_row("Faithfulness (Grounded)", f"{metrics['mean_faithfulness']:.2%}", ">= 90.0%")
         table.add_row("Answer Correctness", f"{metrics['mean_correctness']:.2%}", ">= 80.0%")
-        table.add_row("Average Rubric Grade", f"{metrics['mean_rubric_grade']:.2f} / 5.0", ">= 4.0 / 5")
-        table.add_row("P95 Retrieval Latency", f"{metrics['p95_retrieval_latency_ms']:.1f} ms", "< 150 ms")
+        table.add_row(
+            "Average Rubric Grade", f"{metrics['mean_rubric_grade']:.2f} / 5.0", ">= 4.0 / 5"
+        )
+        table.add_row(
+            "P95 Retrieval Latency", f"{metrics['p95_retrieval_latency_ms']:.1f} ms", "< 150 ms"
+        )
 
         self.console.print("\n", table, "\n")

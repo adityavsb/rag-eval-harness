@@ -1,7 +1,7 @@
 """Unit tests for the ingestion, indexing, and retrieval pipeline."""
 
 import tempfile
-import pytest
+
 from src.pipeline.generator import RAGGenerator
 from src.pipeline.indexing import VectorIndexer
 from src.pipeline.ingestion import (
@@ -30,7 +30,9 @@ def test_fixed_chunking():
 
 
 def test_recursive_chunking_preserves_paragraphs():
-    text = "Paragraph one with some details.\n\nParagraph two with more details.\n\nParagraph three."
+    text = (
+        "Paragraph one with some details.\n\nParagraph two with more details.\n\nParagraph three."
+    )
     chunks = _split_recursive(text, chunk_size=50, chunk_overlap=10)
     assert len(chunks) >= 2
     assert "Paragraph one" in chunks[0]

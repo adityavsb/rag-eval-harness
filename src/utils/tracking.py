@@ -1,9 +1,11 @@
 """MLflow experiment tracking and metric logging utilities."""
 
-from contextlib import contextmanager
 import json
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Generator, Optional
+from typing import Any
+
 from src.utils.config import PipelineConfig
 
 
@@ -30,7 +32,7 @@ class MLflowTracker:
         return self._mlflow
 
     @contextmanager
-    def start_run(self, run_name: Optional[str] = None) -> Generator[Any, None, None]:
+    def start_run(self, run_name: str | None = None) -> Generator[Any, None, None]:
         """Context manager for an MLflow run with parameter autologging."""
         mlf = self._get_mlflow()
         name = run_name or self.config.run_name
@@ -71,7 +73,7 @@ class MLflowTracker:
         }
         self._mlflow.log_params(params)
 
-    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
+    def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
         """Logs a dictionary of scalar evaluation metrics."""
         mlf = self._get_mlflow()
         if mlf and self._active_run:
@@ -79,7 +81,7 @@ class MLflowTracker:
         else:
             print(f"[Metrics] {json.dumps(metrics, indent=2)}")
 
-    def log_artifact_dict(self, data: Dict[str, Any], artifact_name: str) -> None:
+    def log_artifact_dict(self, data: dict[str, Any], artifact_name: str) -> None:
         """Saves a JSON dictionary as a run artifact."""
         mlf = self._get_mlflow()
         output_dir = Path("data/sample_output")

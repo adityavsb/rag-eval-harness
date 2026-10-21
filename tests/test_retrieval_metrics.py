@@ -1,6 +1,7 @@
 """Unit tests for retrieval evaluation metrics."""
 
 import pytest
+
 from src.eval.retrieval_metrics import (
     aggregate_retrieval_metrics,
     compute_context_precision_at_k,
@@ -52,7 +53,9 @@ def test_context_precision_at_k():
     ground_truth = ["doc_a", "doc_c"]
 
     expected_ap = (1.0 + (2.0 / 3.0)) / 2.0
-    assert compute_context_precision_at_k(retrieved, ground_truth, k=3) == pytest.approx(expected_ap)
+    assert compute_context_precision_at_k(retrieved, ground_truth, k=3) == pytest.approx(
+        expected_ap
+    )
 
     # No hits in top-k
     assert compute_context_precision_at_k(retrieved, ["doc_x"], k=3) == 0.0
@@ -68,4 +71,4 @@ def test_aggregate_retrieval_metrics():
     agg = aggregate_retrieval_metrics([m1, m2])
     assert agg.sample_count == 2
     assert agg.mean_hit_rate == 0.5  # (1.0 + 0.0) / 2
-    assert agg.mean_mrr == 0.5       # (1.0 + 0.0) / 2
+    assert agg.mean_mrr == 0.5  # (1.0 + 0.0) / 2

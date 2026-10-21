@@ -2,14 +2,16 @@
 
 import os
 import re
-from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
 class FaithfulnessEvaluation(BaseModel):
     """Result of evaluating whether generated claims are strictly grounded in context."""
 
-    score: float = Field(ge=0.0, le=1.0, description="1.0 means fully grounded; 0.0 means ungrounded/hallucinated.")
+    score: float = Field(
+        ge=0.0, le=1.0, description="1.0 means fully grounded; 0.0 means ungrounded/hallucinated."
+    )
     total_claims: int = 0
     grounded_claims: int = 0
     reasoning: str = ""
@@ -75,7 +77,7 @@ Task:
 
                 data = json.loads(response.choices[0].message.content or "{}")
                 return FaithfulnessEvaluation(**data)
-            except Exception:
+            except (RuntimeError, ValueError, KeyError, TypeError, OSError):
                 pass
 
         # Offline deterministic heuristic fallback
@@ -86,7 +88,9 @@ Task:
         # Tokenize answer into sentences
         sentences = [s.strip() for s in re.split(r"[.!?]", answer) if len(s.strip()) > 10]
         if not sentences:
-            return FaithfulnessEvaluation(score=1.0, total_claims=0, grounded_claims=0, reasoning="Empty answer.")
+            return FaithfulnessEvaluation(
+                score=1.0, total_claims=0, grounded_claims=0, reasoning="Empty answer."
+            )
 
         context_lower = context.lower()
         grounded_count = 0
@@ -160,7 +164,7 @@ Output JSON with:
 
                 data = json.loads(response.choices[0].message.content or "{}")
                 return CorrectnessEvaluation(**data)
-            except Exception:
+            except (RuntimeError, ValueError, KeyError, TypeError, OSError):
                 pass
 
         # Offline deterministic lexical & semantic overlap fallback
@@ -172,11 +176,28 @@ Output JSON with:
         gt_tokens = set(re.findall(r"\w+", ground_truth.lower()))
 
         # Remove common stopwords
-        stopwords = {"the", "a", "an", "is", "are", "and", "or", "to", "in", "for", "with", "of", "on", "at"}
+        stopwords = {
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "and",
+            "or",
+            "to",
+            "in",
+            "for",
+            "with",
+            "of",
+            "on",
+            "at",
+        }
         gt_tokens = {t for t in gt_tokens if t not in stopwords and len(t) > 2}
 
         if not gt_tokens:
-            return CorrectnessEvaluation(score=1.0, rubric_grade=5, reasoning="No ground truth tokens.")
+            return CorrectnessEvaluation(
+                score=1.0, rubric_grade=5, reasoning="No ground truth tokens."
+            )
 
         overlap = len(gt_tokens.intersection(ans_tokens)) / len(gt_tokens)
 

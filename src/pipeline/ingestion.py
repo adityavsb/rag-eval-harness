@@ -1,9 +1,10 @@
 """Document ingestion and chunking pipeline."""
 
 from pathlib import Path
-import re
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
+
 from src.utils.config import ChunkingConfig
 
 
@@ -12,10 +13,10 @@ class DocumentChunk(BaseModel):
 
     chunk_id: str
     content: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-def load_raw_documents(data_dir: str | Path, pattern: str = "*.md") -> List[Dict[str, Any]]:
+def load_raw_documents(data_dir: str | Path, pattern: str = "*.md") -> list[dict[str, Any]]:
     """Loads raw documents from a directory matching the specified file glob pattern."""
     base_path = Path(data_dir)
     if not base_path.exists():
@@ -24,7 +25,7 @@ def load_raw_documents(data_dir: str | Path, pattern: str = "*.md") -> List[Dict
     documents = []
     for file_path in sorted(base_path.rglob(pattern)):
         if file_path.is_file():
-            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            with open(file_path, encoding="utf-8", errors="replace") as f:
                 content = f.read()
             documents.append(
                 {
@@ -37,7 +38,7 @@ def load_raw_documents(data_dir: str | Path, pattern: str = "*.md") -> List[Dict
     return documents
 
 
-def _split_fixed(text: str, chunk_size: int, chunk_overlap: int) -> List[str]:
+def _split_fixed(text: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     """Splits text into fixed character windows with overlap."""
     if not text.strip():
         return []
@@ -54,8 +55,8 @@ def _split_recursive(
     text: str,
     chunk_size: int,
     chunk_overlap: int,
-    separators: Optional[List[str]] = None,
-) -> List[str]:
+    separators: list[str] | None = None,
+) -> list[str]:
     """Splits text hierarchically using natural boundary separators."""
     if separators is None:
         separators = ["\n\n", "\n", ". ", " ", ""]
@@ -73,8 +74,8 @@ def _split_recursive(
     splits = text.split(chosen_sep) if chosen_sep != "" else list(text)
 
     # Recombine splits up to chunk_size
-    chunks: List[str] = []
-    current_chunk: List[str] = []
+    chunks: list[str] = []
+    current_chunk: list[str] = []
     current_length = 0
 
     for piece in splits:
@@ -100,10 +101,10 @@ def _split_recursive(
 
 
 def chunk_documents(
-    raw_documents: List[Dict[str, Any]], config: ChunkingConfig
-) -> List[DocumentChunk]:
+    raw_documents: list[dict[str, Any]], config: ChunkingConfig
+) -> list[DocumentChunk]:
     """Applies the configured chunking strategy to raw documents and generates chunk IDs."""
-    all_chunks: List[DocumentChunk] = []
+    all_chunks: list[DocumentChunk] = []
 
     for doc in raw_documents:
         content = doc["content"]
