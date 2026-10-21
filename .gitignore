@@ -20,6 +20,7 @@ build/
 chroma_db/
 mlruns/
 mlartifacts/
+*.db
 .env
 
 # OS files

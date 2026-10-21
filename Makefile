@@ -35,7 +35,7 @@ eval-all:
 	$(PYTHON) experiments/run_eval.py --config configs/rerank_optimized.yaml
 
 mlflow:
-	$(MLFLOW) ui --port 5001
+	$(MLFLOW) ui --backend-store-uri sqlite:///mlflow.db --port 5001
 
 clean:
 	rm -rf __pycache__ .pytest_cache .coverage htmlcov *.egg-info chroma_db
