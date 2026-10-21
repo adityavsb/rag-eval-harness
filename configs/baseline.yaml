@@ -1,0 +1,45 @@
+run_name: "baseline-naive-rag"
+description: "Naive RAG: Fixed chunk size 1000, 0 overlap, Bi-Encoder top_k=4, no reranker"
+
+corpus:
+  data_dir: "data/raw"
+  file_pattern: "*.md"
+
+chunking:
+  strategy: "fixed"
+  chunk_size: 1000
+  chunk_overlap: 0
+
+embedding:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  device: "cpu"
+
+vector_store:
+  persist_directory: "chroma_db/baseline"
+  collection_name: "baseline_collection"
+
+retriever:
+  top_k: 4
+  use_reranker: false
+  reranker_model: null
+  reranker_top_n: 4
+
+generation:
+  model_name: "gpt-4o-mini"
+  temperature: 0.0
+  max_tokens: 500
+  prompt_style: "naive"
+
+evaluation:
+  golden_qa_path: "data/golden_qa.json"
+  judge_model: "gpt-4o-mini"
+  metrics:
+    - "hit_rate_at_k"
+    - "mrr_at_k"
+    - "context_recall"
+    - "faithfulness"
+    - "answer_correctness"
+
+tracking:
+  experiment_name: "rag-evaluation-benchmark"
+  tracking_uri: "mlruns"
