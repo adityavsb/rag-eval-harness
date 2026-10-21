@@ -42,4 +42,4 @@ evaluation:
 
 tracking:
   experiment_name: "rag-evaluation-benchmark"
-  tracking_uri: "mlruns"
+  tracking_uri: "sqlite:///mlflow.db"

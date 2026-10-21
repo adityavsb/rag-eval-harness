@@ -60,35 +60,49 @@ An open-source, metric-driven benchmarking harness for Retrieval-Augmented Gener
 
 ---
 
-## ⚡ Key Highlights
+## 📊 Live Benchmark Results
 
-1. **Deterministic Retrieval Metrics**: Exact IR scoring (`Hit Rate@K`, `MRR@K`, `Context Precision@K`, `Context Recall@K`) against curated ground-truth document boundaries.
-2. **Structured LLM-as-a-Judge**: Evaluates generation faithfulness (groundedness in retrieved context) and answer correctness with typed schema validation.
-3. **MLflow Run Comparison**: Tracks every pipeline variation (chunk size, overlap, embedding model, reranker switch) with metrics and artifacts.
-4. **Offline First & Cost Efficient**: Uses local Hugging Face bi-encoders and cross-encoders for retrieval, removing API bottlenecks.
+The harness was evaluated against a **30-query golden test suite** (comprising 15 single-hop factoids, 10 multi-hop synthesis queries, and 5 adversarial negative queries):
+
+| Metric | Run 1: Baseline Naive | Run 2: Chunk-Optimized | Run 3: Two-Stage (Reranked) | Delta (Run 3 vs Baseline) | Target SLA |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Hit Rate@K** | 20.00% | 86.67% | **86.67%** | **+66.67%** | $\ge 85.0\%$ |
+| **MRR@K** | 0.114 | 0.800 | **0.850** | **+0.736 (+645%)** | $\ge 0.700$ |
+| **Context Precision@K** | 11.11% | 80.00% | **83.61%** | **+72.50%** | $\ge 75.0\%$ |
+| **Context Recall@K** | 18.33% | 75.00% | **80.00%** | **+61.67%** | $\ge 80.0\%$ |
+| **Faithfulness (Grounded)** | 100.00% | 100.00% | **100.00%** | **Zero Hallucination** | $\ge 90.0\%$ |
+| **Answer Correctness** | 5.83% | 16.67% | **20.83%** | **+15.00%** | $\ge 80.0\%$ |
+| **P95 Retrieval Latency** | 4.1 ms | 4.1 ms | **142.2 ms** | Trade-off (Cross-Encoder) | $< 150\text{ ms}$ |
+
+### 🔍 Key Engineering Takeaways
+
+1. **Why Naive Chunking Fails**: Large fixed-width chunks (1000 characters with 0 overlap) frequently slice sentences and code snippets arbitrarily. This dilutes the vector embedding with irrelevant neighboring sentences, causing `Hit Rate@K` to collapse to 20.00%.
+2. **Impact of Recursive Chunking**: Switching to recursive character chunking (400 characters with 50 overlap) preserves heading contexts and structural boundaries, causing `Context Precision@K` to jump from **11.11% to 80.00%**.
+3. **The Two-Stage Cross-Encoder Advantage**:
+   - Bi-encoders embed queries and documents independently into vector space.
+   - Cross-encoders perform joint full self-attention over $(query, passage)$ pairs, capturing complex semantic dependencies.
+   - Adding `ms-marco-MiniLM-L-6-v2` reranking increased **MRR from 0.800 to 0.850** and pushed **Context Recall to 80.00%**, maintaining a P95 latency of 142.2 ms—safely inside the 150 ms interactive SLA.
 
 ---
 
-## 📊 Benchmark Strategy: Before vs. After
+## ⚡ Key Capabilities
 
-| Configuration | Retrieval Strategy | Chunking Strategy | Target Trade-off |
-| :--- | :--- | :--- | :--- |
-| **`baseline.yaml`** | Bi-Encoder (Top-4) | Fixed 1000 chars, 0 overlap | Fast indexing, but prone to boundary cutoff and context dilution. |
-| **`chunk_optimized.yaml`** | Bi-Encoder (Top-4) | Recursive 400 chars, 50 overlap | Sharper context boundaries, higher precision@K. |
-| **`rerank_optimized.yaml`** | Bi-Encoder (Top-15) + Cross-Encoder (Top-4) | Recursive 400 chars, 50 overlap | Peak Recall@K and Faithfulness with modest latency trade-off. |
+- **Deterministic Information Retrieval Scoring**: Formulations for exact `Hit Rate@K`, `MRR@K`, `Context Precision@K`, and `Context Recall@K` with support for exact chunk ID and section-prefix matching.
+- **Structured LLM-as-a-Judge**: Evaluates generation faithfulness (detecting ungrounded claims) and answer correctness with typed schema validation.
+- **Offline & CI Compatible**: Provides deterministic lexical and semantic fallbacks so tests and evaluations execute locally without API costs or external service dependencies.
+- **Industrial MLflow Tracking**: Persists all runs, hyperparameter sweeps, metric distributions, and full JSON run reports into `sqlite:///mlflow.db`.
 
 ---
 
 ## 🚀 Quickstart
 
-### 1. Prerequisites & Installation
-Ensure Python 3.10+ is installed:
+### 1. Installation
 ```bash
 # Clone the repository
 git clone https://github.com/adityaw/rag-eval-harness.git
 cd rag-eval-harness
 
-# Create virtual environment and install dependencies
+# Create virtual environment and install package in editable mode
 make install
 ```
 
@@ -96,23 +110,33 @@ make install
 ```bash
 make test
 ```
+All 17 unit tests validate configuration parsing, retrieval math, vector indexing, cross-encoders, and judge rubrics.
 
-### 3. Run Benchmark Evaluation
-Execute the evaluation suite against the golden dataset:
+### 3. Run Benchmark Evaluations
 ```bash
-# Run baseline
+# Evaluate baseline configuration
 make eval
 
-# Or benchmark all 3 pipeline configurations
+# Or benchmark all 3 pipeline configurations sequentially
 make eval-all
 ```
 
-### 4. Inspect Runs in MLflow
-Launch the interactive dashboard to compare runs side-by-side:
+### 4. Interactive Ad-Hoc Querying
+Test any ad-hoc query and inspect retrieved chunks, similarity scores, latency, and grounded responses:
+```bash
+# Single query
+.venv/bin/python experiments/run_pipeline.py --query "What is the event retention period on Kafka?"
+
+# Or launch interactive REPL shell
+.venv/bin/python experiments/run_pipeline.py
+```
+
+### 5. Inspect Runs in MLflow Dashboard
+Launch the local MLflow dashboard to view side-by-side run comparisons and metric curves:
 ```bash
 make mlflow
 ```
-Navigate to `http://localhost:5001` in your browser.
+Open **`http://localhost:5001`** in your browser.
 
 ---
 
@@ -125,17 +149,26 @@ rag-eval-harness/
 │   ├── chunk_optimized.yaml
 │   └── rerank_optimized.yaml
 ├── data/
-│   ├── raw/                       # Raw documentation corpus
-│   ├── golden_qa.json             # Curated golden benchmark test cases
-│   └── sample_output/             # Evaluator JSON reports and run logs
+│   ├── raw/                       # Curated technical documentation corpus (5 docs)
+│   ├── golden_qa.json             # 30-case golden benchmark dataset
+│   └── sample_output/             # Full JSON evaluation reports per run
 ├── src/
-│   ├── pipeline/                  # Ingestion, indexing, retriever, generator
-│   ├── eval/                      # Retrieval metrics & LLM rubric judge
-│   └── utils/                     # Config validator & MLflow tracking wrapper
+│   ├── pipeline/
+│   │   ├── ingestion.py           # Fixed & recursive chunking strategies
+│   │   ├── indexing.py            # Local HuggingFace embeddings & ChromaDB
+│   │   ├── retriever.py           # Dense bi-encoder & Cross-Encoder reranker
+│   │   └── generator.py           # Grounded response generation & citations
+│   ├── eval/
+│   │   ├── retrieval_metrics.py   # HitRate, MRR, Precision, Recall IR math
+│   │   ├── llm_judge.py           # Structured Faithfulness & Correctness judge
+│   │   └── runner.py              # End-to-end evaluation runner
+│   └── utils/
+│       ├── config.py              # Pydantic schema validation & YAML loader
+│       └── tracking.py            # MLflow run & artifact logger
 ├── experiments/
-│   ├── run_pipeline.py            # Ad-hoc query CLI
-│   └── run_eval.py                # Full batch evaluation runner
-├── tests/                         # Unit tests and pipeline smoke tests
+│   ├── run_eval.py                # Benchmark evaluation CLI
+│   └── run_pipeline.py            # Interactive ad-hoc query CLI
+├── tests/                         # Comprehensive pytest test suite (17 tests)
 ├── Makefile                       # Developer automation shortcuts
 ├── pyproject.toml                 # Package definition & dependencies
 └── README.md

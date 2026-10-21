@@ -57,7 +57,7 @@ class EvaluationConfig(BaseModel):
 
 class TrackingConfig(BaseModel):
     experiment_name: str = "rag-evaluation-benchmark"
-    tracking_uri: str = "mlruns"
+    tracking_uri: str = "sqlite:///mlflow.db"
 
 
 class PipelineConfig(BaseModel):
