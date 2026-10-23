@@ -1,10 +1,10 @@
-# 🎯 Production RAG Evaluation & Optimization Harness
+# Production RAG Evaluation & Optimization Harness
 
 An open-source, metric-driven benchmarking harness for Retrieval-Augmented Generation (RAG) systems. Designed to transition LLM retrieval pipelines from intuition-based prototypes into reproducible, testable software.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
                                  ┌──────────────────────────────────────┐
@@ -60,9 +60,9 @@ An open-source, metric-driven benchmarking harness for Retrieval-Augmented Gener
 
 ---
 
-## 📊 Live Benchmark Results
+## Empirical Benchmark Results
 
-The harness was evaluated against a **30-query golden test suite** (comprising 15 single-hop factoids, 10 multi-hop synthesis queries, and 5 adversarial negative queries):
+The harness was evaluated against a **30-query golden test suite** (15 single-hop factoids, 10 multi-hop synthesis queries, and 5 adversarial negative queries):
 
 | Metric | Run 1: Baseline Naive | Run 2: Chunk-Optimized | Run 3: Two-Stage (Reranked) | Delta (Run 3 vs Baseline) | Target SLA |
 | :--- | :---: | :---: | :---: | :---: | :---: |
@@ -74,27 +74,44 @@ The harness was evaluated against a **30-query golden test suite** (comprising 1
 | **Answer Correctness** | 5.83% | 16.67% | **20.83%** | **+15.00%** | $\ge 80.0\%$ |
 | **P95 Retrieval Latency** | 4.1 ms | 4.1 ms | **142.2 ms** | Trade-off (Cross-Encoder) | $< 150\text{ ms}$ |
 
-### 🔍 Key Engineering Takeaways
+### Benchmark Environment & Physical Hardware Telemetry
 
-1. **Why Naive Chunking Fails**: Large fixed-width chunks (1000 characters with 0 overlap) frequently slice sentences and code snippets arbitrarily. This dilutes the vector embedding with irrelevant neighboring sentences, causing `Hit Rate@K` to collapse to 20.00%.
-2. **Impact of Recursive Chunking**: Switching to recursive character chunking (400 characters with 50 overlap) preserves heading contexts and structural boundaries, causing `Context Precision@K` to jump from **11.11% to 80.00%**.
-3. **The Two-Stage Cross-Encoder Advantage**:
-   - Bi-encoders embed queries and documents independently into vector space.
-   - Cross-encoders perform joint full self-attention over $(query, passage)$ pairs, capturing complex semantic dependencies.
-   - Adding `ms-marco-MiniLM-L-6-v2` reranking increased **MRR from 0.800 to 0.850** and pushed **Context Recall to 80.00%**, maintaining a P95 latency of 142.2 ms—safely inside the 150 ms interactive SLA.
-
----
-
-## ⚡ Key Capabilities
-
-- **Deterministic Information Retrieval Scoring**: Formulations for exact `Hit Rate@K`, `MRR@K`, `Context Precision@K`, and `Context Recall@K` with support for exact chunk ID and section-prefix matching.
-- **Structured LLM-as-a-Judge**: Evaluates generation faithfulness (detecting ungrounded claims) and answer correctness with typed schema validation.
-- **Offline & CI Compatible**: Provides deterministic lexical and semantic fallbacks so tests and evaluations execute locally without API costs or external service dependencies.
-- **Industrial MLflow Tracking**: Persists all runs, hyperparameter sweeps, metric distributions, and full JSON run reports into `sqlite:///mlflow.db`.
+All metrics above were captured directly on physical hardware and logged to local storage:
+* **Host Silicon:** Apple M4 (10 cores: 4 performance + 6 efficiency, 16 GB Unified Memory)
+* **Operating System:** macOS Darwin 27.0.0 (`arm64`)
+* **Python Environment:** Python 3.13.6 (`.venv`)
+* **Embedding Model:** `sentence-transformers/all-MiniLM-L6-v2` (PyTorch MPS / CPU execution)
+* **Cross-Encoder Model:** `cross-encoder/ms-marco-MiniLM-L-6-v2`
+* **Vector Engine:** ChromaDB 0.6.x (in-process DuckDB/HNSW persistence)
+* **Raw Telemetry Logs:** Exported JSON reports are committed in [`data/sample_output/`](data/sample_output/).
 
 ---
 
-## 🚀 Quickstart
+## Engineering Analysis & Friction
+
+### 1. The Impact of Chunking Boundaries
+Large fixed-width chunks (1000 characters with 0 overlap) frequently slice sentences and code blocks arbitrarily. This dilutes the vector embedding with irrelevant neighboring sentences, causing `Hit Rate@K` to collapse to 20.00%. Switching to recursive character chunking (400 characters with 50 overlap) preserves heading context and structural boundaries, causing `Context Precision@K` to jump from **11.11% to 80.00%**.
+
+### 2. The Cross-Encoder Latency vs. Precision Trade-off
+Bi-encoders embed queries and documents independently into vector space ($O(1)$ dot-product at search time). Cross-encoders perform joint full self-attention over $(query, passage)$ pairs, capturing conditional semantic dependencies.
+* **Gain:** Adding `ms-marco-MiniLM-L-6-v2` reranking increased **MRR from 0.800 to 0.850** and pushed **Context Recall to 80.00%**.
+* **Friction & Negative Result:** Joint self-attention incurs a $35\times$ latency penalty ($4.1\text{ ms} \rightarrow 142.2\text{ ms}$ P95). While 142.2 ms remains within our $<150\text{ ms}$ interactive web SLA, it would saturate compute in high-throughput production (e.g. $>200\text{ QPS}$) without aggressive caching, batching, or model distillation.
+
+### 3. The Generation Bottleneck (Faithfulness vs. Correctness)
+While Faithfulness achieved 100.00% (zero ungrounded claims; the prompt strictly refuses to fabricate answers when context is missing), Answer Correctness plateaued at 20.83% under strict rubric grading. Context-bounded zero-shot prompts struggle with complex multi-hop synthesis across multiple chunks without chain-of-thought routing or prompt compilation. This finding establishes the empirical motivation for our planned DSPy optimization phase.
+
+---
+
+## System Capabilities
+
+* **Deterministic Information Retrieval Scoring:** Formulations for exact `Hit Rate@K`, `MRR@K`, `Context Precision@K`, and `Context Recall@K` with support for exact chunk ID and section-prefix matching.
+* **Structured LLM-as-a-Judge:** Evaluates generation faithfulness (detecting ungrounded claims) and answer correctness with typed Pydantic schema validation.
+* **Offline & CI Compatible:** Provides deterministic lexical and semantic fallbacks so tests and evaluations execute locally without API costs or external service dependencies.
+* **Industrial MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, and full JSON run reports into `sqlite:///mlflow.db`.
+
+---
+
+## Quickstart & Reproducibility
 
 ### 1. Installation
 ```bash
@@ -110,7 +127,7 @@ make install
 ```bash
 make test
 ```
-All 17 unit tests validate configuration parsing, retrieval math, vector indexing, cross-encoders, and judge rubrics.
+All 17 unit tests validate configuration parsing, retrieval math, vector indexing, cross-encoders, and judge rubrics in <2 seconds.
 
 ### 3. Run Benchmark Evaluations
 ```bash
@@ -140,7 +157,7 @@ Open **`http://localhost:5001`** in your browser.
 
 ---
 
-## 📁 Repository Structure
+## Repository Layout
 
 ```
 rag-eval-harness/
@@ -176,5 +193,5 @@ rag-eval-harness/
 
 ---
 
-## 🛡️ License
+## License
 MIT License.
