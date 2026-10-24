@@ -2,211 +2,869 @@
   {
     "id": "qa_001",
     "query": "What algorithm is used for distributed rate limiting at the API Gateway layer?",
-    "ground_truth_context_ids": ["01_architecture_overview_c002"],
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c002"
+    ],
     "ground_truth_answer": "Distributed rate limiting is enforced via token bucket algorithms backed by Redis.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_002",
     "query": "What is the event retention period and compaction setting on Apache Kafka operational topics?",
-    "ground_truth_context_ids": ["01_architecture_overview_c004"],
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c004"
+    ],
     "ground_truth_answer": "Operational topics maintain a 7-day retention period with compaction enabled for state streams.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_003",
     "query": "How are partition keys assigned on Kafka topics to guarantee message ordering?",
-    "ground_truth_context_ids": ["01_architecture_overview_c004", "01_architecture_overview_c005"],
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c004",
+      "01_architecture_overview_c005"
+    ],
     "ground_truth_answer": "Partition keys are mapped to tenant_id to guarantee in-order delivery of state transitions per enterprise customer.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
   },
   {
     "id": "qa_004",
     "query": "What tool is used for automated failover of PostgreSQL 16 clusters?",
-    "ground_truth_context_ids": ["01_architecture_overview_c005"],
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c005"
+    ],
     "ground_truth_answer": "PostgreSQL 16 clusters utilize Patroni for automated failover.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_005",
     "query": "What is the difference between synchronous web workers and the background worker fleet?",
-    "ground_truth_context_ids": ["01_architecture_overview_c003", "01_architecture_overview_c004"],
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c003",
+      "01_architecture_overview_c004"
+    ],
     "ground_truth_answer": "Synchronous web workers handle non-blocking I/O using Uvicorn and ASGI handlers, while the background worker fleet uses Celery and Huey to process heavy asynchronous jobs from RabbitMQ and Redis.",
-    "query_type": "multi_hop"
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_006",
     "query": "How does the dependency injection container resolve sub-dependencies in a graph?",
-    "ground_truth_context_ids": ["02_dependency_injection_c002"],
+    "ground_truth_context_ids": [
+      "02_dependency_injection_c002"
+    ],
     "ground_truth_answer": "The container resolves nested sub-dependencies in a directed acyclic graph using topological sorting before invoking route handlers.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_007",
     "query": "What is the default scope and caching behavior of dependency injection?",
-    "ground_truth_context_ids": ["02_dependency_injection_c003"],
+    "ground_truth_context_ids": [
+      "02_dependency_injection_c003"
+    ],
     "ground_truth_answer": "By default, use_cache=True, which caches resolved dependency instances for the duration of a single HTTP request.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_008",
     "query": "When should use_cache=False be configured on a dependency?",
-    "ground_truth_context_ids": ["02_dependency_injection_c003", "02_dependency_injection_c004"],
+    "ground_truth_context_ids": [
+      "02_dependency_injection_c003",
+      "02_dependency_injection_c004"
+    ],
     "ground_truth_answer": "Setting use_cache=False is used for transient scope when unique instances are required per invocation, such as cryptographic nonces or dedicated worker connection handles.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
   },
   {
     "id": "qa_009",
     "query": "How do generator functions handle resource teardown in dependency injection?",
-    "ground_truth_context_ids": ["02_dependency_injection_c004"],
+    "ground_truth_context_ids": [
+      "02_dependency_injection_c004"
+    ],
     "ground_truth_answer": "Code preceding yield executes during request initialization, and code following yield runs in the finally block during teardown, guaranteeing cleanup even if unhandled exceptions occur.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_010",
     "query": "What signing algorithm is used for JSON Web Tokens and what is their lifespan?",
-    "ground_truth_context_ids": ["03_authentication_and_security_c002"],
+    "ground_truth_context_ids": [
+      "03_authentication_and_security_c002"
+    ],
     "ground_truth_answer": "JWT tokens are signed using asymmetric RS256. Access tokens have a 15-minute lifespan and refresh tokens expire in 7 days.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_011",
     "query": "How does JWT verification handle clock skew between servers?",
-    "ground_truth_context_ids": ["03_authentication_and_security_c003"],
+    "ground_truth_context_ids": [
+      "03_authentication_and_security_c003"
+    ],
     "ground_truth_answer": "The JWT verification middleware tolerates a maximum clock drift of 30 seconds (leeway=30).",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_012",
     "query": "Where are refresh tokens stored and with what cookie attributes?",
-    "ground_truth_context_ids": ["03_authentication_and_security_c002"],
+    "ground_truth_context_ids": [
+      "03_authentication_and_security_c002"
+    ],
     "ground_truth_answer": "Refresh tokens are stored in HTTP-only, secure cookies with the SameSite=Strict attribute.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_013",
     "query": "What format do RBAC scopes follow and what happens if a token lacks required scopes?",
-    "ground_truth_context_ids": ["03_authentication_and_security_c003", "03_authentication_and_security_c004"],
+    "ground_truth_context_ids": [
+      "03_authentication_and_security_c003",
+      "03_authentication_and_security_c004"
+    ],
     "ground_truth_answer": "Scopes follow the <resource>:<action> format. If required scopes are missing, the gateway returns HTTP 403 Forbidden with RFC 7807 problem details.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
   },
   {
     "id": "qa_014",
     "query": "What are the rate limits for public endpoints versus authenticated enterprise tiers?",
-    "ground_truth_context_ids": ["03_authentication_and_security_c004"],
+    "ground_truth_context_ids": [
+      "03_authentication_and_security_c004"
+    ],
     "ground_truth_answer": "Public endpoints are limited to 10 requests per minute per IP. Authenticated standard enterprise tiers get 1,000 requests/minute, and premium tiers get 5,000 requests/minute.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_015",
     "query": "What response code and header are returned when a client exceeds their rate limit quota?",
-    "ground_truth_context_ids": ["03_authentication_and_security_c004"],
+    "ground_truth_context_ids": [
+      "03_authentication_and_security_c004"
+    ],
     "ground_truth_answer": "The gateway returns HTTP 429 Too Many Requests with cooldown seconds specified in the Retry-After header.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_016",
     "query": "What are the capacity, latency, and default TTL of the Layer 1 in-memory cache?",
-    "ground_truth_context_ids": ["04_caching_and_performance_c002", "04_caching_and_performance_c003"],
+    "ground_truth_context_ids": [
+      "04_caching_and_performance_c002",
+      "04_caching_and_performance_c003"
+    ],
     "ground_truth_answer": "L1 cache is an in-memory LRU with a default capacity of 50,000 entries, sub-microsecond latency (<100 microseconds), and a default TTL of 300 seconds.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_017",
     "query": "How many master nodes are in the distributed Redis cluster and what is the lookup latency?",
-    "ground_truth_context_ids": ["04_caching_and_performance_c003"],
-    "ground_truth_answer": "Redis 7.2 Cluster has 6 horizontally sharded master nodes with lookup latencies of 1–3 milliseconds over VPC peering.",
-    "query_type": "factoid"
+    "ground_truth_context_ids": [
+      "04_caching_and_performance_c003"
+    ],
+    "ground_truth_answer": "Redis 7.2 Cluster has 6 horizontally sharded master nodes with lookup latencies of 1\u20133 milliseconds over VPC peering.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_018",
     "query": "How does the XFetch algorithm mitigate cache stampedes on hot keys?",
-    "ground_truth_context_ids": ["04_caching_and_performance_c004", "04_caching_and_performance_c005"],
+    "ground_truth_context_ids": [
+      "04_caching_and_performance_c004",
+      "04_caching_and_performance_c005"
+    ],
     "ground_truth_answer": "XFetch uses a probabilistic calculation near the expiration window to proactively recompute values in the background before hard expiration occurs.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
   },
   {
     "id": "qa_019",
     "query": "What happens when database state changes occur in PostgreSQL regarding cache invalidation?",
-    "ground_truth_context_ids": ["04_caching_and_performance_c005"],
+    "ground_truth_context_ids": [
+      "04_caching_and_performance_c005"
+    ],
     "ground_truth_answer": "A PostgreSQL trigger emits an event to Kafka's cache-invalidation topic, prompting Redis UNLINK commands to clear L2 and UDP/WebSocket pulses to invalidate L1 nodes.",
-    "query_type": "multi_hop"
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_020",
     "query": "What error rate threshold trips the circuit breaker from Closed to Open, and over what window?",
-    "ground_truth_context_ids": ["05_error_handling_and_resilience_c002"],
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c002"
+    ],
     "ground_truth_answer": "The circuit breaker trips to Open when the rolling error rate exceeds 50% over a 20-second evaluation window.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_021",
     "query": "Describe the transition from Half-Open state back to Closed state in the circuit breaker.",
-    "ground_truth_context_ids": ["05_error_handling_and_resilience_c002", "05_error_handling_and_resilience_c003"],
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c002",
+      "05_error_handling_and_resilience_c003"
+    ],
     "ground_truth_answer": "After a 30-second cooldown in Open state, Half-Open permits 5 trial probe requests. If all 5 succeed, the circuit resets to Closed; if any fail, it trips back to Open for a 60-second cooldown.",
-    "query_type": "multi_hop"
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_022",
     "query": "What are the base backoff interval and maximum retry attempts for transient HTTP failures?",
-    "ground_truth_context_ids": ["05_error_handling_and_resilience_c003"],
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c003"
+    ],
     "ground_truth_answer": "Maximum attempts is 3, with a 200ms base delay that doubles exponentially on subsequent failures (200ms, 400ms, 800ms) with full jitter.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_023",
     "query": "Why is full jitter added to exponential backoff retries?",
-    "ground_truth_context_ids": ["05_error_handling_and_resilience_c003", "05_error_handling_and_resilience_c004"],
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c003",
+      "05_error_handling_and_resilience_c004"
+    ],
     "ground_truth_answer": "Full jitter adds random delay to avoid synchronized request spikes across worker clusters.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
   },
   {
     "id": "qa_024",
     "query": "When are messages routed to the Dead Letter Queue and what metadata is preserved?",
-    "ground_truth_context_ids": ["05_error_handling_and_resilience_c004"],
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c004"
+    ],
     "ground_truth_answer": "Tasks failing after 3 execution attempts are routed to dlq.<topic_name>, preserving original payloads, exception tracebacks, timestamps, and retry counters in header envelopes.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_025",
     "query": "What condition triggers a PagerDuty alert regarding the Dead Letter Queue?",
-    "ground_truth_context_ids": ["05_error_handling_and_resilience_c004"],
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c004"
+    ],
     "ground_truth_answer": "An alert is dispatched to PagerDuty if the DLQ depth exceeds 50 messages within any 15-minute sliding window.",
-    "query_type": "factoid"
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_026",
     "query": "How does the system handle asynchronous processing across messaging, worker fleets, and database persistence?",
-    "ground_truth_context_ids": ["01_architecture_overview", "05_error_handling_and_resilience"],
+    "ground_truth_context_ids": [
+      "01_architecture_overview",
+      "05_error_handling_and_resilience"
+    ],
     "ground_truth_answer": "Kafka and RabbitMQ buffer messages, Celery and Huey background workers consume them, and persistent state is committed to PostgreSQL with automated Patroni failover and DLQs for failed tasks.",
-    "query_type": "multi_hop"
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_027",
     "query": "How does GraphQL Federation handle entity stitching across subgraphs in this architecture?",
     "ground_truth_context_ids": [],
     "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
-    "query_type": "negative"
+    "query_type": "negative",
+    "verified": true,
+    "split": "train"
   },
   {
     "id": "qa_028",
     "query": "What is the replication factor configured for Apache Cassandra database clusters?",
     "ground_truth_context_ids": [],
     "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
-    "query_type": "negative"
+    "query_type": "negative",
+    "verified": true,
+    "split": "dev"
   },
   {
     "id": "qa_029",
     "query": "How do you configure DynamoDB global secondary indexes for multi-region replication?",
     "ground_truth_context_ids": [],
     "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
-    "query_type": "negative"
+    "query_type": "negative",
+    "verified": true,
+    "split": "test"
   },
   {
     "id": "qa_030",
     "query": "What gRPC deadline timeout is configured for Envoy service mesh sidecars?",
     "ground_truth_context_ids": [],
     "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
-    "query_type": "negative"
+    "query_type": "negative",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_031",
+    "query": "What pattern is used to achieve zero-downtime database schema migrations?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c002"
+    ],
+    "ground_truth_answer": "The platform enforces zero-downtime database migrations using the Expand-and-Contract (Parallel Run) pattern managed through Alembic.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_032",
+    "query": "What are the required lock_timeout and statement_timeout values for production DDL statements?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c003"
+    ],
+    "ground_truth_answer": "All DDL statements must set lock_timeout to 2 seconds and statement_timeout to 30 seconds.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_033",
+    "query": "How are database indexes created in PostgreSQL to prevent table write locks?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c003"
+    ],
+    "ground_truth_answer": "Index creation must strictly use CREATE INDEX CONCURRENTLY to prevent write locks on active transaction tables.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_034",
+    "query": "What pooling mode does PgBouncer use and what is the maximum connection limit per database node?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c004"
+    ],
+    "ground_truth_answer": "PgBouncer uses transaction pooling mode, and maximum server connections per database node are capped at 300 while maintaining up to 5,000 active client connections.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_035",
+    "query": "At what streaming replication lag threshold does read traffic automatically fail over from replicas to the primary instance?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c004"
+    ],
+    "ground_truth_answer": "If streaming replication lag exceeds 500ms, traffic automatically fails over to the primary instance.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_036",
+    "query": "What W3C Trace Context headers are used for distributed context propagation across service boundaries?",
+    "ground_truth_context_ids": [
+      "07_observability_and_telemetry_c002"
+    ],
+    "ground_truth_answer": "W3C Trace Context headers traceparent and tracestate propagate context across HTTP boundaries and asynchronous Kafka message headers.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_037",
+    "query": "What is the trace sampling rate for successful requests versus error or slow requests?",
+    "ground_truth_context_ids": [
+      "07_observability_and_telemetry_c002"
+    ],
+    "ground_truth_answer": "Adaptive head-based sampling is set at 5% for successful 2xx/3xx requests, while 100% of errors (4xx/5xx) and slow requests (P99 latency > 800ms) are sampled.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_038",
+    "query": "What Prometheus metrics are captured under the RED method for microservices?",
+    "ground_truth_context_ids": [
+      "07_observability_and_telemetry_c003"
+    ],
+    "ground_truth_answer": "Every microservice publishes Rate (requests/sec), Errors (error count tagged by HTTP status), and Duration (histogram buckets from 5ms to 10s).",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_039",
+    "query": "What is the maximum allowed custom metric label cardinality per service instance?",
+    "ground_truth_context_ids": [
+      "07_observability_and_telemetry_c003"
+    ],
+    "ground_truth_answer": "Label combinations are limited to a maximum cardinality of 1,000 unique metric permutations per service instance to prevent memory exhaustion.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_040",
+    "query": "What mandatory fields must be included in structured application log entries?",
+    "ground_truth_context_ids": [
+      "07_observability_and_telemetry_c004"
+    ],
+    "ground_truth_answer": "Mandatory fields include timestamp in ISO 8601 UTC, level, service_name, trace_id, span_id, and tenant_id.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_041",
+    "query": "What are the three priority queues for asynchronous tasks and their respective SLAs?",
+    "ground_truth_context_ids": [
+      "08_asynchronous_worker_fleet_c002"
+    ],
+    "ground_truth_answer": "Jobs are routed to critical (payment processing, SLA < 2s), default (email notifications, user events, SLA < 30s), and bulk (monthly reporting, PDF exports, SLA < 15m).",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_042",
+    "query": "Why do Celery workers configure worker_prefetch_multiplier equal to 1?",
+    "ground_truth_context_ids": [
+      "08_asynchronous_worker_fleet_c003"
+    ],
+    "ground_truth_answer": "Workers set worker_prefetch_multiplier to 1 for long-running compute jobs to prevent idle starvation of other available worker nodes.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_043",
+    "query": "How is task execution deduplicated across distributed Celery workers?",
+    "ground_truth_context_ids": [
+      "08_asynchronous_worker_fleet_c003"
+    ],
+    "ground_truth_answer": "Workers acquire a distributed Redis lock keyed as task_lock:{idempotency_key} with a 10-minute TTL before initiating execution.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_044",
+    "query": "What queue receives unrecoverable poison pill tasks, and what alert threshold is configured?",
+    "ground_truth_context_ids": [
+      "08_asynchronous_worker_fleet_c004"
+    ],
+    "ground_truth_answer": "Tasks encountering unrecoverable errors are routed to the dlq.tasks dead letter queue, and alerts trigger on Slack and PagerDuty when message depth exceeds 50 messages.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_045",
+    "query": "How are API versions mounted and differentiated according to the versioning policy?",
+    "ground_truth_context_ids": [
+      "09_api_versioning_and_contracts_c002"
+    ],
+    "ground_truth_answer": "The platform adheres to SemVer 2.0.0 via URL path prefixes mounted under /api/v1 and /api/v2, where breaking changes require incrementing the major version path.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_046",
+    "query": "What HTTP headers are injected to notify API clients of upcoming endpoint deprecation?",
+    "ground_truth_context_ids": [
+      "09_api_versioning_and_contracts_c003"
+    ],
+    "ground_truth_answer": "The platform injects the standard RFC 8594 Deprecation: true header along with a Sunset header specifying the final timestamp of removal.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_047",
+    "query": "What minimum deprecation window is mandated before deprecated endpoints can be sunset?",
+    "ground_truth_context_ids": [
+      "09_api_versioning_and_contracts_c003"
+    ],
+    "ground_truth_answer": "A minimum 180-day deprecation window is mandated before an endpoint can be decommissioned.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_048",
+    "query": "What tool is used in CI to validate OpenAPI contract backward compatibility?",
+    "ground_truth_context_ids": [
+      "09_api_versioning_and_contracts_c004"
+    ],
+    "ground_truth_answer": "Pull requests validate backward compatibility using oasdiff against the production OpenAPI schema artifact.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_049",
+    "query": "What GitOps tool orchestrates production cluster state from the main Git branch?",
+    "ground_truth_context_ids": [
+      "10_deployment_and_canary_rollouts_c002"
+    ],
+    "ground_truth_answer": "Production deployments are orchestrated via ArgoCD following a declarative GitOps workflow.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_050",
+    "query": "What are the three traffic split phases during an automated canary rollout?",
+    "ground_truth_context_ids": [
+      "10_deployment_and_canary_rollouts_c003"
+    ],
+    "ground_truth_answer": "Canary rollouts split traffic at Phase 1 (5% for 10 minutes), Phase 2 (25% for 20 minutes), and Phase 3 (100% full production promotion).",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_051",
+    "query": "What 5xx error rate threshold triggers an automated canary deployment rollback?",
+    "ground_truth_context_ids": [
+      "10_deployment_and_canary_rollouts_c004"
+    ],
+    "ground_truth_answer": "If HTTP 5xx responses exceed 0.5% of total requests over a 2-minute rolling window, the rollout automatically aborts and rolls back within 15 seconds.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_052",
+    "query": "What are the probe intervals for container liveness and readiness checks?",
+    "ground_truth_context_ids": [
+      "10_deployment_and_canary_rollouts_c004"
+    ],
+    "ground_truth_answer": "Pods must pass /healthz/live every 10 seconds for liveness and /healthz/ready every 5 seconds for readiness before receiving gateway traffic.",
+    "query_type": "factoid",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_053",
+    "query": "How does distributed rate limiting at the API Gateway coordinate with Redis and token bucket algorithms?",
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c002",
+      "03_authentication_and_security_c004"
+    ],
+    "ground_truth_answer": "The API Gateway layer enforces distributed rate limiting using token bucket algorithms with Redis cluster as the shared state store, evaluating tier quotas and returning RFC 7807 problem details when exhausted.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_054",
+    "query": "How do database connection pooling and schema migrations coordinate to ensure zero application downtime?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c002",
+      "06_database_migrations_and_schema_c004"
+    ],
+    "ground_truth_answer": "Zero-downtime is achieved by using Alembic expand-and-contract migrations with concurrent indexing and strict lock timeouts of 2s, while PgBouncer maintains transaction-level pooling of up to 5,000 client connections.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_055",
+    "query": "How are trace IDs correlated across synchronous gateway requests, background Celery jobs, and application logs?",
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c003",
+      "07_observability_and_telemetry_c002",
+      "07_observability_and_telemetry_c004"
+    ],
+    "ground_truth_answer": "The API gateway generates correlation IDs propagated via W3C Trace Context headers (traceparent) across HTTP and Kafka headers to Celery workers, and every structured JSON log entry mandates inclusion of trace_id and span_id.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_056",
+    "query": "How does circuit breaker state change when downstream database failover or high error rates occur?",
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c005",
+      "05_error_handling_and_resilience_c002",
+      "05_error_handling_and_resilience_c003"
+    ],
+    "ground_truth_answer": "When downstream errors exceed the 50% threshold within a 10-second rolling window, the circuit breaker transitions from Closed to Open, halting requests for 60 seconds before probing in Half-Open state while Patroni handles automated failover.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_057",
+    "query": "How does the platform prevent cache stampedes when L2 Redis keys expire during high concurrency?",
+    "ground_truth_context_ids": [
+      "04_caching_and_performance_c003",
+      "04_caching_and_performance_c004",
+      "04_caching_and_performance_c005"
+    ],
+    "ground_truth_answer": "Cache stampedes are mitigated using probabilistic early expiration (XFetch algorithm) with beta factor 1.0 to trigger background recomputation before hard TTL expiry, alongside distributed Redis locks on cache misses.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_058",
+    "query": "How are task deduplication and idempotency enforced for financial operations across the asynchronous worker fleet?",
+    "ground_truth_context_ids": [
+      "08_asynchronous_worker_fleet_c002",
+      "08_asynchronous_worker_fleet_c003"
+    ],
+    "ground_truth_answer": "Financial jobs route to the critical priority queue and require a caller-provided UUIDv4 idempotency_key, which workers use to acquire a Redis lock task_lock:{idempotency_key} with a 10-minute TTL before execution.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_059",
+    "query": "What triggers an automated canary rollback, and how does OTel telemetry capture the failure?",
+    "ground_truth_context_ids": [
+      "07_observability_and_telemetry_c002",
+      "10_deployment_and_canary_rollouts_c004"
+    ],
+    "ground_truth_answer": "An automated rollback triggers if HTTP 5xx responses exceed 0.5% over a 2-minute rolling window or P95 latency degrades by >20%, while OTel telemetry captures 100% of these 5xx error traces into Jaeger.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_060",
+    "query": "How are breaking changes handled in API versioning, and how is client migration enforced before sunset?",
+    "ground_truth_context_ids": [
+      "09_api_versioning_and_contracts_c002",
+      "09_api_versioning_and_contracts_c003"
+    ],
+    "ground_truth_answer": "Breaking changes require bumping the major URL path prefix (/api/v2), while deprecated endpoints return RFC 8594 Deprecation and Sunset headers with a 180-day grace period and metric tracking of persistent callers.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_061",
+    "query": "What mechanisms prevent memory exhaustion in Redis L1/L2 caches and Prometheus metric stores?",
+    "ground_truth_context_ids": [
+      "04_caching_and_performance_c002",
+      "04_caching_and_performance_c003",
+      "07_observability_and_telemetry_c003"
+    ],
+    "ground_truth_answer": "L1 cache enforces max-size eviction with 60s TTL, L2 Redis rejects unbounded keys without TTL, and Prometheus caps custom metric label cardinality to 1,000 unique permutations per instance.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_062",
+    "query": "How do sub-dependencies in the DI container interact with request-scoped caching and concurrency?",
+    "ground_truth_context_ids": [
+      "02_dependency_injection_c002",
+      "02_dependency_injection_c003"
+    ],
+    "ground_truth_answer": "Sub-dependencies are resolved hierarchically into an acyclic dependency graph, caching instances within the request scope so shared dependencies execute only once per HTTP request while concurrent branches resolve safely.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_063",
+    "query": "What retry strategy is applied to transient downstream failures before messages are shunted to the dead letter queue?",
+    "ground_truth_context_ids": [
+      "05_error_handling_and_resilience_c003",
+      "08_asynchronous_worker_fleet_c004"
+    ],
+    "ground_truth_answer": "Workers use exponential backoff with randomized jitter up to 5 attempts, and tasks with unrecoverable poison pill errors are immediately shunted to dlq.tasks without consuming retries.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_064",
+    "query": "How does Kafka partition assignment align with tenant isolation and distributed PostgreSQL persistence?",
+    "ground_truth_context_ids": [
+      "01_architecture_overview_c004",
+      "01_architecture_overview_c005"
+    ],
+    "ground_truth_answer": "Kafka partition keys map to tenant_id to guarantee in-order delivery of state transitions per enterprise customer, aligning with PostgreSQL 16 transactional accounts managed with Patroni failover.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_065",
+    "query": "What happens if a background export job exceeds its queue SLA or experiences a database replica lag spike?",
+    "ground_truth_context_ids": [
+      "06_database_migrations_and_schema_c004",
+      "08_asynchronous_worker_fleet_c002"
+    ],
+    "ground_truth_answer": "Background export jobs route to the bulk priority queue (SLA < 15m), and if database replica streaming lag exceeds 500ms, queries automatically fail over from read replicas to the primary PostgreSQL instance.",
+    "query_type": "multi_hop",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_066",
+    "query": "How does the platform configure Amazon DynamoDB global secondary indexes?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_067",
+    "query": "What is the maximum payload size supported by AWS Lambda serverless execution layers?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_068",
+    "query": "How are GraphQL subscription resolvers configured for WebSocket push notifications?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_069",
+    "query": "What algorithm does Apache Cassandra use for peer-to-peer gossip failure detection?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_070",
+    "query": "How does MongoDB configure wiredTiger cache size across shard replica sets?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_071",
+    "query": "What is the recommended shard allocation policy for Elasticsearch cluster hot-warm architectures?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_072",
+    "query": "How does Kubernetes manage pod affinity for DaemonSet host port mappings?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_073",
+    "query": "What is the syntax for gRPC bidirectional streaming handlers in Go?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_074",
+    "query": "How does Snowflake configure micro-partition pruning for clustering keys?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_075",
+    "query": "What encryption algorithm is used by HashiCorp Vault transit engine for envelope encryption?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_076",
+    "query": "How does Apache Flink handle state checkpointing with RocksDB state backends?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_077",
+    "query": "What is the consensus algorithm used by CockroachDB for multi-raft distributed transactions?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "train"
+  },
+  {
+    "id": "qa_078",
+    "query": "How does Envoy Proxy configure WASM filter chains for header rewriting?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "dev"
+  },
+  {
+    "id": "qa_079",
+    "query": "What is the token expiration policy for Google Firebase Cloud Messaging device tokens?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "test"
+  },
+  {
+    "id": "qa_080",
+    "query": "How does ClickHouse optimize merge tree primary index granule lookups?",
+    "ground_truth_context_ids": [],
+    "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+    "query_type": "adversarial_negative",
+    "verified": true,
+    "split": "test"
   }
 ]
