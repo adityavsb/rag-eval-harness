@@ -105,7 +105,7 @@ Task:
         return self._offline_faithfulness(context, answer)
 
     def _offline_faithfulness(self, context: str, answer: str) -> FaithfulnessEvaluation:
-        """Heuristic word overlap and citation check for offline runs."""
+        """Heuristic word overlap and entity consistency check for offline runs."""
         # Tokenize answer into sentences
         sentences = [s.strip() for s in re.split(r"[.!?]", answer) if len(s.strip()) > 10]
         if not sentences:
@@ -114,14 +114,21 @@ Task:
             )
 
         context_lower = context.lower()
+        context_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", context_lower))
         grounded_count = 0
 
         for sentence in sentences:
             words = [w for w in re.findall(r"\w+", sentence.lower()) if len(w) > 3]
             if not words:
                 continue
+
+            # Number consistency check: if sentence introduces foreign numbers, it is ungrounded
+            sentence_numbers = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", sentence.lower()))
+            if sentence_numbers and not sentence_numbers.issubset(context_numbers):
+                continue
+
             overlap = sum(1 for w in words if w in context_lower)
-            if overlap / len(words) >= 0.5:
+            if overlap / len(words) >= 0.55:
                 grounded_count += 1
 
         score = grounded_count / len(sentences) if sentences else 0.0
@@ -129,7 +136,7 @@ Task:
             score=round(score, 3),
             total_claims=len(sentences),
             grounded_claims=grounded_count,
-            reasoning=f"Heuristic: {grounded_count}/{len(sentences)} sentence claims supported by context vocabulary.",
+            reasoning=f"Heuristic: {grounded_count}/{len(sentences)} sentence claims supported by context vocabulary and numeric entities.",
         )
 
     def evaluate_correctness(
@@ -225,6 +232,16 @@ Output JSON with:
             "of",
             "on",
             "at",
+            "by",
+            "from",
+            "be",
+            "this",
+            "that",
+            "it",
+            "all",
+            "must",
+            "used",
+            "exclusively",
         }
         gt_tokens = {t for t in gt_tokens if t not in stopwords and len(t) > 2}
 
@@ -233,15 +250,22 @@ Output JSON with:
                 score=1.0, rubric_grade=5, reasoning="No ground truth tokens."
             )
 
+        # Check numeric discrepancies between answer and ground truth
+        ans_nums = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", answer.lower()))
+        gt_nums = set(re.findall(r"\b\d+(?:\.\d+)?%?\b", ground_truth.lower()))
+        num_mismatch = bool(ans_nums and gt_nums and not ans_nums.intersection(gt_nums))
+
         overlap = len(gt_tokens.intersection(ans_tokens)) / len(gt_tokens)
 
-        if overlap >= 0.75:
+        if num_mismatch and overlap < 0.8:
+            grade = 1 if overlap < 0.3 else 2
+        elif overlap >= 0.60:
             grade = 5
-        elif overlap >= 0.50:
+        elif overlap >= 0.40:
             grade = 4
-        elif overlap >= 0.30:
+        elif overlap >= 0.25:
             grade = 3
-        elif overlap >= 0.15:
+        elif overlap >= 0.12:
             grade = 2
         else:
             grade = 1
