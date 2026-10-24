@@ -56,6 +56,25 @@ def main():
         config.generation.mode = args.mode
         config.evaluation.mode = args.mode
 
+    if config.generation.mode == "live":
+        import json
+
+        from src.llm.pricing import estimate_batch_cost_eur
+
+        golden_path = Path(config.evaluation.golden_qa_path)
+        num_q = 30
+        if golden_path.exists():
+            try:
+                with open(golden_path, encoding="utf-8") as f:
+                    num_q = len(json.load(f))
+            except Exception:
+                pass
+        cost_est = estimate_batch_cost_eur(config.generation.model_name, num_q)
+        console.print(
+            f"[bold yellow]Projected live run cost: €{cost_est:.4f} "
+            f"({num_q} queries on '{config.generation.model_name}')[/bold yellow]"
+        )
+
     try:
         runner = EvaluationRunner(config)
         report = runner.run_benchmark(force_reindex=args.reindex)
