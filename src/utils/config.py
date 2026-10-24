@@ -36,6 +36,8 @@ class RetrieverConfig(BaseModel):
 
 
 class GenerationConfig(BaseModel):
+    mode: Literal["offline", "live"] = "offline"
+    provider: str = "openai"
     model_name: str = "gpt-4o-mini"
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     max_tokens: int = Field(default=500, gt=0)
@@ -43,6 +45,8 @@ class GenerationConfig(BaseModel):
 
 
 class EvaluationConfig(BaseModel):
+    mode: Literal["offline", "live"] = "offline"
+    judge_provider: str = "openai"
     golden_qa_path: str = "data/golden_qa.json"
     judge_model: str = "gpt-4o-mini"
     metrics: list[str] = Field(
@@ -64,6 +68,7 @@ class TrackingConfig(BaseModel):
 class PipelineConfig(BaseModel):
     run_name: str
     description: str = ""
+    mode: Literal["offline", "live"] | None = None
     corpus: CorpusConfig = Field(default_factory=CorpusConfig)
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)

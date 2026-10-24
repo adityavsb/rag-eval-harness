@@ -72,25 +72,61 @@ class RAGGenerator:
 
         start_time = time.perf_counter()
 
-        # Check if OpenAI API key is configured
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if api_key and not api_key.startswith("mock-"):
-            try:
-                from openai import OpenAI
+        if self.config.mode == "live":
+            # Live model generation requires valid credentials
+            provider = self.config.provider.lower()
+            if provider == "openai":
+                api_key = os.environ.get("OPENAI_API_KEY")
+                if not api_key:
+                    raise ValueError(
+                        f"Live mode generation requested with model '{self.config.model_name}', "
+                        "but OPENAI_API_KEY environment variable is missing."
+                    )
+                try:
+                    from openai import OpenAI
 
-                client = OpenAI(api_key=api_key)
-                response = client.chat.completions.create(
-                    model=self.config.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=self.config.temperature,
-                    max_tokens=self.config.max_tokens,
-                )
-                answer_text = response.choices[0].message.content or ""
-                prompt_tokens = response.usage.prompt_tokens if response.usage else 0
-                completion_tokens = response.usage.completion_tokens if response.usage else 0
-            except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
-                answer_text = f"Error during LLM generation: {e}"
-                prompt_tokens, completion_tokens = 0, 0
+                    client = OpenAI(api_key=api_key)
+                    response = client.chat.completions.create(
+                        model=self.config.model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=self.config.temperature,
+                        max_tokens=self.config.max_tokens,
+                    )
+                    answer_text = response.choices[0].message.content or ""
+                    prompt_tokens = response.usage.prompt_tokens if response.usage else 0
+                    completion_tokens = response.usage.completion_tokens if response.usage else 0
+                except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
+                    raise RuntimeError(f"Error during live LLM generation: {e}") from e
+            elif provider in ("ollama", "local"):
+                # Ollama local inference (free, no API key needed)
+                try:
+                    import json
+                    import urllib.request
+
+                    req_data = json.dumps(
+                        {
+                            "model": self.config.model_name,
+                            "prompt": prompt,
+                            "stream": False,
+                            "options": {"temperature": self.config.temperature},
+                        }
+                    ).encode("utf-8")
+                    req = urllib.request.Request(
+                        "http://localhost:11434/api/generate",
+                        data=req_data,
+                        headers={"Content-Type": "application/json"},
+                    )
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        res = json.loads(resp.read().decode("utf-8"))
+                        answer_text = res.get("response", "")
+                        prompt_tokens = res.get("prompt_eval_count", len(prompt.split()))
+                        completion_tokens = res.get("eval_count", len(answer_text.split()))
+                except Exception as e:
+                    raise RuntimeError(
+                        f"Failed to connect to local Ollama server at http://localhost:11434: {e}"
+                    ) from e
+            else:
+                raise ValueError(f"Unsupported provider '{self.config.provider}' in live mode.")
         else:
             # Deterministic offline mock generator for testing & evaluation without API costs
             if not chunks:

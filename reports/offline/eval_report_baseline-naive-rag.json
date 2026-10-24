@@ -764,5 +764,12 @@
       "retrieval_latency_ms": 3.844417000436806,
       "generation_latency_ms": 0.026083000193466432
     }
-  ]
+  ],
+  "mode": "offline",
+  "provider": "mock",
+  "model_id": "mock-generator",
+  "timestamp": "2026-10-21T11:58:00Z",
+  "git_sha": "9d85d09",
+  "cost_eur": 0.0,
+  "is_mock": true
 }

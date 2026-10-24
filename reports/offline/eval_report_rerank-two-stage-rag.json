@@ -1,16 +1,16 @@
 {
-  "run_name": "chunk-optimized-rag",
+  "run_name": "rerank-two-stage-rag",
   "total_samples": 30,
   "metrics": {
     "hit_rate_at_k": 0.8667,
-    "mrr_at_k": 0.8,
-    "context_precision_at_k": 0.8,
-    "context_recall_at_k": 0.75,
+    "mrr_at_k": 0.85,
+    "context_precision_at_k": 0.8361,
+    "context_recall_at_k": 0.8,
     "mean_faithfulness": 1.0,
-    "mean_correctness": 0.1667,
-    "mean_rubric_grade": 1.67,
-    "p95_retrieval_latency_ms": 4.06,
-    "p95_generation_latency_ms": 0.02
+    "mean_correctness": 0.2083,
+    "mean_rubric_grade": 1.83,
+    "p95_retrieval_latency_ms": 142.17,
+    "p95_generation_latency_ms": 0.03
   },
   "records": [
     {
@@ -23,8 +23,8 @@
       "retrieved_chunk_ids": [
         "01_architecture_overview_c002",
         "03_authentication_and_security_c004",
-        "01_architecture_overview_c001",
-        "03_authentication_and_security_c003"
+        "04_caching_and_performance_c003",
+        "01_architecture_overview_c001"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -35,8 +35,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 5.574750000050699,
-      "generation_latency_ms": 0.02033400051004719
+      "retrieval_latency_ms": 27229.063333999875,
+      "generation_latency_ms": 0.03979200027970364
     },
     {
       "query_id": "qa_002",
@@ -48,8 +48,8 @@
       "retrieved_chunk_ids": [
         "01_architecture_overview_c004",
         "04_caching_and_performance_c005",
-        "01_architecture_overview_c005",
-        "04_caching_and_performance_c002"
+        "05_error_handling_and_resilience_c004",
+        "01_architecture_overview_c001"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -60,8 +60,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.91333300012775,
-      "generation_latency_ms": 0.016709000192349777
+      "retrieval_latency_ms": 47.31195899967133,
+      "generation_latency_ms": 0.022667000848741736
     },
     {
       "query_id": "qa_003",
@@ -73,8 +73,8 @@
       ],
       "retrieved_chunk_ids": [
         "01_architecture_overview_c004",
-        "04_caching_and_performance_c005",
         "05_error_handling_and_resilience_c004",
+        "04_caching_and_performance_c005",
         "04_caching_and_performance_c003"
       ],
       "retrieval_hit_rate": 1.0,
@@ -86,8 +86,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.732166000190773,
-      "generation_latency_ms": 0.017124999430961907
+      "retrieval_latency_ms": 138.4887920003166,
+      "generation_latency_ms": 0.026707999495556578
     },
     {
       "query_id": "qa_004",
@@ -99,8 +99,8 @@
       "retrieved_chunk_ids": [
         "01_architecture_overview_c005",
         "04_caching_and_performance_c005",
-        "04_caching_and_performance_c003",
-        "02_dependency_injection_c002"
+        "05_error_handling_and_resilience_c004",
+        "05_error_handling_and_resilience_c003"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -111,8 +111,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 1.0,
       "rubric_grade": 5,
-      "retrieval_latency_ms": 3.7873330002184957,
-      "generation_latency_ms": 0.01729199993860675
+      "retrieval_latency_ms": 142.81054200000654,
+      "generation_latency_ms": 0.025499999537714757
     },
     {
       "query_id": "qa_005",
@@ -124,21 +124,21 @@
       ],
       "retrieved_chunk_ids": [
         "01_architecture_overview_c003",
-        "01_architecture_overview_c004",
-        "05_error_handling_and_resilience_c004",
-        "05_error_handling_and_resilience_c003"
+        "02_dependency_injection_c002",
+        "01_architecture_overview_c001",
+        "04_caching_and_performance_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
       "retrieval_precision": 1.0,
-      "retrieval_recall": 1.0,
+      "retrieval_recall": 0.5,
       "generated_answer": "According to [01_architecture_overview_c003], ID generation for end-to-end distributed tracing.\n\n### 2. Execution Engine & Worker Pools\nRequest execution is divided into two distinct worker tiers:\n- **Synchronous Web Workers**: Asynchronous event...",
       "ground_truth_answer": "Synchronous web workers handle non-blocking I/O using Uvicorn and ASGI handlers, while the background worker fleet uses Celery and Huey to process heavy asynchronous jobs from RabbitMQ and Redis.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.25,
       "rubric_grade": 2,
-      "retrieval_latency_ms": 3.65916600003402,
-      "generation_latency_ms": 0.01541700021334691
+      "retrieval_latency_ms": 44.208374999470834,
+      "generation_latency_ms": 0.021834000108356122
     },
     {
       "query_id": "qa_006",
@@ -148,22 +148,22 @@
         "02_dependency_injection_c002"
       ],
       "retrieved_chunk_ids": [
-        "02_dependency_injection_c003",
         "02_dependency_injection_c002",
+        "02_dependency_injection_c003",
         "02_dependency_injection_c001",
         "02_dependency_injection_c004"
       ],
       "retrieval_hit_rate": 1.0,
-      "retrieval_mrr": 0.5,
-      "retrieval_precision": 0.5,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
       "retrieval_recall": 1.0,
-      "generated_answer": "According to [02_dependency_injection_c003], ere graph branches do not have inter-dependencies.\n\n## Caching and Scopes\nBy default, the dependency injection engine caches resolved values for the duration of a single HTTP request:\n- **Request Scop...",
+      "generated_answer": "According to [02_dependency_injection_c002], egration tests and deterministic resource cleanup.\n\n## Sub-Dependency Resolution\nDependencies can declare nested sub-dependencies in a directed acyclic graph (DAG):\n- The container traverses the depen...",
       "ground_truth_answer": "The container resolves nested sub-dependencies in a directed acyclic graph using topological sorting before invoking route handlers.",
       "faithfulness_score": 1.0,
-      "correctness_score": 0.0,
-      "rubric_grade": 1,
-      "retrieval_latency_ms": 3.8941250004427275,
-      "generation_latency_ms": 0.014583000847778749
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 141.39470800000709,
+      "generation_latency_ms": 0.027292000595480204
     },
     {
       "query_id": "qa_007",
@@ -175,8 +175,8 @@
       "retrieved_chunk_ids": [
         "02_dependency_injection_c003",
         "02_dependency_injection_c001",
-        "02_dependency_injection_c004",
-        "02_dependency_injection_c002"
+        "04_caching_and_performance_c001",
+        "04_caching_and_performance_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -187,8 +187,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.75,
       "rubric_grade": 4,
-      "retrieval_latency_ms": 3.5742909994951333,
-      "generation_latency_ms": 0.012583999705384485
+      "retrieval_latency_ms": 45.57662499973958,
+      "generation_latency_ms": 0.019292000615678262
     },
     {
       "query_id": "qa_008",
@@ -200,21 +200,21 @@
       ],
       "retrieved_chunk_ids": [
         "02_dependency_injection_c003",
-        "04_caching_and_performance_c001",
-        "02_dependency_injection_c002",
-        "04_caching_and_performance_c004"
+        "04_caching_and_performance_c005",
+        "02_dependency_injection_c004",
+        "04_caching_and_performance_c002"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
-      "retrieval_precision": 1.0,
-      "retrieval_recall": 0.5,
+      "retrieval_precision": 0.8333333333333333,
+      "retrieval_recall": 1.0,
       "generated_answer": "According to [02_dependency_injection_c003], ere graph branches do not have inter-dependencies.\n\n## Caching and Scopes\nBy default, the dependency injection engine caches resolved values for the duration of a single HTTP request:\n- **Request Scop...",
       "ground_truth_answer": "Setting use_cache=False is used for transient scope when unique instances are required per invocation, such as cryptographic nonces or dedicated worker connection handles.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.574375000425789,
-      "generation_latency_ms": 0.01170799987448845
+      "retrieval_latency_ms": 43.199208000260114,
+      "generation_latency_ms": 0.025958000151149463
     },
     {
       "query_id": "qa_009",
@@ -225,8 +225,8 @@
       ],
       "retrieved_chunk_ids": [
         "02_dependency_injection_c004",
-        "02_dependency_injection_c001",
         "02_dependency_injection_c003",
+        "02_dependency_injection_c001",
         "02_dependency_injection_c002"
       ],
       "retrieval_hit_rate": 1.0,
@@ -238,8 +238,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 4.171167000095011,
-      "generation_latency_ms": 0.01529099972685799
+      "retrieval_latency_ms": 44.740374999491905,
+      "generation_latency_ms": 0.024625000150990672
     },
     {
       "query_id": "qa_010",
@@ -252,7 +252,7 @@
         "03_authentication_and_security_c002",
         "03_authentication_and_security_c003",
         "03_authentication_and_security_c004",
-        "03_authentication_and_security_c001"
+        "04_caching_and_performance_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -263,8 +263,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.75,
       "rubric_grade": 4,
-      "retrieval_latency_ms": 3.5715419999178266,
-      "generation_latency_ms": 0.014041999747860245
+      "retrieval_latency_ms": 43.95433399986359,
+      "generation_latency_ms": 0.017250000382773578
     },
     {
       "query_id": "qa_011",
@@ -276,8 +276,8 @@
       "retrieved_chunk_ids": [
         "03_authentication_and_security_c002",
         "03_authentication_and_security_c003",
-        "04_caching_and_performance_c002",
-        "04_caching_and_performance_c001"
+        "03_authentication_and_security_c004",
+        "05_error_handling_and_resilience_c002"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 0.5,
@@ -288,8 +288,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4364590001132456,
-      "generation_latency_ms": 0.013374999980442226
+      "retrieval_latency_ms": 42.46537499966507,
+      "generation_latency_ms": 0.016999999388644937
     },
     {
       "query_id": "qa_012",
@@ -300,9 +300,9 @@
       ],
       "retrieved_chunk_ids": [
         "03_authentication_and_security_c002",
-        "04_caching_and_performance_c001",
         "03_authentication_and_security_c003",
-        "01_architecture_overview_c005"
+        "01_architecture_overview_c005",
+        "01_architecture_overview_c002"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -313,8 +313,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.25,
       "rubric_grade": 2,
-      "retrieval_latency_ms": 3.530375000082131,
-      "generation_latency_ms": 0.012250000509084202
+      "retrieval_latency_ms": 42.82591700030025,
+      "generation_latency_ms": 0.014624999494117219
     },
     {
       "query_id": "qa_013",
@@ -326,9 +326,9 @@
       ],
       "retrieved_chunk_ids": [
         "03_authentication_and_security_c003",
-        "04_caching_and_performance_c003",
-        "01_architecture_overview_c002",
-        "02_dependency_injection_c003"
+        "02_dependency_injection_c003",
+        "03_authentication_and_security_c002",
+        "05_error_handling_and_resilience_c001"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -339,8 +339,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.25,
       "rubric_grade": 2,
-      "retrieval_latency_ms": 3.562291999514855,
-      "generation_latency_ms": 0.01808300021366449
+      "retrieval_latency_ms": 44.408499999917694,
+      "generation_latency_ms": 0.015916999473120086
     },
     {
       "query_id": "qa_014",
@@ -351,9 +351,9 @@
       ],
       "retrieved_chunk_ids": [
         "03_authentication_and_security_c004",
-        "01_architecture_overview_c002",
+        "01_architecture_overview_c005",
         "03_authentication_and_security_c002",
-        "01_architecture_overview_c001"
+        "01_architecture_overview_c002"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -364,8 +364,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.25,
       "rubric_grade": 2,
-      "retrieval_latency_ms": 3.479374999187712,
-      "generation_latency_ms": 0.01341600000159815
+      "retrieval_latency_ms": 44.574999999895226,
+      "generation_latency_ms": 0.016792000678833574
     },
     {
       "query_id": "qa_015",
@@ -376,9 +376,9 @@
       ],
       "retrieved_chunk_ids": [
         "03_authentication_and_security_c004",
-        "03_authentication_and_security_c003",
+        "01_architecture_overview_c002",
         "05_error_handling_and_resilience_c002",
-        "05_error_handling_and_resilience_c003"
+        "05_error_handling_and_resilience_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -389,8 +389,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.417707999687991,
-      "generation_latency_ms": 0.014959000509406906
+      "retrieval_latency_ms": 42.84950000055687,
+      "generation_latency_ms": 0.017917000150191598
     },
     {
       "query_id": "qa_016",
@@ -401,22 +401,22 @@
         "04_caching_and_performance_c003"
       ],
       "retrieved_chunk_ids": [
-        "04_caching_and_performance_c004",
         "04_caching_and_performance_c002",
-        "04_caching_and_performance_c001",
-        "04_caching_and_performance_c005"
+        "04_caching_and_performance_c003",
+        "04_caching_and_performance_c005",
+        "04_caching_and_performance_c004"
       ],
       "retrieval_hit_rate": 1.0,
-      "retrieval_mrr": 0.5,
-      "retrieval_precision": 0.5,
-      "retrieval_recall": 0.5,
-      "generated_answer": "According to [04_caching_and_performance_c004], TTLs are rejected by linting and runtime policies.\n\n## Cache Stampede Mitigation (Probabilistic Early Expiration)\nTo prevent cache stampedes (dog-piling) when hot keys expire under heavy traffic loads...",
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [04_caching_and_performance_c002], data consistency across multi-region deployments.\n\n## Layer 1: In-Memory Local Cache (L1)\n- **Technology**: Local process-level LRU (Least Recently Used) cache with bounded capacity (default: 50,000 e...",
       "ground_truth_answer": "L1 cache is an in-memory LRU with a default capacity of 50,000 entries, sub-microsecond latency (<100 microseconds), and a default TTL of 300 seconds.",
       "faithfulness_score": 1.0,
-      "correctness_score": 0.0,
-      "rubric_grade": 1,
-      "retrieval_latency_ms": 3.5786669996014098,
-      "generation_latency_ms": 0.014000000192027073
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 41.697583999848575,
+      "generation_latency_ms": 0.018708000425249338
     },
     {
       "query_id": "qa_017",
@@ -428,8 +428,8 @@
       "retrieved_chunk_ids": [
         "04_caching_and_performance_c003",
         "01_architecture_overview_c005",
-        "01_architecture_overview_c002",
-        "04_caching_and_performance_c005"
+        "04_caching_and_performance_c002",
+        "01_architecture_overview_c003"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -440,8 +440,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.5,
       "rubric_grade": 3,
-      "retrieval_latency_ms": 3.5127500004819012,
-      "generation_latency_ms": 0.02991600013046991
+      "retrieval_latency_ms": 45.65641699991829,
+      "generation_latency_ms": 0.01849999989644857
     },
     {
       "query_id": "qa_018",
@@ -453,21 +453,21 @@
       ],
       "retrieved_chunk_ids": [
         "04_caching_and_performance_c004",
-        "04_caching_and_performance_c001",
-        "05_error_handling_and_resilience_c004",
-        "05_error_handling_and_resilience_c003"
+        "04_caching_and_performance_c005",
+        "03_authentication_and_security_c002",
+        "01_architecture_overview_c005"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
       "retrieval_precision": 1.0,
-      "retrieval_recall": 0.5,
+      "retrieval_recall": 1.0,
       "generated_answer": "According to [04_caching_and_performance_c004], TTLs are rejected by linting and runtime policies.\n\n## Cache Stampede Mitigation (Probabilistic Early Expiration)\nTo prevent cache stampedes (dog-piling) when hot keys expire under heavy traffic loads...",
       "ground_truth_answer": "XFetch uses a probabilistic calculation near the expiration window to proactively recompute values in the background before hard expiration occurs.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4452499994586105,
-      "generation_latency_ms": 0.012208000043756329
+      "retrieval_latency_ms": 43.802416999824345,
+      "generation_latency_ms": 0.018042000192508567
     },
     {
       "query_id": "qa_019",
@@ -480,7 +480,7 @@
         "04_caching_and_performance_c005",
         "01_architecture_overview_c005",
         "04_caching_and_performance_c002",
-        "04_caching_and_performance_c001"
+        "04_caching_and_performance_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -491,8 +491,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.5,
       "rubric_grade": 3,
-      "retrieval_latency_ms": 3.4747919999063015,
-      "generation_latency_ms": 0.012916000741824973
+      "retrieval_latency_ms": 44.39720899972599,
+      "generation_latency_ms": 0.013999999282532372
     },
     {
       "query_id": "qa_020",
@@ -502,22 +502,22 @@
         "05_error_handling_and_resilience_c002"
       ],
       "retrieved_chunk_ids": [
-        "05_error_handling_and_resilience_c003",
         "05_error_handling_and_resilience_c002",
+        "05_error_handling_and_resilience_c003",
         "05_error_handling_and_resilience_c001",
-        "03_authentication_and_security_c003"
+        "05_error_handling_and_resilience_c004"
       ],
       "retrieval_hit_rate": 1.0,
-      "retrieval_mrr": 0.5,
-      "retrieval_precision": 0.5,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
       "retrieval_recall": 1.0,
-      "generated_answer": "According to [05_error_handling_and_resilience_c003], trips back to Open for another 60-second cooldown.\n\n## Retry Policies with Exponential Backoff and Jitter\nTransient network timeouts and HTTP 502/503/504 responses trigger automated retry policies:\n- ...",
+      "generated_answer": "According to [05_error_handling_and_resilience_c002], # Error Handling, Resilience, and Fault Tolerance\n\n## Circuit Breaker Implementation\nOutbound HTTP integration calls to third-party microservices and external payment gateways are protected by circuit...",
       "ground_truth_answer": "The circuit breaker trips to Open when the rolling error rate exceeds 50% over a 20-second evaluation window.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.25,
       "rubric_grade": 2,
-      "retrieval_latency_ms": 3.513790999932098,
-      "generation_latency_ms": 0.012167000022600405
+      "retrieval_latency_ms": 43.74499999994441,
+      "generation_latency_ms": 0.016291000065393746
     },
     {
       "query_id": "qa_021",
@@ -529,21 +529,21 @@
       ],
       "retrieved_chunk_ids": [
         "05_error_handling_and_resilience_c002",
-        "05_error_handling_and_resilience_c003",
         "01_architecture_overview_c005",
-        "02_dependency_injection_c004"
+        "05_error_handling_and_resilience_c003",
+        "01_architecture_overview_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
-      "retrieval_precision": 1.0,
+      "retrieval_precision": 0.8333333333333333,
       "retrieval_recall": 1.0,
       "generated_answer": "According to [05_error_handling_and_resilience_c002], # Error Handling, Resilience, and Fault Tolerance\n\n## Circuit Breaker Implementation\nOutbound HTTP integration calls to third-party microservices and external payment gateways are protected by circuit...",
       "ground_truth_answer": "After a 30-second cooldown in Open state, Half-Open permits 5 trial probe requests. If all 5 succeed, the circuit resets to Closed; if any fail, it trips back to Open for a 60-second cooldown.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4310410001126,
-      "generation_latency_ms": 0.014250000276661012
+      "retrieval_latency_ms": 43.17462500057445,
+      "generation_latency_ms": 0.015249999705702066
     },
     {
       "query_id": "qa_022",
@@ -555,8 +555,8 @@
       "retrieved_chunk_ids": [
         "05_error_handling_and_resilience_c003",
         "05_error_handling_and_resilience_c002",
-        "03_authentication_and_security_c004",
-        "05_error_handling_and_resilience_c001"
+        "05_error_handling_and_resilience_c004",
+        "03_authentication_and_security_c004"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -567,8 +567,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4782500006258488,
-      "generation_latency_ms": 0.013917000615037978
+      "retrieval_latency_ms": 43.32895800052938,
+      "generation_latency_ms": 0.017374999515595846
     },
     {
       "query_id": "qa_023",
@@ -580,9 +580,9 @@
       ],
       "retrieved_chunk_ids": [
         "05_error_handling_and_resilience_c003",
-        "05_error_handling_and_resilience_c002",
         "04_caching_and_performance_c004",
-        "03_authentication_and_security_c003"
+        "04_caching_and_performance_c001",
+        "02_dependency_injection_c003"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -593,8 +593,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.650708999884955,
-      "generation_latency_ms": 0.015708000319136772
+      "retrieval_latency_ms": 42.87816600026417,
+      "generation_latency_ms": 0.01420800072082784
     },
     {
       "query_id": "qa_024",
@@ -605,9 +605,9 @@
       ],
       "retrieved_chunk_ids": [
         "05_error_handling_and_resilience_c004",
-        "01_architecture_overview_c004",
         "04_caching_and_performance_c005",
-        "04_caching_and_performance_c004"
+        "01_architecture_overview_c004",
+        "04_caching_and_performance_c002"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -618,8 +618,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.515665999657358,
-      "generation_latency_ms": 0.013040999874647241
+      "retrieval_latency_ms": 39.32329100007337,
+      "generation_latency_ms": 0.014332999853650108
     },
     {
       "query_id": "qa_025",
@@ -630,9 +630,9 @@
       ],
       "retrieved_chunk_ids": [
         "05_error_handling_and_resilience_c004",
-        "04_caching_and_performance_c004",
         "04_caching_and_performance_c005",
-        "01_architecture_overview_c004"
+        "05_error_handling_and_resilience_c001",
+        "05_error_handling_and_resilience_c003"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
@@ -643,8 +643,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.25,
       "rubric_grade": 2,
-      "retrieval_latency_ms": 3.3762080001906725,
-      "generation_latency_ms": 0.01249999968422344
+      "retrieval_latency_ms": 42.59862500020972,
+      "generation_latency_ms": 0.014624999494117219
     },
     {
       "query_id": "qa_026",
@@ -655,22 +655,22 @@
         "05_error_handling_and_resilience"
       ],
       "retrieved_chunk_ids": [
-        "01_architecture_overview_c004",
-        "01_architecture_overview_c005",
+        "05_error_handling_and_resilience_c004",
         "01_architecture_overview_c003",
-        "04_caching_and_performance_c005"
+        "04_caching_and_performance_c005",
+        "01_architecture_overview_c005"
       ],
       "retrieval_hit_rate": 1.0,
       "retrieval_mrr": 1.0,
-      "retrieval_precision": 1.0,
-      "retrieval_recall": 0.5,
-      "generated_answer": "According to [01_architecture_overview_c004], ta export jobs, and batch notification dispatches.\n\n### 3. Event Bus & Messaging Backbone\nInternal service communication utilizes Apache Kafka as the durable event backbone:\n- **Event Retention**: Cri...",
+      "retrieval_precision": 0.9166666666666666,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c004], ynchronized request spikes across worker clusters.\n\n## Dead Letter Queues (DLQ)\nAsynchronous message processing pipelines running on Kafka and RabbitMQ isolate poison-pill messages:\n- When a task fail...",
       "ground_truth_answer": "Kafka and RabbitMQ buffer messages, Celery and Huey background workers consume them, and persistent state is committed to PostgreSQL with automated Patroni failover and DLQs for failed tasks.",
       "faithfulness_score": 1.0,
-      "correctness_score": 0.0,
-      "rubric_grade": 1,
-      "retrieval_latency_ms": 3.588000000490865,
-      "generation_latency_ms": 0.012124999557272531
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 40.56316700007301,
+      "generation_latency_ms": 0.015374999748019036
     },
     {
       "query_id": "qa_027",
@@ -680,8 +680,8 @@
       "retrieved_chunk_ids": [
         "02_dependency_injection_c002",
         "02_dependency_injection_c003",
-        "01_architecture_overview_c005",
-        "04_caching_and_performance_c003"
+        "01_architecture_overview_c002",
+        "01_architecture_overview_c005"
       ],
       "retrieval_hit_rate": 0.0,
       "retrieval_mrr": 0.0,
@@ -692,8 +692,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.5364169998501893,
-      "generation_latency_ms": 0.016666000192344654
+      "retrieval_latency_ms": 40.93375000047672,
+      "generation_latency_ms": 0.014458999430644326
     },
     {
       "query_id": "qa_028",
@@ -704,7 +704,7 @@
         "01_architecture_overview_c005",
         "04_caching_and_performance_c003",
         "04_caching_and_performance_c005",
-        "04_caching_and_performance_c001"
+        "01_architecture_overview_c004"
       ],
       "retrieval_hit_rate": 0.0,
       "retrieval_mrr": 0.0,
@@ -715,8 +715,8 @@
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4089589998984593,
-      "generation_latency_ms": 0.01487500048824586
+      "retrieval_latency_ms": 42.838792000111425,
+      "generation_latency_ms": 0.017332999959762674
     },
     {
       "query_id": "qa_029",
@@ -724,22 +724,22 @@
       "query_type": "negative",
       "ground_truth_context_ids": [],
       "retrieved_chunk_ids": [
-        "01_architecture_overview_c005",
+        "04_caching_and_performance_c002",
         "04_caching_and_performance_c001",
-        "04_caching_and_performance_c003",
-        "04_caching_and_performance_c002"
+        "01_architecture_overview_c005",
+        "02_dependency_injection_c003"
       ],
       "retrieval_hit_rate": 0.0,
       "retrieval_mrr": 0.0,
       "retrieval_precision": 0.0,
       "retrieval_recall": 0.0,
-      "generated_answer": "According to [01_architecture_overview_c005], very of state transitions per enterprise customer.\n\n### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the sourc...",
+      "generated_answer": "According to [04_caching_and_performance_c002], data consistency across multi-region deployments.\n\n## Layer 1: In-Memory Local Cache (L1)\n- **Technology**: Local process-level LRU (Least Recently Used) cache with bounded capacity (default: 50,000 e...",
       "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4251669994773692,
-      "generation_latency_ms": 0.013208999916969333
+      "retrieval_latency_ms": 42.07200000018929,
+      "generation_latency_ms": 0.017082999875128735
     },
     {
       "query_id": "qa_030",
@@ -747,22 +747,29 @@
       "query_type": "negative",
       "ground_truth_context_ids": [],
       "retrieved_chunk_ids": [
-        "03_authentication_and_security_c003",
-        "03_authentication_and_security_c004",
+        "05_error_handling_and_resilience_c003",
         "05_error_handling_and_resilience_c002",
-        "01_architecture_overview_c002"
+        "04_caching_and_performance_c003",
+        "01_architecture_overview_c004"
       ],
       "retrieval_hit_rate": 0.0,
       "retrieval_mrr": 0.0,
       "retrieval_precision": 0.0,
       "retrieval_recall": 0.0,
-      "generated_answer": "According to [03_authentication_and_security_c003], a maximum clock drift of 30 seconds (`leeway=30`).\n\n## Role-Based Access Control (RBAC)\nAuthorization is enforced using fine-grained scopes embedded within token claims:\n- Scopes follow the format `<r...",
+      "generated_answer": "According to [05_error_handling_and_resilience_c003], trips back to Open for another 60-second cooldown.\n\n## Retry Policies with Exponential Backoff and Jitter\nTransient network timeouts and HTTP 502/503/504 responses trigger automated retry policies:\n- ...",
       "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
       "faithfulness_score": 1.0,
       "correctness_score": 0.0,
       "rubric_grade": 1,
-      "retrieval_latency_ms": 3.4407500006636837,
-      "generation_latency_ms": 0.013457999557431322
+      "retrieval_latency_ms": 43.58883299937588,
+      "generation_latency_ms": 0.022000000171829015
     }
-  ]
+  ],
+  "mode": "offline",
+  "provider": "mock",
+  "model_id": "mock-generator",
+  "timestamp": "2026-10-21T11:58:00Z",
+  "git_sha": "9d85d09",
+  "cost_eur": 0.0,
+  "is_mock": true
 }
