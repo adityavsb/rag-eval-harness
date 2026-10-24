@@ -27,8 +27,8 @@ An open-source, metric-driven benchmarking harness for Retrieval-Augmented Gener
             ┌───────────────────────────────────────┴───────────────────────────────────────┐
             │                                                                               │
             ▼                                                                               ▼
-  [Baseline Retrieval]                                                            [Two-Stage Retrieval]
-  Top-K Dense Search                                                              Dense Top-N Candidates (N=15)
+  [Lexical & Dense Search]                                                        [Hybrid & Two-Stage]
+  BM25 Okapi + Dense Bi-Encoder                                                   Reciprocal Rank Fusion (RRF, k=60)
             │                                                                               │
             │                                                                               ▼
             │                                                                 Cross-Encoder Reranker
@@ -105,8 +105,10 @@ While Faithfulness achieved 100.00% (zero ungrounded claims; the prompt strictly
 ## System Capabilities
 
 * **Deterministic Information Retrieval Scoring:** Formulations for exact `Hit Rate@K`, `MRR@K`, `Context Precision@K`, and `Context Recall@K` with support for exact chunk ID and section-prefix matching.
-* **Structured LLM-as-a-Judge:** Evaluates generation faithfulness (detecting ungrounded claims) and answer correctness with typed Pydantic schema validation.
-* **Offline & CI Compatible:** Provides deterministic lexical and semantic fallbacks so tests and evaluations execute locally without API costs or external service dependencies.
+* **Hybrid Retrieval (BM25 + Dense RRF):** Reciprocal Rank Fusion ($k=60$) combining BM25 keyword matching with dense embedding vector similarity, followed by optional Cross-Encoder reranking.
+* **Provider Layer & Cost Accounting:** Multi-provider LLM abstraction via LiteLLM with disk-backed response caching (`.cache/llm_responses/`) and deterministic token/pricing models in EUR across major foundation providers.
+* **Curated Golden Evaluation Suite (v2):** 80 manually verified question-answer pairs stratified into 40% train, 20% dev, and a strictly quarantined 40% test split across 10 architectural runbooks.
+* **Human-in-the-Loop Judge Validation:** Judge calibration framework computing Raw Agreement %, Cohen's Kappa ($\kappa \ge 0.60$) for binary faithfulness, and Spearman Rank Correlation ($\rho \ge 0.70$) for rubric correctness against 30 human ground-truth labels.
 * **Industrial MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, and full JSON run reports into `sqlite:///mlflow.db`.
 
 ---
@@ -127,22 +129,25 @@ make install
 ```bash
 make test
 ```
-All 17 unit tests validate configuration parsing, retrieval math, vector indexing, cross-encoders, and judge rubrics in <2 seconds.
+All 33 unit tests validate configuration parsing, retrieval math, BM25, RRF fusion, judge calibration, caching, and fail-loud semantics in <5 seconds.
 
 ### 3. Run Benchmark Evaluations
 ```bash
 # Evaluate baseline configuration
 make eval
 
-# Or benchmark all 3 pipeline configurations sequentially
-make eval-all
+# Benchmark with hybrid BM25 + dense RRF retrieval
+.venv/bin/python experiments/run_eval.py --config configs/hybrid.yaml --mode offline
+
+# Or run judge calibration against human ground-truth annotations
+.venv/bin/python src/eval/judge_agreement.py --mode offline
 ```
 
 ### 4. Interactive Ad-Hoc Querying
 Test any ad-hoc query and inspect retrieved chunks, similarity scores, latency, and grounded responses:
 ```bash
 # Single query
-.venv/bin/python experiments/run_pipeline.py --query "What is the event retention period on Kafka?"
+.venv/bin/python experiments/run_pipeline.py --query "What is the token expiration period for short-lived access tokens?"
 
 # Or launch interactive REPL shell
 .venv/bin/python experiments/run_pipeline.py
@@ -162,24 +167,33 @@ Open **`http://localhost:5001`** in your browser.
 ```
 rag-eval-harness/
 ├── configs/                       # Declarative pipeline configs (YAML)
-│   ├── baseline.yaml
-│   ├── chunk_optimized.yaml
-│   └── rerank_optimized.yaml
+│   ├── baseline.yaml              # Fixed chunking baseline
+│   ├── chunk_optimized.yaml       # Recursive chunking
+│   ├── rerank_optimized.yaml      # Dense + Cross-Encoder reranking
+│   ├── hybrid.yaml                # BM25 + Dense RRF fusion
+│   └── hybrid_rerank.yaml         # Hybrid RRF + Cross-Encoder reranking
 ├── data/
-│   ├── raw/                       # Curated technical documentation corpus (5 docs)
-│   └── golden_qa.json             # 30-case golden benchmark dataset
+│   ├── raw/                       # Curated engineering runbooks (10 docs)
+│   ├── golden_qa.json             # 80-case verified golden set (train/dev/test)
+│   ├── human_labels.jsonl         # 30 human-labeled QA records for judge calibration
+│   └── README.md                  # Dataset card, taxonomy, and split quarantine rules
 ├── reports/
 │   ├── live/                      # Real model benchmark evaluations
 │   └── offline/                   # Deterministic offline benchmark evaluations
 ├── src/
+│   ├── llm/
+│   │   ├── cache.py               # SHA-256 disk response cache
+│   │   ├── pricing.py             # Provider rates and cost estimation (EUR)
+│   │   └── provider.py            # LiteLLM routing and caching wrapper
 │   ├── pipeline/
 │   │   ├── ingestion.py           # Fixed & recursive chunking strategies
 │   │   ├── indexing.py            # Local HuggingFace embeddings & ChromaDB
-│   │   ├── retriever.py           # Dense bi-encoder & Cross-Encoder reranker
+│   │   ├── retriever.py           # Dense, BM25, and Hybrid RRF retriever
 │   │   └── generator.py           # Grounded response generation & citations
 │   ├── eval/
 │   │   ├── retrieval_metrics.py   # HitRate, MRR, Precision, Recall IR math
 │   │   ├── llm_judge.py           # Structured Faithfulness & Correctness judge
+│   │   ├── judge_agreement.py     # Cohen's kappa and Spearman rho calibration
 │   │   └── runner.py              # End-to-end evaluation runner
 │   └── utils/
 │       ├── config.py              # Pydantic schema validation & YAML loader
@@ -187,7 +201,7 @@ rag-eval-harness/
 ├── experiments/
 │   ├── run_eval.py                # Benchmark evaluation CLI
 │   └── run_pipeline.py            # Interactive ad-hoc query CLI
-├── tests/                         # Comprehensive pytest test suite (17 tests)
+├── tests/                         # Comprehensive pytest test suite (33 tests)
 ├── Makefile                       # Developer automation shortcuts
 ├── pyproject.toml                 # Package definition & dependencies
 └── README.md
