@@ -30,6 +30,13 @@ def parse_args():
         action="store_true",
         help="Force re-indexing of documents into vector store.",
     )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["offline", "live"],
+        default=None,
+        help="Evaluation mode: 'offline' for local/mock, 'live' for real model inference.",
+    )
     return parser.parse_args()
 
 
@@ -44,11 +51,20 @@ def main():
     console.print(f"[bold cyan]Loading pipeline config from {config_path}...[/bold cyan]")
     config = PipelineConfig.from_yaml(config_path)
 
-    runner = EvaluationRunner(config)
-    report = runner.run_benchmark(force_reindex=args.reindex)
+    if args.mode:
+        config.mode = args.mode
+        config.generation.mode = args.mode
+        config.evaluation.mode = args.mode
+
+    try:
+        runner = EvaluationRunner(config)
+        report = runner.run_benchmark(force_reindex=args.reindex)
+    except Exception as e:
+        console.print(f"[bold red]Benchmark execution failed: {e}[/bold red]")
+        sys.exit(1)
 
     console.print(
-        f"[bold green]✔ Evaluation completed for '{report.run_name}'. "
+        f"[bold green]✔ Evaluation completed for '{report.run_name}' (mode: {report.mode}). "
         f"Evaluated {report.total_samples} test cases.[/bold green]"
     )
 
