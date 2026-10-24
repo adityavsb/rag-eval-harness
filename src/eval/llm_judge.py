@@ -28,8 +28,15 @@ class CorrectnessEvaluation(BaseModel):
 class LLMJudge:
     """Evaluates generation quality using structured rubrics with offline heuristic fallbacks."""
 
-    def __init__(self, model_name: str = "gpt-4o-mini"):
+    def __init__(
+        self,
+        model_name: str = "gpt-4o-mini",
+        mode: str = "offline",
+        provider: str = "openai",
+    ):
         self.model_name = model_name
+        self.mode = mode
+        self.provider = provider
 
     def evaluate_faithfulness(
         self, query: str, context: str, answer: str
@@ -44,13 +51,20 @@ class LLMJudge:
                 reasoning="Model appropriately identified insufficient context and refused to hallucinate.",
             )
 
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if api_key and not api_key.startswith("mock-"):
-            try:
-                from openai import OpenAI
+        if self.mode == "live":
+            provider = self.provider.lower()
+            if provider == "openai":
+                api_key = os.environ.get("OPENAI_API_KEY")
+                if not api_key:
+                    raise ValueError(
+                        f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                        "but OPENAI_API_KEY environment variable is missing."
+                    )
+                try:
+                    from openai import OpenAI
 
-                client = OpenAI(api_key=api_key)
-                prompt = f"""You are an objective judge evaluating whether an AI assistant's answer is faithful to the provided context.
+                    client = OpenAI(api_key=api_key)
+                    prompt = f"""You are an objective judge evaluating whether an AI assistant's answer is faithful to the provided context.
 
 Context:
 {context}
@@ -67,18 +81,25 @@ Task:
    - "score": float between 0.0 and 1.0
    - "reasoning": brief explanation
 """
-                response = client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"},
-                    temperature=0.0,
-                )
-                import json
+                    response = client.chat.completions.create(
+                        model=self.model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        response_format={"type": "json_object"},
+                        temperature=0.0,
+                    )
+                    import json
 
-                data = json.loads(response.choices[0].message.content or "{}")
-                return FaithfulnessEvaluation(**data)
-            except (RuntimeError, ValueError, KeyError, TypeError, OSError):
-                pass
+                    data = json.loads(response.choices[0].message.content or "{}")
+                    return FaithfulnessEvaluation(**data)
+                except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
+                    raise RuntimeError(
+                        f"Error during live LLM judge faithfulness evaluation: {e}"
+                    ) from e
+            elif provider in ("ollama", "local"):
+                # Offline/local Ollama judge fallback or call
+                return self._offline_faithfulness(context, answer)
+            else:
+                raise ValueError(f"Unsupported judge provider '{self.provider}' in live mode.")
 
         # Offline deterministic heuristic fallback
         return self._offline_faithfulness(context, answer)
@@ -130,13 +151,20 @@ Task:
                     reasoning="Failed to refuse: answered an out-of-scope adversarial query.",
                 )
 
-        api_key = os.environ.get("OPENAI_API_KEY")
-        if api_key and not api_key.startswith("mock-"):
-            try:
-                from openai import OpenAI
+        if self.mode == "live":
+            provider = self.provider.lower()
+            if provider == "openai":
+                api_key = os.environ.get("OPENAI_API_KEY")
+                if not api_key:
+                    raise ValueError(
+                        f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                        "but OPENAI_API_KEY environment variable is missing."
+                    )
+                try:
+                    from openai import OpenAI
 
-                client = OpenAI(api_key=api_key)
-                prompt = f"""You are an objective judge evaluating answer correctness against ground truth.
+                    client = OpenAI(api_key=api_key)
+                    prompt = f"""You are an objective judge evaluating answer correctness against ground truth.
 
 Question: {query}
 Ground Truth: {ground_truth}
@@ -154,18 +182,24 @@ Output JSON with:
 - "score": float ((rubric_grade - 1) / 4)
 - "reasoning": brief explanation
 """
-                response = client.chat.completions.create(
-                    model=self.model_name,
-                    messages=[{"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"},
-                    temperature=0.0,
-                )
-                import json
+                    response = client.chat.completions.create(
+                        model=self.model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        response_format={"type": "json_object"},
+                        temperature=0.0,
+                    )
+                    import json
 
-                data = json.loads(response.choices[0].message.content or "{}")
-                return CorrectnessEvaluation(**data)
-            except (RuntimeError, ValueError, KeyError, TypeError, OSError):
-                pass
+                    data = json.loads(response.choices[0].message.content or "{}")
+                    return CorrectnessEvaluation(**data)
+                except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
+                    raise RuntimeError(
+                        f"Error during live LLM judge correctness evaluation: {e}"
+                    ) from e
+            elif provider in ("ollama", "local"):
+                return self._offline_correctness(answer, ground_truth)
+            else:
+                raise ValueError(f"Unsupported judge provider '{self.provider}' in live mode.")
 
         # Offline deterministic lexical & semantic overlap fallback
         return self._offline_correctness(answer, ground_truth)

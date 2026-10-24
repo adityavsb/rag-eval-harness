@@ -1,11 +1,12 @@
 """End-to-end evaluation harness runner."""
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from rich.console import Console
 from rich.table import Table
 
@@ -43,11 +44,28 @@ class EvaluationRecord(BaseModel):
     generation_latency_ms: float
 
 
+def _get_git_sha() -> str:
+    import subprocess
+
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
 class EvaluationReport(BaseModel):
-    """Aggregate benchmark results and run summary."""
+    """Aggregate benchmark results and run summary with execution provenance."""
 
     run_name: str
     total_samples: int
+    mode: str = "offline"
+    provider: str = "mock"
+    model_id: str = "mock-generator"
+    timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    git_sha: str = "unknown"
+    cost_eur: float = 0.0
     metrics: dict[str, float]
     records: list[EvaluationRecord]
 
@@ -60,11 +78,20 @@ class EvaluationRunner:
         self.console = Console()
         self.tracker = MLflowTracker(config)
 
+        # Apply top-level mode override if present
+        if config.mode:
+            config.generation.mode = config.mode
+            config.evaluation.mode = config.mode
+
         # Initialize pipeline components
         self.indexer = VectorIndexer(config.embedding, config.vector_store)
         self.retriever = RAGRetriever(self.indexer, config.retriever)
         self.generator = RAGGenerator(config.generation)
-        self.judge = LLMJudge(config.evaluation.judge_model)
+        self.judge = LLMJudge(
+            model_name=config.evaluation.judge_model,
+            mode=config.evaluation.mode,
+            provider=config.evaluation.judge_provider,
+        )
 
     def prepare_index(self, force_reindex: bool = False) -> int:
         """Ensures vector database is populated with chunks from corpus."""
@@ -176,15 +203,29 @@ class EvaluationRunner:
 
             # Log metrics and artifact to MLflow
             self.tracker.log_metrics(metrics_summary)
+            is_live = self.config.generation.mode == "live"
             report = EvaluationReport(
                 run_name=self.config.run_name,
                 total_samples=len(records),
+                mode=self.config.generation.mode,
+                provider=self.config.generation.provider if is_live else "mock",
+                model_id=self.config.generation.model_name if is_live else "mock-generator",
+                timestamp=datetime.now(UTC).isoformat(),
+                git_sha=_get_git_sha(),
+                cost_eur=0.0,
                 metrics=metrics_summary,
                 records=records,
             )
             self.tracker.log_artifact_dict(
                 report.model_dump(), f"eval_report_{self.config.run_name}.json"
             )
+
+            # Also persist report to reports/ on disk
+            report_dir = Path("reports/live" if is_live else "reports/offline")
+            report_dir.mkdir(parents=True, exist_ok=True)
+            report_file = report_dir / f"eval_report_{self.config.run_name}.json"
+            with open(report_file, "w", encoding="utf-8") as f:
+                json.dump(report.model_dump(), f, indent=2)
 
             self._print_summary_table(metrics_summary)
             return report

@@ -70,9 +70,9 @@ The harness was evaluated against a **30-query golden test suite** (15 single-ho
 | **MRR@K** | 0.114 | 0.800 | **0.850** | **+0.736 (+645%)** | $\ge 0.700$ |
 | **Context Precision@K** | 11.11% | 80.00% | **83.61%** | **+72.50%** | $\ge 75.0\%$ |
 | **Context Recall@K** | 18.33% | 75.00% | **80.00%** | **+61.67%** | $\ge 80.0\%$ |
-| **Faithfulness (Grounded)** | 100.00% | 100.00% | **100.00%** | **Zero Hallucination** | $\ge 90.0\%$ |
-| **Answer Correctness** | 5.83% | 16.67% | **20.83%** | **+15.00%** | $\ge 80.0\%$ |
 | **P95 Retrieval Latency** | 4.1 ms | 4.1 ms | **142.2 ms** | Trade-off (Cross-Encoder) | $< 150\text{ ms}$ |
+
+> **Note on Generation Metrics:** The retrieval metrics above represent deterministic, offline evaluations against the 30-case golden benchmark. Generation and LLM-as-a-judge metrics (Faithfulness and Answer Correctness) have been decoupled from mock fallbacks and will be populated with real model evaluations under explicit `mode: live` (v2 roadmap milestone M7).
 
 ### Benchmark Environment & Physical Hardware Telemetry
 
@@ -83,7 +83,7 @@ All metrics above were captured directly on physical hardware and logged to loca
 * **Embedding Model:** `sentence-transformers/all-MiniLM-L6-v2` (PyTorch MPS / CPU execution)
 * **Cross-Encoder Model:** `cross-encoder/ms-marco-MiniLM-L-6-v2`
 * **Vector Engine:** ChromaDB 0.6.x (in-process DuckDB/HNSW persistence)
-* **Raw Telemetry Logs:** Exported JSON reports are committed in [`data/sample_output/`](data/sample_output/).
+* **Raw Telemetry Logs:** Exported JSON reports are archived in [`reports/offline/`](reports/offline/).
 
 ---
 
@@ -116,7 +116,7 @@ While Faithfulness achieved 100.00% (zero ungrounded claims; the prompt strictly
 ### 1. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/adityaw/rag-eval-harness.git
+git clone https://github.com/adityavsb/rag-eval-harness.git
 cd rag-eval-harness
 
 # Create virtual environment and install package in editable mode
@@ -167,8 +167,10 @@ rag-eval-harness/
 │   └── rerank_optimized.yaml
 ├── data/
 │   ├── raw/                       # Curated technical documentation corpus (5 docs)
-│   ├── golden_qa.json             # 30-case golden benchmark dataset
-│   └── sample_output/             # Full JSON evaluation reports per run
+│   └── golden_qa.json             # 30-case golden benchmark dataset
+├── reports/
+│   ├── live/                      # Real model benchmark evaluations
+│   └── offline/                   # Deterministic offline benchmark evaluations
 ├── src/
 │   ├── pipeline/
 │   │   ├── ingestion.py           # Fixed & recursive chunking strategies
