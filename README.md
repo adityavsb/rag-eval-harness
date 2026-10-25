@@ -109,6 +109,7 @@ While Faithfulness achieved 100.00% (zero ungrounded claims; the prompt strictly
 * **Provider Layer & Cost Accounting:** Multi-provider LLM abstraction via LiteLLM with disk-backed response caching (`.cache/llm_responses/`) and deterministic token/pricing models in EUR across major foundation providers.
 * **Curated Golden Evaluation Suite (v2):** 80 manually verified question-answer pairs stratified into 40% train, 20% dev, and a strictly quarantined 40% test split across 10 architectural runbooks.
 * **Human-in-the-Loop Judge Validation:** Judge calibration framework computing Raw Agreement %, Cohen's Kappa ($\kappa \ge 0.60$) for binary faithfulness, and Spearman Rank Correlation ($\rho \ge 0.70$) for rubric correctness against 30 human ground-truth labels.
+* **DSPy Prompt Optimization:** Compiled few-shot RAG generation pipelines with `BootstrapFewShot` teleprompters trained on `train`/`dev` splits and benchmarked out-of-sample against the quarantined `test` holdout split.
 * **Industrial MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, and full JSON run reports into `sqlite:///mlflow.db`.
 
 ---
@@ -129,7 +130,7 @@ make install
 ```bash
 make test
 ```
-All 33 unit tests validate configuration parsing, retrieval math, BM25, RRF fusion, judge calibration, caching, and fail-loud semantics in <5 seconds.
+All 39 unit tests validate configuration parsing, retrieval math, BM25, RRF fusion, judge calibration, caching, DSPy compilation, and fail-loud semantics in <5 seconds.
 
 ### 3. Run Benchmark Evaluations
 ```bash
@@ -139,8 +140,11 @@ make eval
 # Benchmark with hybrid BM25 + dense RRF retrieval
 .venv/bin/python experiments/run_eval.py --config configs/hybrid.yaml --mode offline
 
-# Or run judge calibration against human ground-truth annotations
+# Run judge calibration against human ground-truth annotations
 .venv/bin/python src/eval/judge_agreement.py --mode offline
+
+# Compile DSPy generation program using BootstrapFewShot teleprompter
+.venv/bin/python src/optimize/compile.py --mode offline
 ```
 
 ### 4. Interactive Ad-Hoc Querying
@@ -195,13 +199,17 @@ rag-eval-harness/
 │   │   ├── llm_judge.py           # Structured Faithfulness & Correctness judge
 │   │   ├── judge_agreement.py     # Cohen's kappa and Spearman rho calibration
 │   │   └── runner.py              # End-to-end evaluation runner
+│   ├── optimize/
+│   │   ├── dspy_program.py        # Typed DSPy RAGModule and signature
+│   │   ├── compile.py             # BootstrapFewShot compilation & delta evaluation
+│   │   └── compiled_dspy_rag.json # Compiled few-shot program artifact
 │   └── utils/
 │       ├── config.py              # Pydantic schema validation & YAML loader
 │       └── tracking.py            # MLflow run & artifact logger
 ├── experiments/
 │   ├── run_eval.py                # Benchmark evaluation CLI
 │   └── run_pipeline.py            # Interactive ad-hoc query CLI
-├── tests/                         # Comprehensive pytest test suite (33 tests)
+├── tests/                         # Comprehensive pytest test suite (39 tests)
 ├── Makefile                       # Developer automation shortcuts
 ├── pyproject.toml                 # Package definition & dependencies
 └── README.md
