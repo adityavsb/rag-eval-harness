@@ -2,6 +2,7 @@
 
 import os
 import time
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -64,6 +65,40 @@ class RAGGenerator:
     def generate(self, query: str, chunks: list[RetrievedChunk]) -> GenerationResult:
         """Generates a grounded answer from query and retrieved chunks."""
         context_str = self._format_context(chunks)
+
+        if self.config.prompt_style == "dspy":
+            from src.optimize.dspy_program import (
+                RAGModule,
+                configure_dspy_lm,
+                load_compiled_program,
+            )
+
+            start_time = time.perf_counter()
+            configure_dspy_lm(mode=self.config.mode, model_name=self.config.model_name)
+            dspy_path = Path(self.config.compiled_dspy_program_path)
+            if dspy_path.exists():
+                prog = load_compiled_program(dspy_path)
+            else:
+                prog = RAGModule()
+            pred = prog(question=query, context=context_str)
+            latency_ms = (time.perf_counter() - start_time) * 1000.0
+            answer_text = getattr(pred, "answer", "")
+            citations_raw = getattr(pred, "citations", "")
+            citations = [
+                c.strip()
+                for c in citations_raw.split(",")
+                if c.strip() and c.strip().lower() != "none"
+            ]
+            is_ref = "insufficient information" in answer_text.lower()
+            return GenerationResult(
+                query=query,
+                answer=answer_text,
+                cited_chunk_ids=citations,
+                generation_latency_ms=latency_ms,
+                prompt_tokens=len(context_str.split()) + len(query.split()),
+                completion_tokens=len(answer_text.split()),
+                is_refusal=is_ref,
+            )
 
         if self.config.prompt_style == "naive":
             prompt = NAIVE_PROMPT_TEMPLATE.format(context=context_str, query=query)

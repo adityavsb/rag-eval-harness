@@ -43,7 +43,8 @@ class GenerationConfig(BaseModel):
     model_name: str = "gpt-4o-mini"
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     max_tokens: int = Field(default=500, gt=0)
-    prompt_style: Literal["naive", "grounded"] = "grounded"
+    prompt_style: Literal["naive", "grounded", "dspy"] = "grounded"
+    compiled_dspy_program_path: str = "src/optimize/compiled_dspy_rag.json"
 
 
 class EvaluationConfig(BaseModel):

@@ -1,0 +1,65 @@
+{
+  "generate": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "question": "What algorithm is used for distributed rate limiting at the API Gateway layer?",
+        "context": "[01_architecture_overview_c002]\ntask processing.\n\n## Core Architectural Components\n\n### 1. API Gateway Layer\nThe Gateway acts as the single ingress point for all client requests. It handles:\n- TLS termination and SSL certificate offloading.\n- Global traffic routing using path-based and header-based route rules.\n- Distributed rate limiting enforced via token bucket algorithms backed by Redis.\n- Request correlation ID generation for end-to-end distributed tracing.",
+        "citations": "01_architecture_overview_c002",
+        "answer": "task processing.\n\n## Core Architectural Components\n\n### 1."
+      },
+      {
+        "augmented": true,
+        "question": "What is the event retention period and compaction setting on Apache Kafka operational topics?",
+        "context": "[01_architecture_overview_c004]\nta export jobs, and batch notification dispatches.\n\n### 3. Event Bus & Messaging Backbone\nInternal service communication utilizes Apache Kafka as the durable event backbone:\n- **Event Retention**: Critical operational topics maintain a 7-day retention period with compaction enabled for state streams.\n- **Partitioning Strategy**: Partition keys are mapped to `tenant_id` to guarantee in-order delivery of state transitions per enterprise customer.",
+        "citations": "01_architecture_overview_c004",
+        "answer": "ta export jobs, and batch notification dispatches.\n\n### 3."
+      },
+      {
+        "augmented": true,
+        "question": "How does the dependency injection container resolve sub-dependencies in a graph?",
+        "context": "[02_dependency_injection_c002]\negration tests and deterministic resource cleanup.\n\n## Sub-Dependency Resolution\nDependencies can declare nested sub-dependencies in a directed acyclic graph (DAG):\n- The container traverses the dependency tree using topological sorting before invoking route handlers.\n- Both synchronous callable objects (`def`) and asynchronous coroutines (`async def`) are supported transparently.\n- Asynchronous dependencies are awaited concurrently where graph branches do not have inter-dependencies.",
+        "citations": "02_dependency_injection_c002",
+        "answer": "egration tests and deterministic resource cleanup.\n\n## Sub-Dependency Resolution\nDependencies can declare nested sub-dependencies in a directed acyclic graph (DAG):\n- The container traverses the dependency tree using topological sorting before invoking route handlers.\n- Both synchronous callable objects (`def`) and asynchronous coroutines (`async def`) are supported transparently.\n- Asynchronous dependencies are awaited concurrently where graph branches do not have inter-dependencies."
+      },
+      {
+        "augmented": true,
+        "question": "What is the default scope and caching behavior of dependency injection?",
+        "context": "[02_dependency_injection_c003]\nere graph branches do not have inter-dependencies.\n\n## Caching and Scopes\nBy default, the dependency injection engine caches resolved values for the duration of a single HTTP request:\n- **Request Scope (Default `use_cache=True`)**: If multiple route parameters or nested dependencies require `get_db_session()`, the session is resolved once on the first call and reused across all subsequent nodes in the same request DAG.\n- **Transient Scope (`use_cache=False`)**: When unique instances are required per invocation (such as cryptographic nonces or dedicated worker connection handles), setting `use_cache=False` forces re-execution of the dependency factory.",
+        "citations": "02_dependency_injection_c003",
+        "answer": "ere graph branches do not have inter-dependencies.\n\n## Caching and Scopes\nBy default, the dependency injection engine caches resolved values for the duration of a single HTTP request:\n- **Request Scope (Default `use_cache=True`)**: If multiple route parameters or nested dependencies require `get_db_session()`, the session is resolved once on the first call and reused across all subsequent nodes in the same request DAG.\n- **Transient Scope (`use_cache=False`)**: When unique instances are required per invocation (such as cryptographic nonces or dedicated worker connection handles), setting `use_cache=False` forces re-execution of the dependency factory."
+      }
+    ],
+    "signature": {
+      "instructions": "Answer the user's question factually and concisely using ONLY the provided context passages.\n\nIf the context does not contain sufficient facts to answer the question with certainty,\noutput 'Based on the provided documentation, there is insufficient information to answer this question.'\nand set citations to 'none'.",
+      "fields": [
+        {
+          "prefix": "Context:",
+          "description": "Retrieved reference context passages formatted with bracketed chunk IDs"
+        },
+        {
+          "prefix": "Question:",
+          "description": "The user question to be answered"
+        },
+        {
+          "prefix": "Citations:",
+          "description": "Comma-separated list of chunk IDs directly supporting the answer, or 'none'"
+        },
+        {
+          "prefix": "Answer:",
+          "description": "Factual, grounded answer without fabrication or outside knowledge"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.13",
+      "dspy": "3.4.1",
+      "cloudpickle": "3.1"
+    }
+  }
+}
