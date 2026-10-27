@@ -66,80 +66,83 @@ The harness was comprehensively evaluated against the **80-query Golden Evaluati
 
 ### 1. Retrieval Pipeline Comparison (80-Item Golden Evaluation Suite)
 
-| Metric | Run 1: Baseline Naive (1000/0) | Run 2: Chunk-Optimized (400/50) | Run 3: Dense + Cross-Encoder | Run 4: Hybrid RRF (BM25 + Dense) | Run 5: Hybrid RRF + Cross-Encoder | Delta (Run 4 vs Baseline) | Target SLA |
+All retrieval metrics are evaluated over the $n = 61$ answerable test cases with 19 adversarial negative queries tracked separately. 95% bootstrap confidence intervals ($B = 2,000$ resamples) shown in brackets.
+
+| Metric | Run 1: Baseline Naive (1000/0) | Run 2: Chunk-Optimized (400/50) | Run 3: Dense + Cross-Encoder | Run 4: Hybrid RRF (BM25 + Dense) | Run 5: Hybrid RRF + Cross-Encoder | Δ vs Chunk-Optimized (95% CI) | Target SLA |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Hit Rate@K** | 12.50% | 75.00% | 75.00% | **76.25%** | 75.00% | **+63.75%** | $\ge 85.0\%$ |
-| **MRR@K** | 0.059 | 0.646 | **0.731** | 0.690 | **0.731** | **+0.631 (+1069%)** | $\ge 0.700$ |
-| **Context Precision@K** | 5.83% | 64.72% | **70.73%** | 68.02% | **70.73%** | **+62.19%** | $\ge 75.0\%$ |
-| **Context Recall@K** | 8.96% | 68.33% | **71.67%** | 70.83% | **71.67%** | **+61.87%** | $\ge 80.0\%$ |
-| **P95 Retrieval Latency** | 5.2 ms | 4.0 ms | 48.8 ms | **10.7 ms** | 51.7 ms | Low-latency sweet spot | $< 150\text{ ms}$ |
+| **Hit Rate@K** | 98.36% [95.08%, 100.0%] | 73.77% [62.30%, 83.61%] | 73.77% [62.30%, 83.61%] | 72.13% [60.66%, 83.61%] | 73.77% [62.30%, 83.61%] | -1.64% [-4.92%, 0.00%] ($p=1.00$) | $\ge 85.0\%$ |
+| **MRR@K** | 0.906 [0.848, 0.959] | 0.643 [0.529, 0.750] | 0.654 [0.542, 0.761] | 0.650 [0.536, 0.757] | 0.654 [0.542, 0.761] | +0.007 [-0.014, 0.033] | $\ge 0.700$ |
+| **Context Precision@K** | 90.16% [84.43%, 95.22%] | 63.39% [52.19%, 74.04%] | 64.16% [53.14%, 74.41%] | 63.93% [52.60%, 74.46%] | 64.16% [53.14%, 74.41%] | +0.55% [-1.91%, 3.42%] | $\ge 75.0\%$ |
+| **Context Recall@K** | 94.26% [89.07%, 98.36%] | 63.11% [52.19%, 73.50%] | 65.57% [54.37%, 75.96%] | 63.39% [52.46%, 74.04%] | 65.57% [54.37%, 75.96%] | +0.27% [-1.64%, 2.46%] | $\ge 80.0\%$ |
+| **P95 Retrieval Latency** | 4.8 ms | 4.8 ms | 35.0 ms | 4.6 ms | 34.4 ms | -0.2 ms | $< 150\text{ ms}$ |
 
 ---
 
-### 2. DSPy Generation Prompt Optimization Benchmark (Test Split Delta)
+### 2. DSPy Generation Prompt Optimization
 
-To resolve the generation synthesis bottleneck without manual trial-and-error prompt tweaking, prompt optimization was executed with DSPy's `BootstrapFewShot` teleprompter. The optimizer was compiled using strictly the `train` (32 items) and `dev` (16 items) splits, and evaluated completely out-of-sample against the **32-item quarantined `test` holdout split**:
-
-| Metric | Baseline (Zero-Shot) | Compiled (DSPy Few-Shot) | Delta | Evaluation Status | Target SLA |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Answer Correctness** | 0.0% | **53.9%** | **+53.9%** | **IMPROVED** | $\ge 50.0\%$ |
-| **Faithfulness** | 71.9% | **73.4%** | **+1.6%** | **PRESERVED** | $\ge 70.0\%$ |
-| **Mean Generation Latency** | 0.4 ms | 0.7 ms | +0.3 ms | Minimal overhead | $< 50\text{ ms}$ |
-
-* **Optimization Artifact:** Compiled few-shot program with bootstrapped exemplars is persisted in [`src/optimize/compiled_dspy_rag.json`](src/optimize/compiled_dspy_rag.json).
+`src/optimize/compile.py` compiles `RAGModule` with `BootstrapFewShotWithRandomSearch` on the `train` split, selects on `dev`, and evaluates on the quarantined `test` split. **No generation results are published yet**: the only runs so far used the deterministic offline mock LM (`OfflineRAGLM`), which cannot produce evidence about prompt quality. A live run (`--mode live --model gpt-4o-mini`, projected cost < €0.05 by `src/llm/pricing.py`) is required before any number appears here.
 
 ---
 
-### 3. Human-in-the-Loop Judge Calibration Benchmark
+### 3. Offline heuristic judge — agreement with author-written probe labels
 
-To ensure automated LLM-as-a-judge assessments reflect human domain expertise, the judge was calibrated against **30 human ground-truth labeled QA samples** ([`data/human_labels.jsonl`](data/human_labels.jsonl)):
+The offline (no-API) judge is a lexical heuristic (`LLMJudge._offline_faithfulness`, `_offline_correctness`). Its thresholds were set by inspecting the 30 probe labels in `data/human_labels.jsonl` (single annotator: repository author), so the figures below are **in-sample** and describe fit, not generalisation. They are retained only as a regression guard for the heuristic. A real model judge calibration requires a live run and a label set the heuristic was not tuned on.
 
-| Calibration Metric | Observed Score | Acceptance Target | Result | Meaning |
-| :--- | :---: | :---: | :---: | :--- |
-| **Evaluated Samples** | 30 | $\ge 30$ | **PASS** | Statistically representative test cohort |
-| **Faithfulness Raw Agreement** | **83.3%** | $\ge 80.0\%$ | **PASS** | High binary entailment consistency |
-| **Faithfulness Cohen's Kappa ($\kappa$)** | **0.667** | $\ge 0.600$ | **PASS** | Substantial agreement beyond chance |
-| **Correctness Spearman Rho ($\rho$)** | **0.872** | $\ge 0.700$ | **PASS** | Strong monotonic rank correlation ($p < 0.01$) |
+| Calibration Metric | Observed Score | 95 % CI | Acceptance Target | Result | Meaning |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **Evaluated Samples** | 30 | - | $\ge 30$ | **PASS** | Probe set; see CI column |
+| **Faithfulness Raw Agreement** | **83.3%** | - | $\ge 80.0\%$ | **PASS** | High binary entailment consistency |
+| **Faithfulness Cohen's Kappa ($\kappa$)** | **0.667** | [0.40, 0.93] | $\ge 0.600$ | **PASS** | Substantial agreement beyond chance |
+| **Correctness Spearman Rho ($\rho$)** | **0.872** | [0.77, 0.93] | $\ge 0.700$ | **PASS** | Strong monotonic rank correlation ($p = 3.69 \times 10^{-10}$) |
 
 ---
 
 ### Benchmark Environment & Physical Hardware Telemetry
 
-All metrics above were captured directly on physical hardware and logged to local storage:
-* **Host Silicon:** Apple M4 (10 cores: 4 performance + 6 efficiency, 16 GB Unified Memory)
-* **Operating System:** macOS Darwin 27.0.0 (`arm64`)
-* **Python Environment:** Python 3.13.6 (`.venv`)
-* **Embedding Model:** `sentence-transformers/all-MiniLM-L6-v2` (PyTorch CPU / MPS execution)
-* **Cross-Encoder Model:** `cross-encoder/ms-marco-MiniLM-L-6-v2`
-* **Lexical BM25 Engine:** BM25 Okapi (`rank-bm25`)
-* **Vector Engine:** ChromaDB 0.6.x (in-process DuckDB/HNSW persistence)
-* **Experiment Tracker:** MLflow 2.15.x (`sqlite:///mlflow.db`)
+Environment is recorded in every report under `environment`; the table below is copied from `reports/offline/<run>/latest.json`:
+
+```json
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python_version": "3.13.6",
+  "machine": "arm64",
+  "packages": {
+    "chromadb": "1.5.9",
+    "mlflow": "3.17.2",
+    "sentence-transformers": "6.1.0",
+    "dspy": "3.4.1",
+    "rank-bm25": "0.2.2",
+    "torch": "2.14.1",
+    "scipy": "1.18.1",
+    "pydantic": "2.14.1"
+  }
+}
+```
+
 * **Raw Telemetry Logs:** Exported JSON reports are archived in [`reports/offline/`](reports/offline/).
 
 ---
 
 ## Engineering Analysis & Friction
 
-### 1. The Impact of Chunking Boundaries
-Large fixed-width chunks (1000 characters with 0 overlap) arbitrary slice sentences and code definitions across markdown documents. This dilutes the embedding representation with irrelevant neighboring text, causing `Hit Rate@K` to collapse to **12.50%** on the expanded corpus. Switching to recursive character chunking (400 characters with 50 overlap) preserves heading context and structural boundaries, causing `Hit Rate@K` to jump from **12.50% to 75.00%** and `Context Precision@K` from **5.83% to 64.72%**.
+### 1. The Impact of Chunking Boundaries and Corpus Coverage
+Large fixed-width chunks (1000 characters with 0 overlap) produce only 21 chunks across the entire 10-document technical corpus. Retrieving top $K=4$ returns 4,000 characters (~19% of the total indexed knowledge base), mechanically inflating span-overlap hit rate (98.36%) while flooding context windows with un-chunked document bodies. Switching to recursive character chunking (400 characters with 50 overlap) produces 65 focused semantic units. On this properly chunked corpus, top-4 retrieval covers ~6% of the corpus, achieving 73.77% Hit Rate@4 [62.30%, 83.61%] and 63.39% Context Precision@4 [52.19%, 74.04%].
 
 ### 2. The Cross-Encoder Latency vs. Precision Trade-off
 Bi-encoders embed queries and documents independently into vector space ($O(1)$ dot-product at search time). Cross-encoders perform joint full self-attention over $(query, passage)$ pairs, capturing conditional semantic dependencies:
-* **Gain:** Cross-Encoder reranking boosted **MRR from 0.646 to 0.731** and increased **Context Precision to 70.73%**.
-* **Friction & Latency Penalty:** Joint self-attention incurs a $\approx 12\times$ latency penalty ($4.0\text{ ms} \rightarrow 48.8\text{ ms}$ P95). While 48.8 ms remains well within interactive web SLAs ($<150\text{ ms}$), it requires dedicated GPU caching for high-throughput ($>200\text{ QPS}$) workloads.
+* **Retrieval Gain:** Cross-Encoder reranking marginally lifts MRR from 0.643 to 0.654 (+0.011 [-0.042, 0.066]) and Context Precision from 63.39% to 64.16% (+0.77% [-4.28%, 5.88%]).
+* **Friction & Latency Penalty:** Joint self-attention incurs a $\approx 7\times$ latency penalty ($4.8\text{ ms} \rightarrow 35.0\text{ ms}$ P95). While 35.0 ms remains within interactive SLAs ($<150\text{ ms}$), the paired difference confidence interval spans zero, demonstrating that cross-encoder gains are not statistically significant on small evaluation corpora ($n=61$).
 
-### 3. The Power of Hybrid Lexical-Dense Fusion (BM25 + Dense RRF)
-Dense vector search occasionally overlooks precise exact-match technical strings (e.g. status codes, environment variables, tool names). Combining lexical BM25 Okapi with dense vector embeddings via **Reciprocal Rank Fusion ($k=60$)**:
-* Achieved the **highest overall Hit Rate (76.25%)** across the entire test suite.
-* Maintained a blazing-fast **10.7 ms P95 retrieval latency**—achieving near cross-encoder recall without the cross-encoder inference tax.
+### 3. Lexical-Dense Fusion (BM25 + Dense RRF)
+Dense vector search and lexical BM25 Okapi were fused using Reciprocal Rank Fusion ($k=60$):
+* **Performance:** Achieved 72.13% Hit Rate@4 [60.66%, 83.61%] and 0.650 MRR@4 [0.536, 0.757]. Paired comparison against pure dense retrieval yields exact McNemar test $p = 1.0000$ (1 discordant pair out of 61 queries).
+* **Latency:** Preserves bi-encoder retrieval latency (4.6 ms P95), offering hybrid vocabulary matching without the 7x inference cost of a cross-encoder reranker.
 
-### 4. Resolving the Generation Gap via DSPy Prompt Optimization
-Zero-shot prompt templates struggle with complex multi-hop synthesis across multiple passages, frequently plateauing at low correctness scores. By modeling the generator as a typed DSPy program (`RAGModule`) and compiling with `BootstrapFewShot`:
-* **Answer Correctness jumped from 0.0% to 53.9% (+53.9%)** on the holdout test set.
-* **Faithfulness was strictly preserved (71.9% $\rightarrow$ 73.4%)**, because the bootstrapped demonstrations provide concrete exemplars of refusing adversarial queries and grounding factual claims in specific bracketed chunk IDs.
+### 4. Generation Prompt Optimization Status
+Offline optimization runs execute `OfflineRAGLM`, a deterministic test double designed strictly to validate teleprompter compilation, parameter serialization, and pipeline integration without external network calls or API costs. Generation quality benchmarks on `gpt-4o-mini` require a live run (`--mode live`).
 
-### 5. Judge Calibration Against Human Ground Truth
-Automated evaluation using LLM-as-a-judge is only reliable if calibrated against human domain experts. Our calibration benchmark confirmed that incorporating numeric entity consistency checks and rubric calibration aligns the judge with human ratings: achieving a Cohen's Kappa of **0.667** (substantial agreement) and a Spearman rank correlation of **0.872** ($p < 0.01$).
+### 5. Offline Heuristic Judge Guardrails
+The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`). It serves solely as a regression guard for local offline development. Production grade LLM-as-a-judge scoring is evaluated exclusively in live mode.
 
 
 ---
@@ -172,7 +175,7 @@ make install
 ```bash
 make test
 ```
-All 39 unit tests validate configuration parsing, retrieval math, BM25, RRF fusion, judge calibration, caching, DSPy compilation, and fail-loud semantics in <5 seconds.
+All 42 unit tests pass; cold run ≈ 38 s (model download + encode), warm ≈ 10-20 s.
 
 ### 3. Run Benchmark Evaluations
 ```bash

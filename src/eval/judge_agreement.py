@@ -2,10 +2,12 @@
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
@@ -28,7 +30,9 @@ class AgreementMetrics(BaseModel):
     total_samples: int
     faithfulness_agreement_pct: float
     cohen_kappa: float
+    cohen_kappa_ci95: tuple[float, float]
     spearman_rho: float
+    spearman_rho_ci95: tuple[float, float]
     spearman_pvalue: float
     discrepancy_count: int
 
@@ -61,7 +65,7 @@ def calculate_spearman_rho(y1: list[int], y2: list[int]) -> tuple[float, float]:
     res = spearmanr(y1, y2)
     rho = float(res.statistic) if not res.statistic != res.statistic else 0.0
     p_val = float(res.pvalue) if not res.pvalue != res.pvalue else 1.0
-    return round(rho, 4), round(p_val, 4)
+    return round(rho, 4), p_val
 
 
 def evaluate_judge_agreement(
@@ -136,11 +140,29 @@ def evaluate_judge_agreement(
     kappa = calculate_cohen_kappa(human_faith, judge_faith)
     rho, p_val = calculate_spearman_rho(human_corr, judge_corr)
 
+    po = agree_pct
+    p1 = sum(human_faith) / n
+    p2 = sum(judge_faith) / n
+    pe = p1 * p2 + (1 - p1) * (1 - p2)
+    se_k = math.sqrt(po * (1 - po) / (n * (1 - pe) ** 2)) if pe < 1 else 0.0
+    kappa_ci = (round(kappa - 1.96 * se_k, 4), round(kappa + 1.96 * se_k, 4))
+
+    rng = np.random.default_rng(0)
+    hc = np.array(human_corr)
+    jc = np.array(judge_corr)
+    bs = []
+    for _ in range(2000):
+        idx = rng.integers(0, n, n)
+        bs.append(spearmanr(hc[idx], jc[idx]).statistic)
+    rho_ci = tuple(float(x) for x in np.nanpercentile(bs, [2.5, 97.5]).round(4))
+
     metrics = AgreementMetrics(
         total_samples=n,
         faithfulness_agreement_pct=round(agree_pct * 100.0, 2),
         cohen_kappa=kappa,
+        cohen_kappa_ci95=kappa_ci,
         spearman_rho=rho,
+        spearman_rho_ci95=rho_ci,
         spearman_pvalue=p_val,
         discrepancy_count=len(discrepancies),
     )
@@ -180,9 +202,13 @@ def main() -> int:
     )
 
     # Display Metrics Table
-    table = Table(title="Judge Calibration Metrics", header_style="bold magenta")
+    table = Table(
+        title="Judge Calibration Metrics (Agreement with Author Probe Labels)",
+        header_style="bold magenta",
+    )
     table.add_column("Metric", style="cyan")
     table.add_column("Score", justify="right", style="green")
+    table.add_column("95% CI", justify="center", style="dim")
     table.add_column("Acceptance Target", justify="right", style="yellow")
     table.add_column("Status", justify="center")
 
@@ -192,12 +218,14 @@ def main() -> int:
     table.add_row(
         "Total Samples Evaluated",
         str(metrics.total_samples),
+        "-",
         ">= 30",
         "[green]PASS[/green]" if metrics.total_samples >= 30 else "[red]FAIL[/red]",
     )
     table.add_row(
         "Faithfulness Raw Agreement",
         f"{metrics.faithfulness_agreement_pct:.1f}%",
+        "-",
         ">= 80.0%",
         (
             "[green]PASS[/green]"
@@ -208,17 +236,19 @@ def main() -> int:
     table.add_row(
         "Faithfulness Cohen's Kappa (κ)",
         f"{metrics.cohen_kappa:.3f}",
+        f"[{metrics.cohen_kappa_ci95[0]:.2f}, {metrics.cohen_kappa_ci95[1]:.2f}]",
         ">= 0.600",
         "[green]PASS[/green]" if k_pass else "[red]FAIL[/red]",
     )
     table.add_row(
         "Correctness Spearman Rho (ρ)",
         f"{metrics.spearman_rho:.3f}",
+        f"[{metrics.spearman_rho_ci95[0]:.2f}, {metrics.spearman_rho_ci95[1]:.2f}]",
         ">= 0.700",
         "[green]PASS[/green]" if r_pass else "[red]FAIL[/red]",
     )
-    table.add_row("Spearman p-value", f"{metrics.spearman_pvalue:.2e}", "< 0.05", "INFO")
-    table.add_row("Discrepancies", str(metrics.discrepancy_count), "Low", "INFO")
+    table.add_row("Spearman p-value", f"{metrics.spearman_pvalue:.2e}", "-", "< 0.05", "INFO")
+    table.add_row("Discrepancies", str(metrics.discrepancy_count), "-", "Low", "INFO")
 
     console.print(table)
 

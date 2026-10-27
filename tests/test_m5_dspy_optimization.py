@@ -40,8 +40,8 @@ def test_dspy_refusal_on_adversarial_queries():
     configure_dspy_lm(mode="offline")
     module = RAGModule()
     pred = module(
-        question="What quantum computing hardware is deployed?",
-        context="Infrastructure runs on EC2 c6i instances.",
+        question="How does Snowflake configure micro-partition pruning for clustering keys?",
+        context="[07_observability_and_telemetry_c002]\nTraces are exported via OpenTelemetry collectors with batch processors sending telemetry to external endpoints.",
     )
 
     assert "insufficient information" in pred.answer.lower()
@@ -139,3 +139,24 @@ def test_rag_generator_with_dspy_prompt_style():
     assert len(res.answer) > 0
     assert res.generation_latency_ms >= 0.0
     assert not res.is_refusal
+
+
+def test_offline_lm_is_demo_agnostic():
+    """The mock must not change behaviour based on the presence of demonstrations."""
+    from src.optimize.dspy_program import OfflineRAGLM
+
+    lm = OfflineRAGLM()
+    msg = {
+        "role": "user",
+        "content": "[c1]\nShort-lived JWT access tokens expire after 15 minutes.\n\nQuestion: What is the token expiration period?",
+    }
+    no_demo = lm(messages=[{"role": "system", "content": "x"}, msg])
+    with_demo = lm(
+        messages=[
+            {"role": "system", "content": "x"},
+            {"role": "user", "content": "demo"},
+            {"role": "assistant", "content": "demo"},
+            msg,
+        ]
+    )
+    assert no_demo == with_demo
