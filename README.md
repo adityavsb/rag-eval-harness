@@ -1,6 +1,6 @@
 # RAG Evaluation & Optimization Harness
 
-An open-source, metric-driven benchmarking harness for Retrieval-Augmented Generation (RAG) systems. Designed to transition LLM retrieval pipelines from intuition-based prototypes into reproducible, testable software.
+A small, reproducible harness for comparing chunking, retrieval and reranking configurations on an authored corpus, with an offline mode for cost-free regression testing and a live mode for real-model evaluation.
 
 ---
 
@@ -71,19 +71,19 @@ An open-source, metric-driven benchmarking harness for Retrieval-Augmented Gener
 > Retrieval metrics are therefore real; generation and judge figures are not evidence about any
 > language model. No `--mode live` run has been published yet.
 
-The harness was comprehensively evaluated against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (44 single-hop factoid, 17 multi-hop, 19 adversarial negative queries) and physical Apple Silicon hardware:
+The harness was run once per configuration against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (44 single-hop factoid, 17 multi-hop, 19 adversarial negative queries):
 
 ### 1. Retrieval Pipeline Comparison (80-Item Golden Evaluation Suite)
 
 All retrieval metrics are evaluated over the $n = 61$ answerable test cases with 19 adversarial negative queries tracked separately. 95% bootstrap confidence intervals ($B = 2,000$ resamples) shown in brackets.
 
-| Metric | Run 1: Baseline Naive (1000/0) | Run 2: Chunk-Optimized (400/50) | Run 3: Dense + Cross-Encoder | Run 4: Hybrid RRF (BM25 + Dense) | Run 5: Hybrid RRF + Cross-Encoder | Δ vs Chunk-Optimized (95% CI) | Target SLA |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Hit Rate@K** | 98.36% [95.08%, 100.0%] | 73.77% [62.30%, 83.61%] | 73.77% [62.30%, 83.61%] | 72.13% [60.66%, 83.61%] | 73.77% [62.30%, 83.61%] | -1.64% [-4.92%, 0.00%] ($p=1.00$) | $\ge 85.0\%$ |
-| **MRR@K** | 0.906 [0.848, 0.959] | 0.643 [0.529, 0.750] | 0.654 [0.542, 0.761] | 0.650 [0.536, 0.757] | 0.654 [0.542, 0.761] | +0.007 [-0.014, 0.033] | $\ge 0.700$ |
-| **Context Precision@K** | 90.16% [84.43%, 95.22%] | 63.39% [52.19%, 74.04%] | 64.16% [53.14%, 74.41%] | 63.93% [52.60%, 74.46%] | 64.16% [53.14%, 74.41%] | +0.55% [-1.91%, 3.42%] | $\ge 75.0\%$ |
-| **Context Recall@K** | 94.26% [89.07%, 98.36%] | 63.11% [52.19%, 73.50%] | 65.57% [54.37%, 75.96%] | 63.39% [52.46%, 74.04%] | 65.57% [54.37%, 75.96%] | +0.27% [-1.64%, 2.46%] | $\ge 80.0\%$ |
-| **P95 Retrieval Latency** | 4.8 ms | 4.8 ms | 35.0 ms | 4.6 ms | 34.4 ms | -0.2 ms | $< 150\text{ ms}$ |
+| Metric | Run 1: Baseline Naive (1000/0) | Run 2: Chunk-Optimized (400/50) | Run 3: Dense + Cross-Encoder | Run 4: Hybrid RRF (BM25 + Dense) | Run 5: Hybrid RRF + Cross-Encoder | Δ vs Chunk-Optimized (95% CI) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Hit Rate@K** | 98.36% [95.08%, 100.0%] | 73.77% [62.30%, 83.61%] | 73.77% [62.30%, 83.61%] | 72.13% [60.66%, 83.61%] | 73.77% [62.30%, 83.61%] | -1.64% [-4.92%, 0.00%] ($p=1.00$) |
+| **MRR@K** | 0.906 [0.848, 0.959] | 0.643 [0.529, 0.750] | 0.654 [0.542, 0.761] | 0.650 [0.536, 0.757] | 0.654 [0.542, 0.761] | +0.007 [-0.014, 0.033] |
+| **Context Precision@K** | 90.16% [84.43%, 95.22%] | 63.39% [52.19%, 74.04%] | 64.16% [53.14%, 74.41%] | 63.93% [52.60%, 74.46%] | 64.16% [53.14%, 74.41%] | +0.55% [-1.91%, 3.42%] |
+| **Context Recall@K** | 94.26% [89.07%, 98.36%] | 63.11% [52.19%, 73.50%] | 65.57% [54.37%, 75.96%] | 63.39% [52.46%, 74.04%] | 65.57% [54.37%, 75.96%] | +0.27% [-1.64%, 2.46%] |
+| **P95 Retrieval Latency** | 4.8 ms | 4.8 ms | 35.0 ms | 4.6 ms | 34.4 ms | -0.2 ms |
 
 ---
 
@@ -97,12 +97,12 @@ All retrieval metrics are evaluated over the $n = 61$ answerable test cases with
 
 The offline (no-API) judge is a lexical heuristic (`LLMJudge._offline_faithfulness`, `_offline_correctness`). Its thresholds were set by inspecting the 30 probe labels in `data/human_labels.jsonl` (single annotator: repository author), so the figures below are **in-sample** and describe fit, not generalisation. They are retained only as a regression guard for the heuristic. A real model judge calibration requires a live run and a label set the heuristic was not tuned on.
 
-| Calibration Metric | Observed Score | 95 % CI | Acceptance Target | Result | Meaning |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Evaluated Samples** | 30 | - | $\ge 30$ | **PASS** | Probe set; see CI column |
-| **Faithfulness Raw Agreement** | **83.3%** | - | $\ge 80.0\%$ | **PASS** | High binary entailment consistency |
-| **Faithfulness Cohen's Kappa ($\kappa$)** | **0.667** | [0.40, 0.93] | $\ge 0.600$ | **PASS** | Substantial agreement beyond chance |
-| **Correctness Spearman Rho ($\rho$)** | **0.872** | [0.77, 0.93] | $\ge 0.700$ | **PASS** | Strong monotonic rank correlation ($p = 3.69 \times 10^{-10}$) |
+| Calibration Metric | Observed Score | 95 % CI | Reference Threshold | Meaning |
+| :--- | :---: | :---: | :---: | :--- |
+| **Evaluated Samples** | 30 | - | $n \ge 30$ | Author-written probe set |
+| **Faithfulness Raw Agreement** | **83.3%** | - | $\ge 80.0\%$ | Binary entailment consistency |
+| **Faithfulness Cohen's Kappa ($\kappa$)** | **0.667** | [0.40, 0.93] | $\ge 0.600$ | Substantial agreement beyond chance (Landis & Koch 1977) |
+| **Correctness Spearman Rho ($\rho$)** | **0.872** | [0.77, 0.93] | $\ge 0.700$ | Monotonic rank correlation ($p = 3.69 \times 10^{-10}$) |
 
 ---
 
@@ -138,7 +138,7 @@ Captured automatically into each report (`environment` key). Values below are co
 Large fixed-width chunks (1000 characters with 0 overlap) produce only 21 chunks across the entire 10-document technical corpus. Retrieving top $K=4$ returns 4,000 characters (~19% of the total indexed knowledge base), mechanically inflating span-overlap hit rate (98.36%) while flooding context windows with un-chunked document bodies. Switching to recursive character chunking (400 characters with 50 overlap) produces 65 focused semantic units. On this properly chunked corpus, top-4 retrieval covers ~6% of the corpus, achieving 73.77% Hit Rate@4 [62.30%, 83.61%] and 63.39% Context Precision@4 [52.19%, 74.04%].
 
 ### 2. The Cross-Encoder Latency vs. Precision Trade-off
-Bi-encoders embed passages offline, so query-time cost is one query encoding plus an approximate nearest-neighbour (HNSW) search; cross-encoders run a full transformer forward pass per (query, passage) pair, which is why reranking cost scales with the candidate count:
+Bi-encoders embed corpus chunks offline, so query-time cost is one query encoding plus an approximate nearest-neighbour (HNSW) search; cross-encoders require full cross-attention evaluation per (query, chunk) candidate, which is why reranking cost scales with candidate count:
 * **Retrieval Gain:** Cross-Encoder reranking marginally lifts MRR from 0.643 to 0.654 (+0.011 [-0.042, 0.066]) and Context Precision from 63.39% to 64.16% (+0.77% [-4.28%, 5.88%]).
 * **Friction & Latency Penalty:** Joint self-attention incurs a $\approx 7\times$ latency penalty ($4.8\text{ ms} \rightarrow 35.0\text{ ms}$ P95). While 35.0 ms remains within interactive SLAs ($<150\text{ ms}$), the paired difference confidence interval spans zero, demonstrating that cross-encoder gains are not statistically significant on small evaluation corpora ($n=61$).
 
@@ -151,7 +151,7 @@ Dense vector search and lexical BM25 Okapi were fused using Reciprocal Rank Fusi
 Offline optimization runs execute `OfflineRAGLM`, a deterministic test double designed strictly to validate teleprompter compilation, parameter serialization, and pipeline integration without external network calls or API costs. Generation quality benchmarks on `gpt-4o-mini` require a live run (`--mode live`).
 
 ### 5. Offline Heuristic Judge Guardrails
-The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`; Landis & Koch 1977 band 0.61–0.80). It serves solely as a regression guard for local offline development. Production grade LLM-as-a-judge scoring is evaluated exclusively in live mode.
+The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`; Landis & Koch 1977 band 0.61–0.80). It serves solely as a regression guard for local offline development. Full model-based judge scoring requires live API execution (--mode live).
 
 
 ---
@@ -165,7 +165,7 @@ The offline evaluation mode relies on regex entity checking and keyword overlap 
 * **Curated Golden Evaluation Suite (v2):** 80 manually verified question-answer pairs (author-written, fictional corpus; see `data/README.md`) stratified into 40% train, 20% dev, and a strictly quarantined 40% test split across 10 architectural runbooks.
 * **Human-in-the-Loop Judge Validation:** Judge calibration framework computing Raw Agreement %, Cohen's Kappa ($\kappa$; Cohen 1960; Landis & Koch 1977 band 0.61–0.80 for substantial agreement) for binary faithfulness, and Spearman Rank Correlation ($\rho$) for rubric correctness against 30 author-written probe labels.
 * **DSPy Prompt Optimization:** Few-shot RAG generation pipelines with `BootstrapFewShotWithRandomSearch` teleprompters (Khattab et al. 2023) trained on `train`/`dev` splits with demo quality gates; offline mode serves as a deterministic compilation smoke test.
-* **Industrial MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, environment telemetry, and full JSON run reports into `sqlite:///mlflow.db`.
+* **MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, environment telemetry, and full JSON run reports into `sqlite:///mlflow.db`.
 
 ---
 
@@ -185,7 +185,7 @@ make install
 ```bash
 make test
 ```
-All 42 unit tests pass; cold run ≈ 38 s (model download + encode), warm ≈ 10-20 s.
+All 44 unit tests run cleanly; cold run ≈ 40 s (model download + encode), warm ≈ 10-20 s.
 
 ### 3. Run Benchmark Evaluations
 ```bash
@@ -237,7 +237,6 @@ rag-eval-harness/
 │   ├── human_labels.jsonl         # 30 human-labeled QA records for judge calibration
 │   └── README.md                  # Dataset card, taxonomy, and split quarantine rules
 ├── reports/
-│   ├── live/                      # Real model benchmark evaluations
 │   └── offline/                   # Deterministic offline benchmark evaluations
 ├── src/
 │   ├── llm/
@@ -266,7 +265,7 @@ rag-eval-harness/
 ├── scripts/
 │   ├── compare_runs.py            # Paired run comparison & exact McNemar test
 │   └── dataset_card.py            # Dataset split & query type cross-tabulation
-├── tests/                         # Comprehensive pytest test suite (43 tests)
+├── tests/                         # Comprehensive pytest test suite (44 tests)
 ├── Makefile                       # Developer automation shortcuts
 ├── pyproject.toml                 # Package definition & dependencies
 └── README.md

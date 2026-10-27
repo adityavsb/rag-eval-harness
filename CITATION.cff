@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: rag-eval-harness
+message: If you use this harness, please cite it using this metadata.
+type: software
+authors:
+  - family-names: Bhadoria
+    given-names: Aditya
+repository-code: https://github.com/adityavsb/rag-eval-harness
+license: MIT
+version: 0.1.0
+date-released: 2026-10-25
