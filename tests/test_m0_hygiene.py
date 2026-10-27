@@ -81,3 +81,8 @@ def test_cli_live_mode_without_key_exits_nonzero(monkeypatch):
         "OPENAI_API_KEY environment variable is missing" in result.stdout
         or "OPENAI_API_KEY environment variable is missing" in result.stderr
     )
+
+
+def test_readme_discloses_offline_mode():
+    text = open("README.md", encoding="utf-8").read()
+    assert "deterministic mock" in text and "lexical-overlap heuristic" in text
