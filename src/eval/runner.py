@@ -57,6 +57,35 @@ def _get_git_sha() -> str:
         return "unknown"
 
 
+def _collect_environment_telemetry() -> dict[str, Any]:
+    import importlib.metadata
+    import platform
+
+    packages = [
+        "chromadb",
+        "mlflow",
+        "sentence-transformers",
+        "dspy",
+        "rank-bm25",
+        "torch",
+        "scipy",
+        "pydantic",
+    ]
+    pkg_versions = {}
+    for p in packages:
+        try:
+            pkg_versions[p] = importlib.metadata.version(p)
+        except Exception:
+            pkg_versions[p] = "unknown"
+
+    return {
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+        "machine": platform.machine(),
+        "packages": pkg_versions,
+    }
+
+
 class EvaluationReport(BaseModel):
     """Aggregate benchmark results and run summary with execution provenance."""
 
@@ -69,6 +98,7 @@ class EvaluationReport(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
     git_sha: str = "unknown"
     cost_eur: float = 0.0
+    environment: dict[str, Any] = Field(default_factory=dict)
     metrics: dict[str, Any]
     records: list[EvaluationRecord]
 
@@ -237,6 +267,36 @@ class EvaluationRunner:
                 else 0.0
             )
 
+            ci95: dict[str, list[float]] = {}
+            if answerable:
+                rng = np.random.default_rng(0)
+                n_ans = len(answerable)
+                ans_hits = np.array([r.retrieval_hit_rate for r in answerable])
+                ans_mrrs = np.array([r.retrieval_mrr for r in answerable])
+                ans_precs = np.array([r.retrieval_precision for r in answerable])
+                ans_recalls = np.array([r.retrieval_recall for r in answerable])
+
+                b_hits, b_mrrs, b_precs, b_recalls = [], [], [], []
+                for _ in range(2000):
+                    idx = rng.integers(0, n_ans, n_ans)
+                    b_hits.append(np.mean(ans_hits[idx]))
+                    b_mrrs.append(np.mean(ans_mrrs[idx]))
+                    b_precs.append(np.mean(ans_precs[idx]))
+                    b_recalls.append(np.mean(ans_recalls[idx]))
+
+                ci95 = {
+                    "hit_rate_at_k": [
+                        round(float(x), 4) for x in np.percentile(b_hits, [2.5, 97.5])
+                    ],
+                    "mrr_at_k": [round(float(x), 4) for x in np.percentile(b_mrrs, [2.5, 97.5])],
+                    "context_precision_at_k": [
+                        round(float(x), 4) for x in np.percentile(b_precs, [2.5, 97.5])
+                    ],
+                    "context_recall_at_k": [
+                        round(float(x), 4) for x in np.percentile(b_recalls, [2.5, 97.5])
+                    ],
+                }
+
             metrics_summary: dict[str, Any] = {
                 "k": self.effective_k,
                 "n_answerable": len(answerable),
@@ -245,6 +305,7 @@ class EvaluationRunner:
                 "mrr_at_k": round(agg_retrieval.mean_mrr, 4),
                 "context_precision_at_k": round(agg_retrieval.mean_context_precision, 4),
                 "context_recall_at_k": round(agg_retrieval.mean_context_recall, 4),
+                "ci95": ci95,
                 "negative_refusal_rate": refusal_rate,
                 "p95_retrieval_latency_ms": round(float(np.percentile(ret_latencies, 95)), 2),
                 "p95_generation_latency_ms": round(float(np.percentile(gen_latencies, 95)), 2),
@@ -279,6 +340,7 @@ class EvaluationRunner:
                 timestamp=datetime.now(UTC).isoformat(),
                 git_sha=_get_git_sha(),
                 cost_eur=0.0,
+                environment=_collect_environment_telemetry(),
                 metrics=metrics_summary,
                 records=records,
             )
@@ -319,13 +381,33 @@ class EvaluationRunner:
         table.add_row("Evaluation Cutoff (K)", str(k_val), "-")
         table.add_row("Answerable Queries", str(n_ans), "-")
         table.add_row("Negative Queries", str(n_neg), "-")
-        table.add_row(f"Hit Rate@{k_val}", f"{metrics['hit_rate_at_k']:.2%}", ">= 85.0%")
-        table.add_row(f"MRR@{k_val}", f"{metrics['mrr_at_k']:.3f}", ">= 0.700")
+        ci = metrics.get("ci95", {})
+        hit_ci = (
+            f" [{ci['hit_rate_at_k'][0]:.2%}, {ci['hit_rate_at_k'][1]:.2%}]"
+            if "hit_rate_at_k" in ci
+            else ""
+        )
+        mrr_ci = f" [{ci['mrr_at_k'][0]:.3f}, {ci['mrr_at_k'][1]:.3f}]" if "mrr_at_k" in ci else ""
+        prec_ci = (
+            f" [{ci['context_precision_at_k'][0]:.2%}, {ci['context_precision_at_k'][1]:.2%}]"
+            if "context_precision_at_k" in ci
+            else ""
+        )
+        rec_ci = (
+            f" [{ci['context_recall_at_k'][0]:.2%}, {ci['context_recall_at_k'][1]:.2%}]"
+            if "context_recall_at_k" in ci
+            else ""
+        )
+
+        table.add_row(f"Hit Rate@{k_val}", f"{metrics['hit_rate_at_k']:.2%}{hit_ci}", ">= 85.0%")
+        table.add_row(f"MRR@{k_val}", f"{metrics['mrr_at_k']:.3f}{mrr_ci}", ">= 0.700")
         table.add_row(
-            f"Context Precision@{k_val}", f"{metrics['context_precision_at_k']:.2%}", ">= 75.0%"
+            f"Context Precision@{k_val}",
+            f"{metrics['context_precision_at_k']:.2%}{prec_ci}",
+            ">= 75.0%",
         )
         table.add_row(
-            f"Context Recall@{k_val}", f"{metrics['context_recall_at_k']:.2%}", ">= 80.0%"
+            f"Context Recall@{k_val}", f"{metrics['context_recall_at_k']:.2%}{rec_ci}", ">= 80.0%"
         )
         table.add_row(
             "Negative Refusal Rate", f"{metrics['negative_refusal_rate']:.2%}", ">= 90.0%"

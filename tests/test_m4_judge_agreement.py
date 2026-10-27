@@ -46,6 +46,10 @@ def test_judge_agreement_end_to_end():
 
     assert metrics.total_samples == 30
     assert metrics.faithfulness_agreement_pct >= 80.0
-    assert metrics.cohen_kappa >= 0.60
-    assert metrics.spearman_rho >= 0.70
+    assert abs(metrics.cohen_kappa - 0.6667) < 1e-3, (
+        "heuristic drifted; re-inspect labels before accepting"
+    )
+    assert abs(metrics.spearman_rho - 0.8715) < 1e-3
+    assert metrics.cohen_kappa_ci95[0] <= metrics.cohen_kappa <= metrics.cohen_kappa_ci95[1]
+    assert metrics.spearman_rho_ci95[0] <= metrics.spearman_rho <= metrics.spearman_rho_ci95[1]
     assert metrics.spearman_pvalue < 0.05

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import dspy
-from dspy.teleprompt import BootstrapFewShot
+from dspy.teleprompt import BootstrapFewShotWithRandomSearch
 from rich.console import Console
 from rich.table import Table
 
@@ -116,9 +116,9 @@ def rag_optimization_metric(gold: dspy.Example, pred: dspy.Prediction, trace=Non
 
     overlap = len(core_gold.intersection(pred_tokens)) / len(core_gold)
 
-    # Citation bonus
+    # Citation bonus (conditional on meaningful overlap)
     pred_cits = getattr(pred, "citations", "").strip().lower()
-    citation_score = 0.2 if (pred_cits and pred_cits != "none") else 0.0
+    citation_score = 0.2 if (pred_cits not in ("", "none") and overlap >= 0.5) else 0.0
 
     total_score = min(1.0, (overlap * 0.8) + citation_score)
     return round(total_score, 3)
@@ -128,6 +128,7 @@ def evaluate_program_on_split(
     program: dspy.Module,
     examples: list[dspy.Example],
     judge: LLMJudge,
+    retriever: Any | None = None,
 ) -> dict[str, float]:
     """Evaluates a DSPy module against examples and calculates correctness, faithfulness, and latency."""
     correctness_scores = []
@@ -135,14 +136,20 @@ def evaluate_program_on_split(
     latencies = []
 
     for ex in examples:
+        if retriever is not None:
+            ret_chunks = retriever.retrieve(ex.question).chunks
+            ctx_str = "\n\n".join([f"[{c.chunk_id}]\n{c.content}" for c in ret_chunks])
+        else:
+            ctx_str = ex.context
+
         start_t = time.perf_counter()
-        pred = program(question=ex.question, context=ex.context)
+        pred = program(question=ex.question, context=ctx_str)
         latencies.append((time.perf_counter() - start_t) * 1000.0)
 
         answer = getattr(pred, "answer", "")
 
         corr_eval = judge.evaluate_correctness(ex.question, answer, ex.answer)
-        faith_eval = judge.evaluate_faithfulness(ex.question, ex.context, answer)
+        faith_eval = judge.evaluate_faithfulness(ex.question, ctx_str, answer)
 
         correctness_scores.append(corr_eval.score)
         faithfulness_scores.append(faith_eval.score)
@@ -190,18 +197,41 @@ def compile_dspy_pipeline(
     # 4. Instantiate Baseline Program
     baseline_module = RAGModule()
 
-    # 5. Compile with BootstrapFewShot using ONLY train and dev
-    teleprompter = BootstrapFewShot(
+    # 5. Compile with BootstrapFewShotWithRandomSearch using train and dev splits
+    teleprompter = BootstrapFewShotWithRandomSearch(
         metric=rag_optimization_metric,
+        metric_threshold=0.6,
         max_bootstrapped_demos=max_bootstrapped_demos,
         max_labeled_demos=max_labeled_demos,
+        num_candidate_programs=4,
+        num_threads=1,
     )
 
-    console.print("\n[bold]Running BootstrapFewShot teleprompter optimization...[/bold]")
+    console.print(
+        "\n[bold]Running BootstrapFewShotWithRandomSearch teleprompter optimization...[/bold]"
+    )
     compiled_module = teleprompter.compile(
         student=baseline_module,
         trainset=train_exs,
+        valset=dev_exs,
     )
+
+    # Demo sanity gate: prevent mid-sentence or markdown header fragments
+    demos = getattr(compiled_module.generate, "demos", [])
+    bad = [
+        d
+        for d in demos
+        if str(getattr(d, "answer", d.get("answer", "") if isinstance(d, dict) else ""))[
+            :1
+        ].islower()
+        or str(getattr(d, "answer", d.get("answer", "") if isinstance(d, dict) else "")).startswith(
+            "#"
+        )
+    ]
+    if bad:
+        raise RuntimeError(
+            f"{len(bad)} bootstrapped demos start mid-sentence or heading; refusing to save a broken artifact"
+        )
 
     # 6. Save compiled artifact
     out_file = Path(output_path)
@@ -211,60 +241,85 @@ def compile_dspy_pipeline(
         f"[bold green]Successfully saved compiled DSPy program to {out_file}[/bold green]"
     )
 
-    # 7. Evaluate on Quarantined Test Split Before & After
-    judge = LLMJudge(model_name=model_name, mode=mode)
-    console.print(
-        "\n[bold]Evaluating holdout test split (32 items) before and after optimization...[/bold]"
-    )
+    # 7. Evaluate on Quarantined Test Split (Live mode only)
+    if mode == "live":
+        from src.pipeline.indexing import VectorIndexer
+        from src.pipeline.retriever import RAGRetriever
+        from src.utils.config import load_pipeline_config
 
-    baseline_metrics = evaluate_program_on_split(baseline_module, test_exs, judge)
-    compiled_metrics = evaluate_program_on_split(compiled_module, test_exs, judge)
+        config = load_pipeline_config("configs/hybrid.yaml")
+        indexer = VectorIndexer(config.embedding, config.vector_store)
+        retriever = RAGRetriever(indexer, config.retriever)
 
-    # Display Comparison Table
-    table = Table(
-        title="DSPy Generation Prompt Optimization Benchmark (Test Split Delta)",
-        header_style="bold magenta",
-    )
-    table.add_column("Metric", style="cyan")
-    table.add_column("Baseline (Zero-Shot)", justify="right", style="dim")
-    table.add_column("Compiled (DSPy Few-Shot)", justify="right", style="green")
-    table.add_column("Delta", justify="right", style="bold")
-    table.add_column("Status", justify="center")
+        judge = LLMJudge(model_name=model_name, mode=mode)
+        console.print(
+            "\n[bold]Evaluating holdout test split (32 items) before and after optimization in live mode...[/bold]"
+        )
 
-    corr_base = baseline_metrics["answer_correctness"]
-    corr_comp = compiled_metrics["answer_correctness"]
-    corr_delta = corr_comp - corr_base
+        base_oracle = evaluate_program_on_split(baseline_module, test_exs, judge)
+        comp_oracle = evaluate_program_on_split(compiled_module, test_exs, judge)
 
-    faith_base = baseline_metrics["faithfulness"]
-    faith_comp = compiled_metrics["faithfulness"]
-    faith_delta = faith_comp - faith_base
+        base_retrieved = evaluate_program_on_split(
+            baseline_module, test_exs, judge, retriever=retriever
+        )
+        comp_retrieved = evaluate_program_on_split(
+            compiled_module, test_exs, judge, retriever=retriever
+        )
 
-    lat_base = baseline_metrics["mean_latency_ms"]
-    lat_comp = compiled_metrics["mean_latency_ms"]
+        table = Table(
+            title="DSPy Generation Prompt Optimization Benchmark (Test Split Delta)",
+            header_style="bold magenta",
+        )
+        table.add_column("Condition / Metric", style="cyan")
+        table.add_column("Baseline (Zero-Shot)", justify="right", style="dim")
+        table.add_column("Compiled (DSPy Few-Shot)", justify="right", style="green")
+        table.add_column("Delta", justify="right", style="bold")
+        table.add_column("Status", justify="center")
 
-    table.add_row(
-        "Answer Correctness",
-        f"{corr_base:.1%}",
-        f"{corr_comp:.1%}",
-        f"{'+' if corr_delta >= 0 else ''}{corr_delta:.1%}",
-        "[green]IMPROVED[/green]" if corr_delta > 0 else "[yellow]NEUTRAL[/yellow]",
-    )
-    table.add_row(
-        "Faithfulness",
-        f"{faith_base:.1%}",
-        f"{faith_comp:.1%}",
-        f"{'+' if faith_delta >= 0 else ''}{faith_delta:.1%}",
-        "[green]PRESERVED[/green]" if faith_delta >= 0 else "[red]DEGRADED[/red]",
-    )
-    table.add_row(
-        "Mean Generation Latency",
-        f"{lat_base:.1f} ms",
-        f"{lat_comp:.1f} ms",
-        f"{lat_comp - lat_base:+.1f} ms",
-        "INFO",
-    )
+        def add_delta_row(label: str, b_val: float, c_val: float, is_pct: bool = True) -> None:
+            delta = c_val - b_val
+            fmt = ".1%" if is_pct else ".1f ms"
+            status = "[green]IMPROVED[/green]" if delta > 0 else "[yellow]NEUTRAL[/yellow]"
+            table.add_row(
+                label,
+                f"{b_val:{fmt}}",
+                f"{c_val:{fmt}}",
+                f"{'+' if delta >= 0 else ''}{delta:{fmt}}",
+                status if is_pct else "INFO",
+            )
 
-    console.print(table)
+        add_delta_row(
+            "Correctness (Oracle Context)",
+            base_oracle["answer_correctness"],
+            comp_oracle["answer_correctness"],
+        )
+        add_delta_row(
+            "Correctness (Retrieved Context)",
+            base_retrieved["answer_correctness"],
+            comp_retrieved["answer_correctness"],
+        )
+        add_delta_row(
+            "Faithfulness (Oracle Context)",
+            base_oracle["faithfulness"],
+            comp_oracle["faithfulness"],
+        )
+        add_delta_row(
+            "Faithfulness (Retrieved Context)",
+            base_retrieved["faithfulness"],
+            comp_retrieved["faithfulness"],
+        )
+        add_delta_row(
+            "Mean Latency",
+            base_retrieved["mean_latency_ms"],
+            comp_retrieved["mean_latency_ms"],
+            is_pct=False,
+        )
+
+        console.print(table)
+    else:
+        console.print(
+            "Offline mode: compilation smoke test only. No generation metrics are reported because the offline LM is a deterministic mock."
+        )
 
     # Log Prompt Diff / Demonstration Exemplars
     demos = getattr(compiled_module.generate, "demos", [])

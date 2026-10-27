@@ -1,0 +1,4382 @@
+{
+  "run_name": "hybrid-rerank-rag",
+  "total_samples": 80,
+  "mode": "offline",
+  "provider": "mock",
+  "model_id": "mock-generator",
+  "index_fingerprint": "aab84d8bac1d18ab",
+  "timestamp": "2026-10-27T16:55:43.184254+00:00",
+  "git_sha": "d4ba4711fb6e193d8be8ba10e232ba59ebececfc",
+  "cost_eur": 0.0,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.6",
+    "machine": "arm64",
+    "packages": {
+      "chromadb": "1.5.9",
+      "mlflow": "3.17.2",
+      "sentence-transformers": "6.1.0",
+      "dspy": "3.4.1",
+      "rank-bm25": "0.2.2",
+      "torch": "2.14.1",
+      "scipy": "1.18.1",
+      "pydantic": "2.14.1"
+    }
+  },
+  "metrics": {
+    "k": 4,
+    "n_answerable": 61,
+    "n_negative": 19,
+    "hit_rate_at_k": 0.7377,
+    "mrr_at_k": 0.6544,
+    "context_precision_at_k": 0.6416,
+    "context_recall_at_k": 0.6557,
+    "ci95": {
+      "hit_rate_at_k": [
+        0.623,
+        0.8361
+      ],
+      "mrr_at_k": [
+        0.5423,
+        0.7609
+      ],
+      "context_precision_at_k": [
+        0.5314,
+        0.7441
+      ],
+      "context_recall_at_k": [
+        0.5437,
+        0.7596
+      ]
+    },
+    "negative_refusal_rate": 0.0,
+    "p95_retrieval_latency_ms": 34.38,
+    "p95_generation_latency_ms": 0.02
+  },
+  "records": [
+    {
+      "query_id": "qa_001",
+      "query": "What algorithm is used for distributed rate limiting at the API Gateway layer?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 291,
+          "char_end": 725
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c002",
+        "03_authentication_and_security_c006",
+        "04_caching_and_performance_c004",
+        "01_architecture_overview_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1346,
+          "char_end": 1698
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 0,
+          "char_end": 341
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [01_architecture_overview_c002], ### 1. API Gateway Layer\nThe Gateway acts as the single ingress point for all client requests. It handles:\n- TLS termination and SSL certificate offloading.\n- Global traffic routing using path-based a...",
+      "ground_truth_answer": "Distributed rate limiting is enforced via token bucket algorithms backed by Redis.",
+      "faithfulness_score": 0.75,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 5534.531625000454,
+      "generation_latency_ms": 0.01845900078478735
+    },
+    {
+      "query_id": "qa_002",
+      "query": "What is the event retention period and compaction setting on Apache Kafka operational topics?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1187,
+          "char_end": 1635
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c005",
+        "04_caching_and_performance_c008",
+        "05_error_handling_and_resilience_c006",
+        "07_observability_and_telemetry_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 0,
+          "char_end": 363
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [01_architecture_overview_c005], ### 3. Event Bus & Messaging Backbone\nInternal service communication utilizes Apache Kafka as the durable event backbone:\n- **Event Retention**: Critical operational topics maintain a 7-day retention ...",
+      "ground_truth_answer": "Operational topics maintain a 7-day retention period with compaction enabled for state streams.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 32.39512499931152,
+      "generation_latency_ms": 0.015666999388486147
+    },
+    {
+      "query_id": "qa_003",
+      "query": "How are partition keys assigned on Kafka topics to guarantee message ordering?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c004",
+        "01_architecture_overview_c005"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1187,
+          "char_end": 1635
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1585,
+          "char_end": 1961
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c005",
+        "05_error_handling_and_resilience_c006",
+        "04_caching_and_performance_c008",
+        "07_observability_and_telemetry_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 0,
+          "char_end": 363
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [01_architecture_overview_c005], ### 3. Event Bus & Messaging Backbone\nInternal service communication utilizes Apache Kafka as the durable event backbone:\n- **Event Retention**: Critical operational topics maintain a 7-day retention ...",
+      "ground_truth_answer": "Partition keys are mapped to tenant_id to guarantee in-order delivery of state transitions per enterprise customer.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 33.728165999491466,
+      "generation_latency_ms": 0.015208001059363596
+    },
+    {
+      "query_id": "qa_004",
+      "query": "What tool is used for automated failover of PostgreSQL 16 clusters?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c005"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1585,
+          "char_end": 1961
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c006",
+        "06_database_migrations_and_schema_c003",
+        "06_database_migrations_and_schema_c005",
+        "04_caching_and_performance_c008"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 612,
+          "char_end": 932
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [01_architecture_overview_c006], ### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the source of truth for user accounts and transactional entit...",
+      "ground_truth_answer": "PostgreSQL 16 clusters utilize Patroni for automated failover.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 33.37774999999965,
+      "generation_latency_ms": 0.012667000191868283
+    },
+    {
+      "query_id": "qa_005",
+      "query": "What is the difference between synchronous web workers and the background worker fleet?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c003",
+        "01_architecture_overview_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 676,
+          "char_end": 1237
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1187,
+          "char_end": 1635
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c004",
+        "01_architecture_overview_c003",
+        "08_asynchronous_worker_fleet_c001",
+        "05_error_handling_and_resilience_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 48
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1162,
+          "char_end": 1336
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.5,
+      "retrieval_precision": 0.5,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [01_architecture_overview_c004], - **Background Worker Fleet**: Dedicated Celery and Huey task workers that consume heavy asynchronous jobs from RabbitMQ and Redis queues, including document rendering, data export jobs, and batch not...",
+      "ground_truth_answer": "Synchronous web workers handle non-blocking I/O using Uvicorn and ASGI handlers, while the background worker fleet uses Celery and Huey to process heavy asynchronous jobs from RabbitMQ and Redis.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 34.37395899891271,
+      "generation_latency_ms": 0.008542001523892395
+    },
+    {
+      "query_id": "qa_006",
+      "query": "How does the dependency injection container resolve sub-dependencies in a graph?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "02_dependency_injection_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 295,
+          "char_end": 784
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "02_dependency_injection_c002",
+        "02_dependency_injection_c004",
+        "02_dependency_injection_c001",
+        "02_dependency_injection_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 347,
+          "char_end": 678
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 0,
+          "char_end": 345
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 679,
+          "char_end": 784
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [02_dependency_injection_c002], ## Sub-Dependency Resolution\nDependencies can declare nested sub-dependencies in a directed acyclic graph (DAG):\n- The container traverses the dependency tree using topological sorting before invoking...",
+      "ground_truth_answer": "The container resolves nested sub-dependencies in a directed acyclic graph using topological sorting before invoking route handlers.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 30.2014170010807,
+      "generation_latency_ms": 0.010375000783824362
+    },
+    {
+      "query_id": "qa_007",
+      "query": "What is the default scope and caching behavior of dependency injection?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "02_dependency_injection_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 734,
+          "char_end": 1393
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "02_dependency_injection_c004",
+        "02_dependency_injection_c001",
+        "02_dependency_injection_c005",
+        "04_caching_and_performance_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 0,
+          "char_end": 345
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1157,
+          "char_end": 1393
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 0,
+          "char_end": 265
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [02_dependency_injection_c004], ## Caching and Scopes\nBy default, the dependency injection engine caches resolved values for the duration of a single HTTP request:\n- **Request Scope (Default `use_cache=True`)**: If multiple route pa...",
+      "ground_truth_answer": "By default, use_cache=True, which caches resolved dependency instances for the duration of a single HTTP request.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.487166999388137,
+      "generation_latency_ms": 0.010624999049468897
+    },
+    {
+      "query_id": "qa_008",
+      "query": "When should use_cache=False be configured on a dependency?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "02_dependency_injection_c003",
+        "02_dependency_injection_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 734,
+          "char_end": 1393
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1343,
+          "char_end": 1903
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "02_dependency_injection_c005",
+        "02_dependency_injection_c004",
+        "02_dependency_injection_c002",
+        "04_caching_and_performance_c008"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1157,
+          "char_end": 1393
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 347,
+          "char_end": 678
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.5,
+      "retrieval_precision": 0.5,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [02_dependency_injection_c005], - **Transient Scope (`use_cache=False`)**: When unique instances are required per invocation (such as cryptographic nonces or dedicated worker connection handles), setting `use_cache=False` forces re-...",
+      "ground_truth_answer": "Setting use_cache=False is used for transient scope when unique instances are required per invocation, such as cryptographic nonces or dedicated worker connection handles.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.208040999947116,
+      "generation_latency_ms": 0.010375000783824362
+    },
+    {
+      "query_id": "qa_009",
+      "query": "How do generator functions handle resource teardown in dependency injection?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "02_dependency_injection_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1343,
+          "char_end": 1903
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "02_dependency_injection_c006",
+        "02_dependency_injection_c001",
+        "02_dependency_injection_c004",
+        "02_dependency_injection_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1395,
+          "char_end": 1711
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 0,
+          "char_end": 345
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1712,
+          "char_end": 1903
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [02_dependency_injection_c006], ## Resource Teardown and Context Managers\nDependencies that yield resources (such as database connections or file handles) utilize Python generator functions:\n- Code preceding the `yield` statement ex...",
+      "ground_truth_answer": "Code preceding yield executes during request initialization, and code following yield runs in the finally block during teardown, guaranteeing cleanup even if unhandled exceptions occur.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 29.63245899991307,
+      "generation_latency_ms": 0.017291000403929502
+    },
+    {
+      "query_id": "qa_010",
+      "query": "What signing algorithm is used for JSON Web Tokens and what is their lifespan?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "03_authentication_and_security_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 211,
+          "char_end": 862
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c002",
+        "03_authentication_and_security_c003",
+        "04_caching_and_performance_c006",
+        "01_architecture_overview_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 263,
+          "char_end": 562
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 563,
+          "char_end": 862
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c002], ### JSON Web Tokens (JWT)\nUser identities are verified using asymmetric RS256 signed JWT tokens:\n- **Token Lifespan**: Access tokens have a strict 15-minute lifespan to limit vulnerability exposure. R...",
+      "ground_truth_answer": "JWT tokens are signed using asymmetric RS256. Access tokens have a 15-minute lifespan and refresh tokens expire in 7 days.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 32.496374999027466,
+      "generation_latency_ms": 0.017249998563784175
+    },
+    {
+      "query_id": "qa_011",
+      "query": "How does JWT verification handle clock skew between servers?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "03_authentication_and_security_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 812,
+          "char_end": 1344
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c003",
+        "03_authentication_and_security_c002",
+        "07_observability_and_telemetry_c005",
+        "05_error_handling_and_resilience_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 563,
+          "char_end": 862
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 263,
+          "char_end": 562
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1322,
+          "char_end": 1692
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1162,
+          "char_end": 1336
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c003], - **Key Rotation**: Public keys for signature verification are dynamically retrieved from the identity provider's JSON Web Key Set (JWKS) endpoint and cached locally for 1 hour.\n- **Clock Skew Tolerat...",
+      "ground_truth_answer": "The JWT verification middleware tolerates a maximum clock drift of 30 seconds (leeway=30).",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 37.15741599989997,
+      "generation_latency_ms": 0.016332998711732216
+    },
+    {
+      "query_id": "qa_012",
+      "query": "Where are refresh tokens stored and with what cookie attributes?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "03_authentication_and_security_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 211,
+          "char_end": 862
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c002",
+        "01_architecture_overview_c006",
+        "03_authentication_and_security_c003",
+        "07_observability_and_telemetry_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 263,
+          "char_end": 562
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 563,
+          "char_end": 862
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 364,
+          "char_end": 760
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c002], ### JSON Web Tokens (JWT)\nUser identities are verified using asymmetric RS256 signed JWT tokens:\n- **Token Lifespan**: Access tokens have a strict 15-minute lifespan to limit vulnerability exposure. R...",
+      "ground_truth_answer": "Refresh tokens are stored in HTTP-only, secure cookies with the SameSite=Strict attribute.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 31.207665999318124,
+      "generation_latency_ms": 0.01420800072082784
+    },
+    {
+      "query_id": "qa_013",
+      "query": "What format do RBAC scopes follow and what happens if a token lacks required scopes?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "03_authentication_and_security_c003",
+        "03_authentication_and_security_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 812,
+          "char_end": 1344
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1294,
+          "char_end": 1844
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c004",
+        "03_authentication_and_security_c005",
+        "02_dependency_injection_c004",
+        "02_dependency_injection_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 864,
+          "char_end": 1216
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1217,
+          "char_end": 1344
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1157,
+          "char_end": 1393
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [03_authentication_and_security_c004], ## Role-Based Access Control (RBAC)\nAuthorization is enforced using fine-grained scopes embedded within token claims:\n- Scopes follow the format `<resource>:<action>` (for example, `analytics:read` or...",
+      "ground_truth_answer": "Scopes follow the <resource>:<action> format. If required scopes are missing, the gateway returns HTTP 403 Forbidden with RFC 7807 problem details.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 30.8603330013284,
+      "generation_latency_ms": 0.012083999536116607
+    },
+    {
+      "query_id": "qa_014",
+      "query": "What are the rate limits for public endpoints versus authenticated enterprise tiers?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "03_authentication_and_security_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1294,
+          "char_end": 1844
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c006",
+        "03_authentication_and_security_c003",
+        "06_database_migrations_and_schema_c006",
+        "07_observability_and_telemetry_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1346,
+          "char_end": 1698
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 563,
+          "char_end": 862
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [03_authentication_and_security_c006], ## Distributed Rate Limiting\nTo defend against brute-force attacks and noisy neighbors:\n- Public endpoints (such as `/auth/login`) are constrained to 10 requests per minute per IP address.\n- Authentic...",
+      "ground_truth_answer": "Public endpoints are limited to 10 requests per minute per IP. Authenticated standard enterprise tiers get 1,000 requests/minute, and premium tiers get 5,000 requests/minute.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 35.462583999105846,
+      "generation_latency_ms": 0.016665999282849953
+    },
+    {
+      "query_id": "qa_015",
+      "query": "What response code and header are returned when a client exceeds their rate limit quota?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "03_authentication_and_security_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1294,
+          "char_end": 1844
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c007",
+        "03_authentication_and_security_c006",
+        "01_architecture_overview_c002",
+        "09_api_versioning_and_contracts_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1699,
+          "char_end": 1844
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1346,
+          "char_end": 1698
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 572,
+          "char_end": 890
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.5,
+      "retrieval_precision": 0.5,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [03_authentication_and_security_c007], - When quotas are exhausted, the gateway responds with HTTP 429 Too Many Requests and specifies the cooldown seconds in the `Retry-After` header....",
+      "ground_truth_answer": "The gateway returns HTTP 429 Too Many Requests with cooldown seconds specified in the Retry-After header.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 34.41500000008091,
+      "generation_latency_ms": 0.015375000657513738
+    },
+    {
+      "query_id": "qa_016",
+      "query": "What are the capacity, latency, and default TTL of the Layer 1 in-memory cache?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "04_caching_and_performance_c002",
+        "04_caching_and_performance_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 216,
+          "char_end": 770
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 720,
+          "char_end": 1203
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c002",
+        "04_caching_and_performance_c003",
+        "04_caching_and_performance_c004",
+        "04_caching_and_performance_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 267,
+          "char_end": 640
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 641,
+          "char_end": 770
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1605,
+          "char_end": 1705
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 0.8333333333333333,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [04_caching_and_performance_c002], ## Layer 1: In-Memory Local Cache (L1)\n- **Technology**: Local process-level LRU (Least Recently Used) cache with bounded capacity (default: 50,000 entries).\n- **Lookup Latency**: Sub-microsecond (< 1...",
+      "ground_truth_answer": "L1 cache is an in-memory LRU with a default capacity of 50,000 entries, sub-microsecond latency (<100 microseconds), and a default TTL of 300 seconds.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 33.923416000106954,
+      "generation_latency_ms": 0.014457998986472376
+    },
+    {
+      "query_id": "qa_017",
+      "query": "How many master nodes are in the distributed Redis cluster and what is the lookup latency?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "04_caching_and_performance_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 720,
+          "char_end": 1203
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c004",
+        "01_architecture_overview_c006",
+        "04_caching_and_performance_c002",
+        "08_asynchronous_worker_fleet_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 267,
+          "char_end": 640
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 852,
+          "char_end": 1160
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [04_caching_and_performance_c004], ## Layer 2: Distributed Redis Cluster (L2)\n- **Technology**: Redis 7.2 Cluster with horizontal sharding across 6 master nodes.\n- **Lookup Latency**: 1\u20133 milliseconds over internal VPC peering.\n- **Tar...",
+      "ground_truth_answer": "Redis 7.2 Cluster has 6 horizontally sharded master nodes with lookup latencies of 1\u20133 milliseconds over VPC peering.",
+      "faithfulness_score": 0.667,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 34.1570420005155,
+      "generation_latency_ms": 0.016916999811655842
+    },
+    {
+      "query_id": "qa_018",
+      "query": "How does the XFetch algorithm mitigate cache stampedes on hot keys?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "04_caching_and_performance_c004",
+        "04_caching_and_performance_c005"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1153,
+          "char_end": 1705
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1656,
+          "char_end": 2062
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c006",
+        "03_authentication_and_security_c003",
+        "08_asynchronous_worker_fleet_c003",
+        "02_dependency_injection_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 563,
+          "char_end": 862
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 413,
+          "char_end": 589
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [04_caching_and_performance_c006], ## Cache Stampede Mitigation (Probabilistic Early Expiration)\nTo prevent cache stampedes (dog-piling) when hot keys expire under heavy traffic loads, the caching layer implements the XFetch algorithm:...",
+      "ground_truth_answer": "XFetch uses a probabilistic calculation near the expiration window to proactively recompute values in the background before hard expiration occurs.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 30.58950000013283,
+      "generation_latency_ms": 0.011416999768698588
+    },
+    {
+      "query_id": "qa_019",
+      "query": "What happens when database state changes occur in PostgreSQL regarding cache invalidation?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "04_caching_and_performance_c005"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1656,
+          "char_end": 2062
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c008",
+        "01_architecture_overview_c006",
+        "06_database_migrations_and_schema_c003",
+        "06_database_migrations_and_schema_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 612,
+          "char_end": 932
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [04_caching_and_performance_c008], ## Cache Invalidation Protocols\n- When state mutations occur in the persistence layer (PostgreSQL), an asynchronous database trigger emits an event to the Kafka `cache-invalidation` topic.\n- A dedicat...",
+      "ground_truth_answer": "A PostgreSQL trigger emits an event to Kafka's cache-invalidation topic, prompting Redis UNLINK commands to clear L2 and UDP/WebSocket pulses to invalidate L1 nodes.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 32.43745800136821,
+      "generation_latency_ms": 0.011208001524209976
+    },
+    {
+      "query_id": "qa_020",
+      "query": "What error rate threshold trips the circuit breaker from Closed to Open, and over what window?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 819
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c002",
+        "05_error_handling_and_resilience_c003",
+        "05_error_handling_and_resilience_c001",
+        "10_deployment_and_canary_rollouts_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 330,
+          "char_end": 573
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 574,
+          "char_end": 819
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 329
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c002], - **Open State**: If the rolling error rate exceeds 50% over a 20-second evaluation window, the circuit trips to Open. Inbound requests immediately fail fast with an HTTP 503 Service Unavailable error...",
+      "ground_truth_answer": "The circuit breaker trips to Open when the rolling error rate exceeds 50% over a 20-second evaluation window.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.758542001218302,
+      "generation_latency_ms": 0.011125001037726179
+    },
+    {
+      "query_id": "qa_021",
+      "query": "Describe the transition from Half-Open state back to Closed state in the circuit breaker.",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c002",
+        "05_error_handling_and_resilience_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 819
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 769,
+          "char_end": 1336
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c003",
+        "05_error_handling_and_resilience_c001",
+        "05_error_handling_and_resilience_c002",
+        "02_dependency_injection_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 574,
+          "char_end": 819
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 329
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 330,
+          "char_end": 573
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1712,
+          "char_end": 1903
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c003], - **Half-Open State**: After a 30-second cooldown period, the circuit transitions to Half-Open, permitting 5 trial probe requests. If all 5 succeed, the circuit resets to Closed; if any fail, it trips...",
+      "ground_truth_answer": "After a 30-second cooldown in Open state, Half-Open permits 5 trial probe requests. If all 5 succeed, the circuit resets to Closed; if any fail, it trips back to Open for a 60-second cooldown.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.17554099985864,
+      "generation_latency_ms": 0.009790999683900736
+    },
+    {
+      "query_id": "qa_022",
+      "query": "What are the base backoff interval and maximum retry attempts for transient HTTP failures?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 769,
+          "char_end": 1336
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c004",
+        "08_asynchronous_worker_fleet_c006",
+        "05_error_handling_and_resilience_c005",
+        "03_authentication_and_security_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 821,
+          "char_end": 1161
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1162,
+          "char_end": 1469
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1162,
+          "char_end": 1336
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1699,
+          "char_end": 1844
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c004], ## Retry Policies with Exponential Backoff and Jitter\nTransient network timeouts and HTTP 502/503/504 responses trigger automated retry policies:\n- **Maximum Attempts**: 3 retry attempts.\n- **Base Bac...",
+      "ground_truth_answer": "Maximum attempts is 3, with a 200ms base delay that doubles exponentially on subsequent failures (200ms, 400ms, 800ms) with full jitter.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 28.96912500000326,
+      "generation_latency_ms": 0.009124998541665263
+    },
+    {
+      "query_id": "qa_023",
+      "query": "Why is full jitter added to exponential backoff retries?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c003",
+        "05_error_handling_and_resilience_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 769,
+          "char_end": 1336
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1286,
+          "char_end": 1865
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c005",
+        "08_asynchronous_worker_fleet_c006",
+        "05_error_handling_and_resilience_c004",
+        "04_caching_and_performance_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1162,
+          "char_end": 1336
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1162,
+          "char_end": 1469
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 821,
+          "char_end": 1161
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1605,
+          "char_end": 1705
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.3333333333333333,
+      "retrieval_precision": 0.3333333333333333,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [05_error_handling_and_resilience_c005], - **Full Jitter**: A pseudo-random uniform jitter between 0 and the current exponential backoff interval is added to avoid synchronized request spikes across worker clusters....",
+      "ground_truth_answer": "Full jitter adds random delay to avoid synchronized request spikes across worker clusters.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 30.88641700014705,
+      "generation_latency_ms": 0.009125000360654667
+    },
+    {
+      "query_id": "qa_024",
+      "query": "When are messages routed to the Dead Letter Queue and what metadata is preserved?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1286,
+          "char_end": 1865
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c006",
+        "08_asynchronous_worker_fleet_c006",
+        "05_error_handling_and_resilience_c007",
+        "08_asynchronous_worker_fleet_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1162,
+          "char_end": 1469
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1607,
+          "char_end": 1865
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c006], ## Dead Letter Queues (DLQ)\nAsynchronous message processing pipelines running on Kafka and RabbitMQ isolate poison-pill messages:\n- When a task fails after 3 execution attempts, it is acknowledged and...",
+      "ground_truth_answer": "Tasks failing after 3 execution attempts are routed to dlq.<topic_name>, preserving original payloads, exception tracebacks, timestamps, and retry counters in header envelopes.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 30.104667001069174,
+      "generation_latency_ms": 0.010957999620586634
+    },
+    {
+      "query_id": "qa_025",
+      "query": "What condition triggers a PagerDuty alert regarding the Dead Letter Queue?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1286,
+          "char_end": 1865
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c007",
+        "08_asynchronous_worker_fleet_c006",
+        "05_error_handling_and_resilience_c006",
+        "05_error_handling_and_resilience_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1470,
+          "char_end": 1563
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1162,
+          "char_end": 1469
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1607,
+          "char_end": 1865
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c007], - DLQ depth alerts trigger on Slack and PagerDuty whenever message count exceeds 50 messages....",
+      "ground_truth_answer": "An alert is dispatched to PagerDuty if the DLQ depth exceeds 50 messages within any 15-minute sliding window.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 29.887791999499314,
+      "generation_latency_ms": 0.009499999578110874
+    },
+    {
+      "query_id": "qa_026",
+      "query": "How does the system handle asynchronous processing across messaging, worker fleets, and database persistence?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "01_architecture_overview",
+        "05_error_handling_and_resilience"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 0,
+          "char_end": -1
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": -1
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c002",
+        "01_architecture_overview_c003",
+        "05_error_handling_and_resilience_c006",
+        "01_architecture_overview_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.5,
+      "retrieval_precision": 0.6388888888888888,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c002], ## Task Queue Topology\nAsynchronous workloads are scheduled across RabbitMQ message brokers with priority-partitioned queue topologies:\n- **Priority Queues**: Jobs are routed to one of three priority ...",
+      "ground_truth_answer": "Kafka and RabbitMQ buffer messages, Celery and Huey background workers consume them, and persistent state is committed to PostgreSQL with automated Patroni failover and DLQs for failed tasks.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 33.068291000745376,
+      "generation_latency_ms": 0.01195799995912239
+    },
+    {
+      "query_id": "qa_027",
+      "query": "How does GraphQL Federation handle entity stitching across subgraphs in this architecture?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c005",
+        "02_dependency_injection_c002",
+        "07_observability_and_telemetry_c003",
+        "01_architecture_overview_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 347,
+          "char_end": 678
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c005], ## Connection Pooling Architecture\nClient applications connect to PostgreSQL via PgBouncer proxy pools:\n- **Pooling Mode**: Transaction pooling is standard, allowing connections to be reused across di...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.138999998598592,
+      "generation_latency_ms": 0.010707999535952695
+    },
+    {
+      "query_id": "qa_028",
+      "query": "What is the replication factor configured for Apache Cassandra database clusters?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c006",
+        "06_database_migrations_and_schema_c006",
+        "04_caching_and_performance_c004",
+        "06_database_migrations_and_schema_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [01_architecture_overview_c006], ### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the source of truth for user accounts and transactional entit...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.01604199905705,
+      "generation_latency_ms": 0.013374999980442226
+    },
+    {
+      "query_id": "qa_029",
+      "query": "How do you configure DynamoDB global secondary indexes for multi-region replication?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c006",
+        "04_caching_and_performance_c001",
+        "06_database_migrations_and_schema_c006",
+        "06_database_migrations_and_schema_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 0,
+          "char_end": 265
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [01_architecture_overview_c006], ### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the source of truth for user accounts and transactional entit...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.466500000329688,
+      "generation_latency_ms": 0.010624999049468897
+    },
+    {
+      "query_id": "qa_030",
+      "query": "What gRPC deadline timeout is configured for Envoy service mesh sidecars?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c004",
+        "10_deployment_and_canary_rollouts_c006",
+        "10_deployment_and_canary_rollouts_c005",
+        "10_deployment_and_canary_rollouts_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 821,
+          "char_end": 1161
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 1204,
+          "char_end": 1537
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 414,
+          "char_end": 756
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c004], ## Retry Policies with Exponential Backoff and Jitter\nTransient network timeouts and HTTP 502/503/504 responses trigger automated retry policies:\n- **Maximum Attempts**: 3 retry attempts.\n- **Base Bac...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.905833998782327,
+      "generation_latency_ms": 0.011624999388004653
+    },
+    {
+      "query_id": "qa_031",
+      "query": "What pattern is used to achieve zero-downtime database schema migrations?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 16,
+          "char_end": 610
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c001",
+        "06_database_migrations_and_schema_c002",
+        "09_api_versioning_and_contracts_c005",
+        "04_caching_and_performance_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 397,
+          "char_end": 610
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 891,
+          "char_end": 1256
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1605,
+          "char_end": 1705
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c001], # Database Migrations, Schema Evolution, and Connection Management\n\n## Schema Evolution Strategy\nThe platform enforces zero-downtime database migrations using the Expand-and-Contract (Parallel Run) pa...",
+      "ground_truth_answer": "The platform enforces zero-downtime database migrations using the Expand-and-Contract (Parallel Run) pattern managed through Alembic.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.935042000943213,
+      "generation_latency_ms": 0.010125000699190423
+    },
+    {
+      "query_id": "qa_032",
+      "query": "What are the required lock_timeout and statement_timeout values for production DDL statements?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 560,
+          "char_end": 1095
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c003",
+        "05_error_handling_and_resilience_c004",
+        "02_dependency_injection_c007",
+        "07_observability_and_telemetry_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 612,
+          "char_end": 932
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 821,
+          "char_end": 1161
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1712,
+          "char_end": 1903
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 364,
+          "char_end": 760
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c003], ## Lock Prevention & DDL Safety\nTo avoid catastrophic table-level lock contention on production PostgreSQL 16 clusters:\n- All DDL statements must set `lock_timeout = '2s'` and `statement_timeout = '30...",
+      "ground_truth_answer": "All DDL statements must set lock_timeout to 2 seconds and statement_timeout to 30 seconds.",
+      "faithfulness_score": 0.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 30.095541000264348,
+      "generation_latency_ms": 0.010416999430162832
+    },
+    {
+      "query_id": "qa_033",
+      "query": "How are database indexes created in PostgreSQL to prevent table write locks?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 560,
+          "char_end": 1095
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c003",
+        "06_database_migrations_and_schema_c001",
+        "06_database_migrations_and_schema_c005",
+        "04_caching_and_performance_c008"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 612,
+          "char_end": 932
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c003], ## Lock Prevention & DDL Safety\nTo avoid catastrophic table-level lock contention on production PostgreSQL 16 clusters:\n- All DDL statements must set `lock_timeout = '2s'` and `statement_timeout = '30...",
+      "ground_truth_answer": "Index creation must strictly use CREATE INDEX CONCURRENTLY to prevent write locks on active transaction tables.",
+      "faithfulness_score": 0.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.484999999316642,
+      "generation_latency_ms": 0.011165999239892699
+    },
+    {
+      "query_id": "qa_034",
+      "query": "What pooling mode does PgBouncer use and what is the maximum connection limit per database node?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1045,
+          "char_end": 1767
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c006",
+        "06_database_migrations_and_schema_c005",
+        "01_architecture_overview_c003",
+        "06_database_migrations_and_schema_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c006], - **Pool Sizing**: Maximum server connections per database node are capped at 300, while PgBouncer maintains up to 5,000 active client connections.\n- **Read Replicas**: Read-only queries route through...",
+      "ground_truth_answer": "PgBouncer uses transaction pooling mode, and maximum server connections per database node are capped at 300 while maintaining up to 5,000 active client connections.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 30.456250000497676,
+      "generation_latency_ms": 0.010792000466608442
+    },
+    {
+      "query_id": "qa_035",
+      "query": "At what streaming replication lag threshold does read traffic automatically fail over from replicas to the primary instance?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1045,
+          "char_end": 1767
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c006",
+        "10_deployment_and_canary_rollouts_c005",
+        "01_architecture_overview_c006",
+        "10_deployment_and_canary_rollouts_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 414,
+          "char_end": 756
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c006], - **Pool Sizing**: Maximum server connections per database node are capped at 300, while PgBouncer maintains up to 5,000 active client connections.\n- **Read Replicas**: Read-only queries route through...",
+      "ground_truth_answer": "If streaming replication lag exceeds 500ms, traffic automatically fails over to the primary instance.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.148290999932215,
+      "generation_latency_ms": 0.011583000741666183
+    },
+    {
+      "query_id": "qa_036",
+      "query": "What W3C Trace Context headers are used for distributed context propagation across service boundaries?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "07_observability_and_telemetry_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 2,
+          "char_end": 760
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c001",
+        "01_architecture_overview_c002",
+        "08_asynchronous_worker_fleet_c004",
+        "04_caching_and_performance_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 0,
+          "char_end": 363
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 591,
+          "char_end": 851
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [07_observability_and_telemetry_c001], # Observability, Distributed Tracing, and Telemetry\n\n## Distributed Tracing Framework\nThe platform instruments all inbound requests and outbound RPC calls using the OpenTelemetry (OTel) Python SDK:\n- ...",
+      "ground_truth_answer": "W3C Trace Context headers traceparent and tracestate propagate context across HTTP boundaries and asynchronous Kafka message headers.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.634667000413174,
+      "generation_latency_ms": 0.012333000995568
+    },
+    {
+      "query_id": "qa_037",
+      "query": "What is the trace sampling rate for successful requests versus error or slow requests?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "07_observability_and_telemetry_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 2,
+          "char_end": 760
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c002",
+        "05_error_handling_and_resilience_c002",
+        "10_deployment_and_canary_rollouts_c005",
+        "07_observability_and_telemetry_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 364,
+          "char_end": 760
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 330,
+          "char_end": 573
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [07_observability_and_telemetry_c002], - **Trace Sampling Strategy**: Adaptive head-based sampling is set at 5% for successful 2xx/3xx requests, while 100% of errors (HTTP 4xx/5xx) and slow requests (P99 latency > 800ms) are forced into pe...",
+      "ground_truth_answer": "Adaptive head-based sampling is set at 5% for successful 2xx/3xx requests, while 100% of errors (4xx/5xx) and slow requests (P99 latency > 800ms) are sampled.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 31.016375000035623,
+      "generation_latency_ms": 0.012125001376261935
+    },
+    {
+      "query_id": "qa_038",
+      "query": "What Prometheus metrics are captured under the RED method for microservices?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "07_observability_and_telemetry_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 711,
+          "char_end": 1320
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c003",
+        "07_observability_and_telemetry_c004",
+        "09_api_versioning_and_contracts_c005",
+        "05_error_handling_and_resilience_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1134,
+          "char_end": 1320
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 891,
+          "char_end": 1256
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 329
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [07_observability_and_telemetry_c003], ## Metrics Collection Architecture\nPrometheus collectors scrape metrics endpoints exposed by service pods on port 9090:\n- **Scrape Interval**: Default scrape interval is 15 seconds across production s...",
+      "ground_truth_answer": "Every microservice publishes Rate (requests/sec), Errors (error count tagged by HTTP status), and Duration (histogram buckets from 5ms to 10s).",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.189459001121577,
+      "generation_latency_ms": 0.011209000149392523
+    },
+    {
+      "query_id": "qa_039",
+      "query": "What is the maximum allowed custom metric label cardinality per service instance?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "07_observability_and_telemetry_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 711,
+          "char_end": 1320
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c004",
+        "07_observability_and_telemetry_c003",
+        "06_database_migrations_and_schema_c006",
+        "03_authentication_and_security_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1134,
+          "char_end": 1320
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1346,
+          "char_end": 1698
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.5,
+      "retrieval_precision": 0.5,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [07_observability_and_telemetry_c004], - **Custom Metric Cardinality**: Label combinations are limited to a maximum cardinality of 1,000 unique metric permutations per service instance to prevent Prometheus memory exhaustion....",
+      "ground_truth_answer": "Label combinations are limited to a maximum cardinality of 1,000 unique metric permutations per service instance to prevent memory exhaustion.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.143333000320126,
+      "generation_latency_ms": 0.011874999472638592
+    },
+    {
+      "query_id": "qa_040",
+      "query": "What mandatory fields must be included in structured application log entries?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "07_observability_and_telemetry_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1271,
+          "char_end": 1692
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c005",
+        "06_database_migrations_and_schema_c002",
+        "06_database_migrations_and_schema_c003",
+        "03_authentication_and_security_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1322,
+          "char_end": 1692
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 397,
+          "char_end": 610
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 612,
+          "char_end": 932
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 864,
+          "char_end": 1216
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [07_observability_and_telemetry_c005], ## Structured Logging & Correlation\nAll application logs are output in single-line JSON format directly to stdout:\n- Mandatory fields include `timestamp` (ISO 8601 UTC), `level`, `service_name`, `trac...",
+      "ground_truth_answer": "Mandatory fields include timestamp in ISO 8601 UTC, level, service_name, trace_id, span_id, and tenant_id.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 28.804499999750988,
+      "generation_latency_ms": 0.010624999049468897
+    },
+    {
+      "query_id": "qa_041",
+      "query": "What are the three priority queues for asynchronous tasks and their respective SLAs?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "08_asynchronous_worker_fleet_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 589
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c002",
+        "05_error_handling_and_resilience_c006",
+        "01_architecture_overview_c004",
+        "08_asynchronous_worker_fleet_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 48
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c002], ## Task Queue Topology\nAsynchronous workloads are scheduled across RabbitMQ message brokers with priority-partitioned queue topologies:\n- **Priority Queues**: Jobs are routed to one of three priority ...",
+      "ground_truth_answer": "Jobs are routed to critical (payment processing, SLA < 2s), default (email notifications, user events, SLA < 30s), and bulk (monthly reporting, PDF exports, SLA < 15m).",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.07479200095986,
+      "generation_latency_ms": 0.00866699883772526
+    },
+    {
+      "query_id": "qa_042",
+      "query": "Why do Celery workers configure worker_prefetch_multiplier equal to 1?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "08_asynchronous_worker_fleet_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 539,
+          "char_end": 1160
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c003",
+        "01_architecture_overview_c004",
+        "04_caching_and_performance_c006",
+        "01_architecture_overview_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 413,
+          "char_end": 589
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c003], - **Worker Prefetch Limits**: Celery workers run with `worker_prefetch_multiplier = 1` for long-running compute jobs to prevent idle starvation of other available worker nodes....",
+      "ground_truth_answer": "Workers set worker_prefetch_multiplier to 1 for long-running compute jobs to prevent idle starvation of other available worker nodes.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 33.438209000451025,
+      "generation_latency_ms": 0.01133299883804284
+    },
+    {
+      "query_id": "qa_043",
+      "query": "How is task execution deduplicated across distributed Celery workers?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "08_asynchronous_worker_fleet_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 539,
+          "char_end": 1160
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c004",
+        "08_asynchronous_worker_fleet_c005",
+        "01_architecture_overview_c004",
+        "08_asynchronous_worker_fleet_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 591,
+          "char_end": 851
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 852,
+          "char_end": 1160
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 413,
+          "char_end": 589
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c004], ## Idempotency and Deduplication\nTo maintain exactly-once execution semantics across distributed workers:\n- **Idempotency Keys**: Tasks generating financial state mutations or email dispatches require...",
+      "ground_truth_answer": "Workers acquire a distributed Redis lock keyed as task_lock:{idempotency_key} with a 10-minute TTL before initiating execution.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 29.527208000217797,
+      "generation_latency_ms": 0.010042000212706625
+    },
+    {
+      "query_id": "qa_044",
+      "query": "What queue receives unrecoverable poison pill tasks, and what alert threshold is configured?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "08_asynchronous_worker_fleet_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1110,
+          "char_end": 1563
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c006",
+        "05_error_handling_and_resilience_c006",
+        "08_asynchronous_worker_fleet_c002",
+        "08_asynchronous_worker_fleet_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1162,
+          "char_end": 1469
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 48
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c006], ## Poison Pill & Dead Letter Queue (DLQ)\n- Failed tasks retry with exponential backoff and randomized jitter up to 5 attempts.\n- Tasks encountering unrecoverable errors (e.g. malformed payloads or sch...",
+      "ground_truth_answer": "Tasks encountering unrecoverable errors are routed to the dlq.tasks dead letter queue, and alerts trigger on Slack and PagerDuty when message depth exceeds 50 messages.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 30.812916998911533,
+      "generation_latency_ms": 0.0106250008684583
+    },
+    {
+      "query_id": "qa_045",
+      "query": "How are API versions mounted and differentiated according to the versioning policy?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "09_api_versioning_and_contracts_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 12,
+          "char_end": 570
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "09_api_versioning_and_contracts_c002",
+        "09_api_versioning_and_contracts_c001",
+        "09_api_versioning_and_contracts_c004",
+        "01_architecture_overview_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 64,
+          "char_end": 406
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 0,
+          "char_end": 62
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 572,
+          "char_end": 890
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 0,
+          "char_end": 341
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [09_api_versioning_and_contracts_c002], ## Versioning Strategy\nThe API platform adheres to Semantic Versioning (SemVer 2.0.0) implemented via URL path prefixes:\n- Current active release channels are mounted under `/api/v1` and `/api/v2`.\n- ...",
+      "ground_truth_answer": "The platform adheres to SemVer 2.0.0 via URL path prefixes mounted under /api/v1 and /api/v2, where breaking changes require incrementing the major version path.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 29.744625000603264,
+      "generation_latency_ms": 0.010292000297340564
+    },
+    {
+      "query_id": "qa_046",
+      "query": "What HTTP headers are injected to notify API clients of upcoming endpoint deprecation?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "09_api_versioning_and_contracts_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 520,
+          "char_end": 1256
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "09_api_versioning_and_contracts_c004",
+        "09_api_versioning_and_contracts_c005",
+        "09_api_versioning_and_contracts_c001",
+        "01_architecture_overview_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 572,
+          "char_end": 890
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 891,
+          "char_end": 1256
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 0,
+          "char_end": 62
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [09_api_versioning_and_contracts_c004], ## Deprecation Lifecycle & Sunset Headers\nWhen an API endpoint or version is slated for decommissioning:\n- **Deprecation Notice**: The platform injects the standard RFC 8594 `Deprecation: true` respon...",
+      "ground_truth_answer": "The platform injects the standard RFC 8594 Deprecation: true header along with a Sunset header specifying the final timestamp of removal.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 30.57033299955947,
+      "generation_latency_ms": 0.010792000466608442
+    },
+    {
+      "query_id": "qa_047",
+      "query": "What minimum deprecation window is mandated before deprecated endpoints can be sunset?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "09_api_versioning_and_contracts_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 520,
+          "char_end": 1256
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "09_api_versioning_and_contracts_c004",
+        "09_api_versioning_and_contracts_c005",
+        "06_database_migrations_and_schema_c002",
+        "09_api_versioning_and_contracts_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 572,
+          "char_end": 890
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 891,
+          "char_end": 1256
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 397,
+          "char_end": 610
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 0,
+          "char_end": 62
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [09_api_versioning_and_contracts_c004], ## Deprecation Lifecycle & Sunset Headers\nWhen an API endpoint or version is slated for decommissioning:\n- **Deprecation Notice**: The platform injects the standard RFC 8594 `Deprecation: true` respon...",
+      "ground_truth_answer": "A minimum 180-day deprecation window is mandated before an endpoint can be decommissioned.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.37399999993795,
+      "generation_latency_ms": 0.008874998457031325
+    },
+    {
+      "query_id": "qa_048",
+      "query": "What tool is used in CI to validate OpenAPI contract backward compatibility?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "09_api_versioning_and_contracts_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 1206,
+          "char_end": 1565
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "09_api_versioning_and_contracts_c006",
+        "06_database_migrations_and_schema_c002",
+        "09_api_versioning_and_contracts_c001",
+        "06_database_migrations_and_schema_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 1258,
+          "char_end": 1565
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 397,
+          "char_end": 610
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 0,
+          "char_end": 62
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [09_api_versioning_and_contracts_c006], ## Contract Testing & Schema Validation\nAll service boundaries enforce strict OpenAPI 3.1.0 specifications:\n- Pull requests validate backward compatibility using `oasdiff` against the production OpenA...",
+      "ground_truth_answer": "Pull requests validate backward compatibility using oasdiff against the production OpenAPI schema artifact.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.71070800049347,
+      "generation_latency_ms": 0.011457999789854512
+    },
+    {
+      "query_id": "qa_049",
+      "query": "What GitOps tool orchestrates production cluster state from the main Git branch?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "10_deployment_and_canary_rollouts_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 11,
+          "char_end": 412
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "10_deployment_and_canary_rollouts_c002",
+        "10_deployment_and_canary_rollouts_c001",
+        "04_caching_and_performance_c004",
+        "01_architecture_overview_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 63,
+          "char_end": 412
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 0,
+          "char_end": 61
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [10_deployment_and_canary_rollouts_c002], ## GitOps Deployment Model\nProduction deployments are orchestrated via ArgoCD following a declarative GitOps workflow:\n- The `main` branch state defines the desired cluster state across Kubernetes nam...",
+      "ground_truth_answer": "Production deployments are orchestrated via ArgoCD following a declarative GitOps workflow.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.983958000229904,
+      "generation_latency_ms": 0.013124999895808287
+    },
+    {
+      "query_id": "qa_050",
+      "query": "What are the three traffic split phases during an automated canary rollout?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "10_deployment_and_canary_rollouts_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 362,
+          "char_end": 874
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "10_deployment_and_canary_rollouts_c003",
+        "10_deployment_and_canary_rollouts_c004",
+        "10_deployment_and_canary_rollouts_c005",
+        "10_deployment_and_canary_rollouts_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 414,
+          "char_end": 756
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 757,
+          "char_end": 874
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 1204,
+          "char_end": 1537
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [10_deployment_and_canary_rollouts_c003], ## Canary Rollout Architecture\nMicroservice releases utilize Argo Rollouts to mitigate risk through automated canary analysis:\n- **Phase 1 (Traffic Split: 5%)**: Route 5% of production traffic to the ...",
+      "ground_truth_answer": "Canary rollouts split traffic at Phase 1 (5% for 10 minutes), Phase 2 (25% for 20 minutes), and Phase 3 (100% full production promotion).",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 29.754750001302455,
+      "generation_latency_ms": 0.011583000741666183
+    },
+    {
+      "query_id": "qa_051",
+      "query": "What 5xx error rate threshold triggers an automated canary deployment rollback?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "10_deployment_and_canary_rollouts_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 824,
+          "char_end": 1537
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "10_deployment_and_canary_rollouts_c005",
+        "10_deployment_and_canary_rollouts_c003",
+        "10_deployment_and_canary_rollouts_c006",
+        "05_error_handling_and_resilience_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 414,
+          "char_end": 756
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 1204,
+          "char_end": 1537
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 330,
+          "char_end": 573
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [10_deployment_and_canary_rollouts_c005], ## Automated Rollback Triggers\nCanary deployments continuously evaluate analysis metrics against strict health criteria:\n- **5xx Error Rate**: If HTTP 5xx responses exceed 0.5% of total requests over ...",
+      "ground_truth_answer": "If HTTP 5xx responses exceed 0.5% of total requests over a 2-minute rolling window, the rollout automatically aborts and rolls back within 15 seconds.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 30.635334000180592,
+      "generation_latency_ms": 0.012709000657196157
+    },
+    {
+      "query_id": "qa_052",
+      "query": "What are the probe intervals for container liveness and readiness checks?",
+      "query_type": "factoid",
+      "ground_truth_context_ids": [
+        "10_deployment_and_canary_rollouts_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 824,
+          "char_end": 1537
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "10_deployment_and_canary_rollouts_c006",
+        "05_error_handling_and_resilience_c003",
+        "02_dependency_injection_c001",
+        "07_observability_and_telemetry_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 1204,
+          "char_end": 1537
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 574,
+          "char_end": 819
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 0,
+          "char_end": 345
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [10_deployment_and_canary_rollouts_c006], - **Latency Degradation**: If P95 latency increases by more than 20% compared to the baseline stable version, the canary rollout is paused for engineering review.\n- **Container Health Probes**: Pods m...",
+      "ground_truth_answer": "Pods must pass /healthz/live every 10 seconds for liveness and /healthz/ready every 5 seconds for readiness before receiving gateway traffic.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.390832998615224,
+      "generation_latency_ms": 0.011374999303370714
+    },
+    {
+      "query_id": "qa_053",
+      "query": "How does distributed rate limiting at the API Gateway coordinate with Redis and token bucket algorithms?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c002",
+        "03_authentication_and_security_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 291,
+          "char_end": 725
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1294,
+          "char_end": 1844
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c002",
+        "03_authentication_and_security_c006",
+        "04_caching_and_performance_c004",
+        "08_asynchronous_worker_fleet_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1346,
+          "char_end": 1698
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 852,
+          "char_end": 1160
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [01_architecture_overview_c002], ### 1. API Gateway Layer\nThe Gateway acts as the single ingress point for all client requests. It handles:\n- TLS termination and SSL certificate offloading.\n- Global traffic routing using path-based a...",
+      "ground_truth_answer": "The API Gateway layer enforces distributed rate limiting using token bucket algorithms with Redis cluster as the shared state store, evaluating tier quotas and returning RFC 7807 problem details when exhausted.",
+      "faithfulness_score": 0.75,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.547500000466243,
+      "generation_latency_ms": 0.015209001503535546
+    },
+    {
+      "query_id": "qa_054",
+      "query": "How do database connection pooling and schema migrations coordinate to ensure zero application downtime?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c002",
+        "06_database_migrations_and_schema_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 16,
+          "char_end": 610
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1045,
+          "char_end": 1767
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c001",
+        "06_database_migrations_and_schema_c005",
+        "06_database_migrations_and_schema_c002",
+        "06_database_migrations_and_schema_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 397,
+          "char_end": 610
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 0.75,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c001], # Database Migrations, Schema Evolution, and Connection Management\n\n## Schema Evolution Strategy\nThe platform enforces zero-downtime database migrations using the Expand-and-Contract (Parallel Run) pa...",
+      "ground_truth_answer": "Zero-downtime is achieved by using Alembic expand-and-contract migrations with concurrent indexing and strict lock timeouts of 2s, while PgBouncer maintains transaction-level pooling of up to 5,000 client connections.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 30.68616699965787,
+      "generation_latency_ms": 0.011374999303370714
+    },
+    {
+      "query_id": "qa_055",
+      "query": "How are trace IDs correlated across synchronous gateway requests, background Celery jobs, and application logs?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c003",
+        "07_observability_and_telemetry_c002",
+        "07_observability_and_telemetry_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 676,
+          "char_end": 1237
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 2,
+          "char_end": 760
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1271,
+          "char_end": 1692
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c005",
+        "01_architecture_overview_c002",
+        "01_architecture_overview_c004",
+        "07_observability_and_telemetry_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1322,
+          "char_end": 1692
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 0,
+          "char_end": 363
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 0.3333333333333333,
+      "generated_answer": "According to [07_observability_and_telemetry_c005], ## Structured Logging & Correlation\nAll application logs are output in single-line JSON format directly to stdout:\n- Mandatory fields include `timestamp` (ISO 8601 UTC), `level`, `service_name`, `trac...",
+      "ground_truth_answer": "The API gateway generates correlation IDs propagated via W3C Trace Context headers (traceparent) across HTTP and Kafka headers to Celery workers, and every structured JSON log entry mandates inclusion of trace_id and span_id.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 34.2411669989815,
+      "generation_latency_ms": 0.012874999811174348
+    },
+    {
+      "query_id": "qa_056",
+      "query": "How does circuit breaker state change when downstream database failover or high error rates occur?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c005",
+        "05_error_handling_and_resilience_c002",
+        "05_error_handling_and_resilience_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1585,
+          "char_end": 1961
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 819
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 769,
+          "char_end": 1336
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "05_error_handling_and_resilience_c002",
+        "05_error_handling_and_resilience_c001",
+        "05_error_handling_and_resilience_c003",
+        "04_caching_and_performance_c008"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 330,
+          "char_end": 573
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 329
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 574,
+          "char_end": 819
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [05_error_handling_and_resilience_c002], - **Open State**: If the rolling error rate exceeds 50% over a 20-second evaluation window, the circuit trips to Open. Inbound requests immediately fail fast with an HTTP 503 Service Unavailable error...",
+      "ground_truth_answer": "When downstream errors exceed the 50% threshold within a 10-second rolling window, the circuit breaker transitions from Closed to Open, halting requests for 60 seconds before probing in Half-Open state while Patroni handles automated failover.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 28.810333000365063,
+      "generation_latency_ms": 0.011541000276338309
+    },
+    {
+      "query_id": "qa_057",
+      "query": "How does the platform prevent cache stampedes when L2 Redis keys expire during high concurrency?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "04_caching_and_performance_c003",
+        "04_caching_and_performance_c004",
+        "04_caching_and_performance_c005"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 720,
+          "char_end": 1203
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1153,
+          "char_end": 1705
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1656,
+          "char_end": 2062
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c006",
+        "04_caching_and_performance_c008",
+        "01_architecture_overview_c006",
+        "04_caching_and_performance_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 0.9166666666666666,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [04_caching_and_performance_c006], ## Cache Stampede Mitigation (Probabilistic Early Expiration)\nTo prevent cache stampedes (dog-piling) when hot keys expire under heavy traffic loads, the caching layer implements the XFetch algorithm:...",
+      "ground_truth_answer": "Cache stampedes are mitigated using probabilistic early expiration (XFetch algorithm) with beta factor 1.0 to trigger background recomputation before hard TTL expiry, alongside distributed Redis locks on cache misses.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 30.629791999672307,
+      "generation_latency_ms": 0.014582999938284047
+    },
+    {
+      "query_id": "qa_058",
+      "query": "How are task deduplication and idempotency enforced for financial operations across the asynchronous worker fleet?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "08_asynchronous_worker_fleet_c002",
+        "08_asynchronous_worker_fleet_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 589
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 539,
+          "char_end": 1160
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c004",
+        "08_asynchronous_worker_fleet_c005",
+        "01_architecture_overview_c004",
+        "08_asynchronous_worker_fleet_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 591,
+          "char_end": 851
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 852,
+          "char_end": 1160
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.25,
+      "retrieval_precision": 0.25,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c004], ## Idempotency and Deduplication\nTo maintain exactly-once execution semantics across distributed workers:\n- **Idempotency Keys**: Tasks generating financial state mutations or email dispatches require...",
+      "ground_truth_answer": "Financial jobs route to the critical priority queue and require a caller-provided UUIDv4 idempotency_key, which workers use to acquire a Redis lock task_lock:{idempotency_key} with a 10-minute TTL before execution.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 33.06283399979293,
+      "generation_latency_ms": 0.01170799987448845
+    },
+    {
+      "query_id": "qa_059",
+      "query": "What triggers an automated canary rollback, and how does OTel telemetry capture the failure?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "07_observability_and_telemetry_c002",
+        "10_deployment_and_canary_rollouts_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 2,
+          "char_end": 760
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 824,
+          "char_end": 1537
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "10_deployment_and_canary_rollouts_c005",
+        "10_deployment_and_canary_rollouts_c003",
+        "10_deployment_and_canary_rollouts_c006",
+        "05_error_handling_and_resilience_c004"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 876,
+          "char_end": 1203
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 414,
+          "char_end": 756
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 1204,
+          "char_end": 1537
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 821,
+          "char_end": 1161
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [10_deployment_and_canary_rollouts_c005], ## Automated Rollback Triggers\nCanary deployments continuously evaluate analysis metrics against strict health criteria:\n- **5xx Error Rate**: If HTTP 5xx responses exceed 0.5% of total requests over ...",
+      "ground_truth_answer": "An automated rollback triggers if HTTP 5xx responses exceed 0.5% over a 2-minute rolling window or P95 latency degrades by >20%, while OTel telemetry captures 100% of these 5xx error traces into Jaeger.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.5,
+      "rubric_grade": 3,
+      "retrieval_latency_ms": 30.825833000562852,
+      "generation_latency_ms": 0.012624999726540409
+    },
+    {
+      "query_id": "qa_060",
+      "query": "How are breaking changes handled in API versioning, and how is client migration enforced before sunset?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "09_api_versioning_and_contracts_c002",
+        "09_api_versioning_and_contracts_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 12,
+          "char_end": 570
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 520,
+          "char_end": 1256
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "09_api_versioning_and_contracts_c005",
+        "09_api_versioning_and_contracts_c002",
+        "09_api_versioning_and_contracts_c004",
+        "09_api_versioning_and_contracts_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 891,
+          "char_end": 1256
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 64,
+          "char_end": 406
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 572,
+          "char_end": 890
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 407,
+          "char_end": 570
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.5,
+      "retrieval_precision": 0.5,
+      "retrieval_recall": 0.5,
+      "generated_answer": "According to [09_api_versioning_and_contracts_c005], - **Migration Link**: A `Link: <url>; rel=\"deprecation\"` header points consumers directly to the migration guide.\n- **Consumer Telemetry**: Inbound calls to deprecated endpoints emit Prometheus metric...",
+      "ground_truth_answer": "Breaking changes require bumping the major URL path prefix (/api/v2), while deprecated endpoints return RFC 8594 Deprecation and Sunset headers with a 180-day grace period and metric tracking of persistent callers.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 30.90833299938822,
+      "generation_latency_ms": 0.010291001672158018
+    },
+    {
+      "query_id": "qa_061",
+      "query": "What mechanisms prevent memory exhaustion in Redis L1/L2 caches and Prometheus metric stores?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "04_caching_and_performance_c002",
+        "04_caching_and_performance_c003",
+        "07_observability_and_telemetry_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 216,
+          "char_end": 770
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 720,
+          "char_end": 1203
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 711,
+          "char_end": 1320
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "07_observability_and_telemetry_c004",
+        "04_caching_and_performance_c008",
+        "07_observability_and_telemetry_c003",
+        "04_caching_and_performance_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 1134,
+          "char_end": 1320
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 267,
+          "char_end": 640
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 0.3333333333333333,
+      "retrieval_precision": 0.41666666666666663,
+      "retrieval_recall": 0.6666666666666666,
+      "generated_answer": "According to [07_observability_and_telemetry_c004], - **Custom Metric Cardinality**: Label combinations are limited to a maximum cardinality of 1,000 unique metric permutations per service instance to prevent Prometheus memory exhaustion....",
+      "ground_truth_answer": "L1 cache enforces max-size eviction with 60s TTL, L2 Redis rejects unbounded keys without TTL, and Prometheus caps custom metric label cardinality to 1,000 unique permutations per instance.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.75,
+      "rubric_grade": 4,
+      "retrieval_latency_ms": 30.499000000418164,
+      "generation_latency_ms": 0.013124999895808287
+    },
+    {
+      "query_id": "qa_062",
+      "query": "How do sub-dependencies in the DI container interact with request-scoped caching and concurrency?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "02_dependency_injection_c002",
+        "02_dependency_injection_c003"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 295,
+          "char_end": 784
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 734,
+          "char_end": 1393
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "02_dependency_injection_c002",
+        "02_dependency_injection_c004",
+        "02_dependency_injection_c001",
+        "02_dependency_injection_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 347,
+          "char_end": 678
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 0,
+          "char_end": 345
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1395,
+          "char_end": 1711
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 1.0,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [02_dependency_injection_c002], ## Sub-Dependency Resolution\nDependencies can declare nested sub-dependencies in a directed acyclic graph (DAG):\n- The container traverses the dependency tree using topological sorting before invoking...",
+      "ground_truth_answer": "Sub-dependencies are resolved hierarchically into an acyclic dependency graph, caching instances within the request scope so shared dependencies execute only once per HTTP request while concurrent branches resolve safely.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 30.838250000670087,
+      "generation_latency_ms": 0.012083999536116607
+    },
+    {
+      "query_id": "qa_063",
+      "query": "What retry strategy is applied to transient downstream failures before messages are shunted to the dead letter queue?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "05_error_handling_and_resilience_c003",
+        "08_asynchronous_worker_fleet_c004"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 769,
+          "char_end": 1336
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1110,
+          "char_end": 1563
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "08_asynchronous_worker_fleet_c006",
+        "05_error_handling_and_resilience_c006",
+        "05_error_handling_and_resilience_c004",
+        "05_error_handling_and_resilience_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 1162,
+          "char_end": 1469
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1338,
+          "char_end": 1606
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 821,
+          "char_end": 1161
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1607,
+          "char_end": 1865
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 0.8333333333333333,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [08_asynchronous_worker_fleet_c006], ## Poison Pill & Dead Letter Queue (DLQ)\n- Failed tasks retry with exponential backoff and randomized jitter up to 5 attempts.\n- Tasks encountering unrecoverable errors (e.g. malformed payloads or sch...",
+      "ground_truth_answer": "Workers use exponential backoff with randomized jitter up to 5 attempts, and tasks with unrecoverable poison pill errors are immediately shunted to dlq.tasks without consuming retries.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 1.0,
+      "rubric_grade": 5,
+      "retrieval_latency_ms": 30.082874998697662,
+      "generation_latency_ms": 0.015499999790336005
+    },
+    {
+      "query_id": "qa_064",
+      "query": "How does Kafka partition assignment align with tenant isolation and distributed PostgreSQL persistence?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "01_architecture_overview_c004",
+        "01_architecture_overview_c005"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1187,
+          "char_end": 1635
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1585,
+          "char_end": 1961
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c005",
+        "04_caching_and_performance_c008",
+        "01_architecture_overview_c006",
+        "07_observability_and_telemetry_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 0,
+          "char_end": 363
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 0.8333333333333333,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [01_architecture_overview_c005], ### 3. Event Bus & Messaging Backbone\nInternal service communication utilizes Apache Kafka as the durable event backbone:\n- **Event Retention**: Critical operational topics maintain a 7-day retention ...",
+      "ground_truth_answer": "Kafka partition keys map to tenant_id to guarantee in-order delivery of state transitions per enterprise customer, aligning with PostgreSQL 16 transactional accounts managed with Patroni failover.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.3286250000383,
+      "generation_latency_ms": 0.011416999768698588
+    },
+    {
+      "query_id": "qa_065",
+      "query": "What happens if a background export job exceeds its queue SLA or experiences a database replica lag spike?",
+      "query_type": "multi_hop",
+      "ground_truth_context_ids": [
+        "06_database_migrations_and_schema_c004",
+        "08_asynchronous_worker_fleet_c002"
+      ],
+      "ground_truth_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1045,
+          "char_end": 1767
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 589
+        }
+      ],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c006",
+        "01_architecture_overview_c004",
+        "08_asynchronous_worker_fleet_c002",
+        "08_asynchronous_worker_fleet_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1016,
+          "char_end": 1237
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 0,
+          "char_end": 48
+        }
+      ],
+      "retrieval_hit_rate": 1.0,
+      "retrieval_mrr": 1.0,
+      "retrieval_precision": 0.8333333333333333,
+      "retrieval_recall": 1.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c006], - **Pool Sizing**: Maximum server connections per database node are capped at 300, while PgBouncer maintains up to 5,000 active client connections.\n- **Read Replicas**: Read-only queries route through...",
+      "ground_truth_answer": "Background export jobs route to the bulk priority queue (SLA < 15m), and if database replica streaming lag exceeds 500ms, queries automatically fail over from read replicas to the primary PostgreSQL instance.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.25,
+      "rubric_grade": 2,
+      "retrieval_latency_ms": 30.478542001219466,
+      "generation_latency_ms": 0.010417001249152236
+    },
+    {
+      "query_id": "qa_066",
+      "query": "How does the platform configure Amazon DynamoDB global secondary indexes?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c001",
+        "09_api_versioning_and_contracts_c002",
+        "03_authentication_and_security_c001",
+        "01_architecture_overview_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 0,
+          "char_end": 396
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 64,
+          "char_end": 406
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 0,
+          "char_end": 261
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 0,
+          "char_end": 341
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c001], # Database Migrations, Schema Evolution, and Connection Management\n\n## Schema Evolution Strategy\nThe platform enforces zero-downtime database migrations using the Expand-and-Contract (Parallel Run) pa...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 31.081041999641457,
+      "generation_latency_ms": 0.011457999789854512
+    },
+    {
+      "query_id": "qa_067",
+      "query": "What is the maximum payload size supported by AWS Lambda serverless execution layers?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c005",
+        "05_error_handling_and_resilience_c007",
+        "01_architecture_overview_c003",
+        "01_architecture_overview_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1217,
+          "char_end": 1344
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1607,
+          "char_end": 1865
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c005], - If a token lacks required scopes, the gateway returns HTTP 403 Forbidden with standard RFC 7807 problem details JSON payload....",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 32.050916999651236,
+      "generation_latency_ms": 0.012792001143679954
+    },
+    {
+      "query_id": "qa_068",
+      "query": "How are GraphQL subscription resolvers configured for WebSocket push notifications?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c008",
+        "08_asynchronous_worker_fleet_c002",
+        "02_dependency_injection_c004",
+        "05_error_handling_and_resilience_c007"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "08_asynchronous_worker_fleet",
+          "char_start": 50,
+          "char_end": 412
+        },
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 786,
+          "char_end": 1156
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1607,
+          "char_end": 1865
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [04_caching_and_performance_c008], ## Cache Invalidation Protocols\n- When state mutations occur in the persistence layer (PostgreSQL), an asynchronous database trigger emits an event to the Kafka `cache-invalidation` topic.\n- A dedicat...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 31.3066250000702,
+      "generation_latency_ms": 0.013041000784141943
+    },
+    {
+      "query_id": "qa_069",
+      "query": "What algorithm does Apache Cassandra use for peer-to-peer gossip failure detection?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c006",
+        "01_architecture_overview_c005",
+        "04_caching_and_performance_c006",
+        "01_architecture_overview_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [01_architecture_overview_c006], ### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the source of truth for user accounts and transactional entit...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.175582998708705,
+      "generation_latency_ms": 0.014125000234344043
+    },
+    {
+      "query_id": "qa_070",
+      "query": "How does MongoDB configure wiredTiger cache size across shard replica sets?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "06_database_migrations_and_schema_c006",
+        "10_deployment_and_canary_rollouts_c003",
+        "01_architecture_overview_c006",
+        "04_caching_and_performance_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1384,
+          "char_end": 1767
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 414,
+          "char_end": 756
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 267,
+          "char_end": 640
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [06_database_migrations_and_schema_c006], - **Pool Sizing**: Maximum server connections per database node are capped at 300, while PgBouncer maintains up to 5,000 active client connections.\n- **Read Replicas**: Read-only queries route through...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 31.720375000077183,
+      "generation_latency_ms": 0.012541000614874065
+    },
+    {
+      "query_id": "qa_071",
+      "query": "What is the recommended shard allocation policy for Elasticsearch cluster hot-warm architectures?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c004",
+        "04_caching_and_performance_c006",
+        "05_error_handling_and_resilience_c005",
+        "10_deployment_and_canary_rollouts_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1162,
+          "char_end": 1336
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 63,
+          "char_end": 412
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [04_caching_and_performance_c004], ## Layer 2: Distributed Redis Cluster (L2)\n- **Technology**: Redis 7.2 Cluster with horizontal sharding across 6 master nodes.\n- **Lookup Latency**: 1\u20133 milliseconds over internal VPC peering.\n- **Tar...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.667,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 28.424542000720976,
+      "generation_latency_ms": 0.013958999261376448
+    },
+    {
+      "query_id": "qa_072",
+      "query": "How does Kubernetes manage pod affinity for DaemonSet host port mappings?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "10_deployment_and_canary_rollouts_c002",
+        "07_observability_and_telemetry_c003",
+        "01_architecture_overview_c006",
+        "01_architecture_overview_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 63,
+          "char_end": 412
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 762,
+          "char_end": 1133
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [10_deployment_and_canary_rollouts_c002], ## GitOps Deployment Model\nProduction deployments are orchestrated via ArgoCD following a declarative GitOps workflow:\n- The `main` branch state defines the desired cluster state across Kubernetes nam...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.199124999853666,
+      "generation_latency_ms": 0.013250000847619958
+    },
+    {
+      "query_id": "qa_073",
+      "query": "What is the syntax for gRPC bidirectional streaming handlers in Go?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "02_dependency_injection_c007",
+        "03_authentication_and_security_c004",
+        "07_observability_and_telemetry_c001",
+        "01_architecture_overview_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "02_dependency_injection",
+          "char_start": 1712,
+          "char_end": 1903
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 864,
+          "char_end": 1216
+        },
+        {
+          "doc": "07_observability_and_telemetry",
+          "char_start": 0,
+          "char_end": 363
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [02_dependency_injection_c007], - Code following the `yield` statement executes during request teardown in the `finally` block, ensuring connections are closed even if an unhandled exception occurs during handler execution....",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.667584000184434,
+      "generation_latency_ms": 0.011875001291627996
+    },
+    {
+      "query_id": "qa_074",
+      "query": "How does Snowflake configure micro-partition pruning for clustering keys?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c006",
+        "01_architecture_overview_c005",
+        "09_api_versioning_and_contracts_c003",
+        "10_deployment_and_canary_rollouts_c002"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 407,
+          "char_end": 570
+        },
+        {
+          "doc": "10_deployment_and_canary_rollouts",
+          "char_start": 63,
+          "char_end": 412
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [01_architecture_overview_c006], ### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the source of truth for user accounts and transactional entit...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 28.524000001198146,
+      "generation_latency_ms": 0.011207999705220573
+    },
+    {
+      "query_id": "qa_075",
+      "query": "What encryption algorithm is used by HashiCorp Vault transit engine for envelope encryption?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c001",
+        "01_architecture_overview_c002",
+        "01_architecture_overview_c003",
+        "03_authentication_and_security_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 0,
+          "char_end": 261
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 727,
+          "char_end": 1015
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 563,
+          "char_end": 862
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c001], # Authentication, Authorization, and Security Policies\n\n## Authentication Protocols\nThe platform supports OAuth2 with Proof Key for Code Exchange (PKCE) for frontend single-page applications and Mutua...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.90808299909986,
+      "generation_latency_ms": 0.01129200063587632
+    },
+    {
+      "query_id": "qa_076",
+      "query": "How does Apache Flink handle state checkpointing with RocksDB state backends?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c005",
+        "05_error_handling_and_resilience_c003",
+        "04_caching_and_performance_c008",
+        "05_error_handling_and_resilience_c001"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1239,
+          "char_end": 1635
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 574,
+          "char_end": 819
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1707,
+          "char_end": 2062
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 0,
+          "char_end": 329
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [01_architecture_overview_c005], ### 3. Event Bus & Messaging Backbone\nInternal service communication utilizes Apache Kafka as the durable event backbone:\n- **Event Retention**: Critical operational topics maintain a 7-day retention ...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.59379200001422,
+      "generation_latency_ms": 0.012249998690094799
+    },
+    {
+      "query_id": "qa_077",
+      "query": "What is the consensus algorithm used by CockroachDB for multi-raft distributed transactions?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "01_architecture_overview_c006",
+        "01_architecture_overview_c002",
+        "04_caching_and_performance_c001",
+        "06_database_migrations_and_schema_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 1637,
+          "char_end": 1961
+        },
+        {
+          "doc": "01_architecture_overview",
+          "char_start": 343,
+          "char_end": 725
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 0,
+          "char_end": 265
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [01_architecture_overview_c006], ### 4. Data Persistence Tier\n- **Relational Storage**: PostgreSQL 16 managed clusters utilizing patroni for automated failover, serving as the source of truth for user accounts and transactional entit...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 0.5,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.556583000157843,
+      "generation_latency_ms": 0.010416999430162832
+    },
+    {
+      "query_id": "qa_078",
+      "query": "How does Envoy Proxy configure WASM filter chains for header rewriting?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c007",
+        "05_error_handling_and_resilience_c007",
+        "09_api_versioning_and_contracts_c005",
+        "06_database_migrations_and_schema_c005"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1699,
+          "char_end": 1844
+        },
+        {
+          "doc": "05_error_handling_and_resilience",
+          "char_start": 1607,
+          "char_end": 1865
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 891,
+          "char_end": 1256
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 1097,
+          "char_end": 1383
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c007], - When quotas are exhausted, the gateway responds with HTTP 429 Too Many Requests and specifies the cooldown seconds in the `Retry-After` header....",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.425082999499864,
+      "generation_latency_ms": 0.009708001016406342
+    },
+    {
+      "query_id": "qa_079",
+      "query": "What is the token expiration policy for Google Firebase Cloud Messaging device tokens?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "03_authentication_and_security_c002",
+        "03_authentication_and_security_c004",
+        "03_authentication_and_security_c005",
+        "04_caching_and_performance_c006"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 263,
+          "char_end": 562
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 864,
+          "char_end": 1216
+        },
+        {
+          "doc": "03_authentication_and_security",
+          "char_start": 1217,
+          "char_end": 1344
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 1205,
+          "char_end": 1604
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [03_authentication_and_security_c002], ### JSON Web Tokens (JWT)\nUser identities are verified using asymmetric RS256 signed JWT tokens:\n- **Token Lifespan**: Access tokens have a strict 15-minute lifespan to limit vulnerability exposure. R...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 30.24991700112878,
+      "generation_latency_ms": 0.011874999472638592
+    },
+    {
+      "query_id": "qa_080",
+      "query": "How does ClickHouse optimize merge tree primary index granule lookups?",
+      "query_type": "adversarial_negative",
+      "ground_truth_context_ids": [],
+      "ground_truth_spans": [],
+      "retrieved_chunk_ids": [
+        "04_caching_and_performance_c001",
+        "09_api_versioning_and_contracts_c006",
+        "04_caching_and_performance_c004",
+        "06_database_migrations_and_schema_c003"
+      ],
+      "retrieved_spans": [
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 0,
+          "char_end": 265
+        },
+        {
+          "doc": "09_api_versioning_and_contracts",
+          "char_start": 1258,
+          "char_end": 1565
+        },
+        {
+          "doc": "04_caching_and_performance",
+          "char_start": 772,
+          "char_end": 1065
+        },
+        {
+          "doc": "06_database_migrations_and_schema",
+          "char_start": 612,
+          "char_end": 932
+        }
+      ],
+      "retrieval_hit_rate": 0.0,
+      "retrieval_mrr": 0.0,
+      "retrieval_precision": 0.0,
+      "retrieval_recall": 0.0,
+      "generated_answer": "According to [04_caching_and_performance_c001], # Multi-Tier Caching and Performance Optimization\n\n## Caching Strategy Overview\nThe platform employs a two-tier caching hierarchy designed to achieve sub-10 millisecond median read latencies while mai...",
+      "ground_truth_answer": "Based on the provided documentation, there is insufficient information to answer this question.",
+      "faithfulness_score": 1.0,
+      "correctness_score": 0.0,
+      "rubric_grade": 1,
+      "retrieval_latency_ms": 29.739333000179613,
+      "generation_latency_ms": 0.012042000889778137
+    }
+  ]
+}

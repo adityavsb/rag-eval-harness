@@ -73,11 +73,12 @@ class MLflowTracker:
         }
         self._mlflow.log_params(params)
 
-    def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
+    def log_metrics(self, metrics: dict[str, Any], step: int | None = None) -> None:
         """Logs a dictionary of scalar evaluation metrics."""
         mlf = self._get_mlflow()
+        scalar_metrics = {k: float(v) for k, v in metrics.items() if isinstance(v, (int, float))}
         if mlf and self._active_run:
-            mlf.log_metrics(metrics, step=step)
+            mlf.log_metrics(scalar_metrics, step=step)
         else:
             print(f"[Metrics] {json.dumps(metrics, indent=2)}")
 

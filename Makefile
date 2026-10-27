@@ -17,7 +17,8 @@ help:
 
 install:
 	$(PIP) install --upgrade pip
-	$(PIP) install -e ".[dev]"
+	$(PIP) install -r requirements.lock
+	$(PIP) install -e . --no-deps
 
 lint:
 	$(VENV)/bin/ruff check src tests experiments
