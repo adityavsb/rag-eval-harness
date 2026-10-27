@@ -21,8 +21,8 @@ install:
 	$(PIP) install -e . --no-deps
 
 lint:
-	$(VENV)/bin/ruff check src tests experiments
-	$(VENV)/bin/ruff format --check src tests experiments
+	$(VENV)/bin/ruff check src tests experiments scripts
+	$(VENV)/bin/ruff format --check src tests experiments scripts
 
 test:
 	$(PYTEST) -v tests/
