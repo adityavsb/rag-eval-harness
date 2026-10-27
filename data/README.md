@@ -2,9 +2,13 @@
 
 This directory contains the curated golden test set and source corpus for `rag-eval-harness`.
 
+## Provenance
+
+All material in this directory was **written by the repository author for this benchmark**. The ten documents in `raw/` describe a fictional "Enterprise API Platform"; they are not derived from any employer's or vendor's documentation. The 80 QA pairs and the 30 probe labels were authored and checked by the same person (single annotator). Everything here is released under the repository's MIT licence. "Verified" means each answer was checked against the fictional corpus text, not against a real system.
+
 ## Dataset Structure
 
-- **`raw/`**: 10 engineering documents representing realistic software platform architecture, runbooks, infrastructure configurations, and incident response guides.
+- **`raw/`**: 10 engineering documents describing a fictional platform architecture, runbooks, infrastructure configurations, and incident response guides.
 - **`golden_qa.json`**: 80 manually verified question-answer pairs with source context annotations and strict train/dev/test splits.
 - **`human_labels.jsonl`**: 30 author-written probe QA items used for in-sample regression testing of the offline heuristic judge. Single annotator (`adityavsb`, 2026-10-24); answers are hand-authored probe targets, not live model outputs.
 

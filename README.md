@@ -1,4 +1,4 @@
-# Production RAG Evaluation & Optimization Harness
+# RAG Evaluation & Optimization Harness
 
 An open-source, metric-driven benchmarking harness for Retrieval-Augmented Generation (RAG) systems. Designed to transition LLM retrieval pipelines from intuition-based prototypes into reproducible, testable software.
 
@@ -60,9 +60,18 @@ An open-source, metric-driven benchmarking harness for Retrieval-Augmented Gener
 
 ---
 
-## Empirical Benchmark Results
+## Benchmark Results (offline mode)
 
-The harness was comprehensively evaluated against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (44 single-hop factoid, 17 multi-hop, 19 adversarial negative queries) and physical Apple M4 hardware:
+> [!NOTE]
+> **How these numbers were produced.** Every figure on this page comes from `--mode offline`:
+> retrieval uses real local models (`all-MiniLM-L6-v2`, BM25, `cross-encoder/ms-marco-MiniLM-L6-v2`) on a
+> 10-document authored corpus; **generation is a deterministic mock** that echoes the top chunk;
+> **the "judge" is a lexical-overlap heuristic**, not an LLM; the DSPy run uses a scripted mock LM.
+> Offline mode exists so the harness can be exercised and regression-tested without API cost.
+> Retrieval metrics are therefore real; generation and judge figures are not evidence about any
+> language model. No `--mode live` run has been published yet.
+
+The harness was comprehensively evaluated against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (44 single-hop factoid, 17 multi-hop, 19 adversarial negative queries) and physical Apple Silicon hardware:
 
 ### 1. Retrieval Pipeline Comparison (80-Item Golden Evaluation Suite)
 
@@ -97,9 +106,9 @@ The offline (no-API) judge is a lexical heuristic (`LLMJudge._offline_faithfulne
 
 ---
 
-### Benchmark Environment & Physical Hardware Telemetry
-
-Environment is recorded in every report under `environment`; the table below is copied from `reports/offline/<run>/latest.json`:
+### Benchmark environment
+Captured automatically into each report (`environment` key). Values below are copied from
+`reports/offline/hybrid-rrf-rag/latest.json` at commit `9a083af`:
 
 ```json
 {
@@ -129,12 +138,12 @@ Environment is recorded in every report under `environment`; the table below is 
 Large fixed-width chunks (1000 characters with 0 overlap) produce only 21 chunks across the entire 10-document technical corpus. Retrieving top $K=4$ returns 4,000 characters (~19% of the total indexed knowledge base), mechanically inflating span-overlap hit rate (98.36%) while flooding context windows with un-chunked document bodies. Switching to recursive character chunking (400 characters with 50 overlap) produces 65 focused semantic units. On this properly chunked corpus, top-4 retrieval covers ~6% of the corpus, achieving 73.77% Hit Rate@4 [62.30%, 83.61%] and 63.39% Context Precision@4 [52.19%, 74.04%].
 
 ### 2. The Cross-Encoder Latency vs. Precision Trade-off
-Bi-encoders embed queries and documents independently into vector space ($O(1)$ dot-product at search time). Cross-encoders perform joint full self-attention over $(query, passage)$ pairs, capturing conditional semantic dependencies:
+Bi-encoders embed passages offline, so query-time cost is one query encoding plus an approximate nearest-neighbour (HNSW) search; cross-encoders run a full transformer forward pass per (query, passage) pair, which is why reranking cost scales with the candidate count:
 * **Retrieval Gain:** Cross-Encoder reranking marginally lifts MRR from 0.643 to 0.654 (+0.011 [-0.042, 0.066]) and Context Precision from 63.39% to 64.16% (+0.77% [-4.28%, 5.88%]).
 * **Friction & Latency Penalty:** Joint self-attention incurs a $\approx 7\times$ latency penalty ($4.8\text{ ms} \rightarrow 35.0\text{ ms}$ P95). While 35.0 ms remains within interactive SLAs ($<150\text{ ms}$), the paired difference confidence interval spans zero, demonstrating that cross-encoder gains are not statistically significant on small evaluation corpora ($n=61$).
 
 ### 3. Lexical-Dense Fusion (BM25 + Dense RRF)
-Dense vector search and lexical BM25 Okapi were fused using Reciprocal Rank Fusion ($k=60$):
+Dense vector search and lexical BM25 Okapi were fused using Reciprocal Rank Fusion ($k=60$; Cormack et al. 2009):
 * **Performance:** Achieved 72.13% Hit Rate@4 [60.66%, 83.61%] and 0.650 MRR@4 [0.536, 0.757]. Paired comparison against pure dense retrieval yields exact McNemar test $p = 1.0000$ (1 discordant pair out of 61 queries).
 * **Latency:** Preserves bi-encoder retrieval latency (4.6 ms P95), offering hybrid vocabulary matching without the 7x inference cost of a cross-encoder reranker.
 
@@ -142,20 +151,21 @@ Dense vector search and lexical BM25 Okapi were fused using Reciprocal Rank Fusi
 Offline optimization runs execute `OfflineRAGLM`, a deterministic test double designed strictly to validate teleprompter compilation, parameter serialization, and pipeline integration without external network calls or API costs. Generation quality benchmarks on `gpt-4o-mini` require a live run (`--mode live`).
 
 ### 5. Offline Heuristic Judge Guardrails
-The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`). It serves solely as a regression guard for local offline development. Production grade LLM-as-a-judge scoring is evaluated exclusively in live mode.
+The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`; Landis & Koch 1977 band 0.61–0.80). It serves solely as a regression guard for local offline development. Production grade LLM-as-a-judge scoring is evaluated exclusively in live mode.
 
 
 ---
 
 ## System Capabilities
 
-* **Deterministic Information Retrieval Scoring:** Formulations for exact `Hit Rate@K`, `MRR@K`, `Context Precision@K`, and `Context Recall@K` with support for exact chunk ID and section-prefix matching.
-* **Hybrid Retrieval (BM25 + Dense RRF):** Reciprocal Rank Fusion ($k=60$) combining BM25 keyword matching with dense embedding vector similarity, followed by optional Cross-Encoder reranking.
-* **Provider Layer & Cost Accounting:** Multi-provider LLM abstraction via LiteLLM with disk-backed response caching (`.cache/llm_responses/`) and deterministic token/pricing models in EUR across major foundation providers.
-* **Curated Golden Evaluation Suite (v2):** 80 manually verified question-answer pairs stratified into 40% train, 20% dev, and a strictly quarantined 40% test split across 10 architectural runbooks.
-* **Human-in-the-Loop Judge Validation:** Judge calibration framework computing Raw Agreement %, Cohen's Kappa ($\kappa \ge 0.60$) for binary faithfulness, and Spearman Rank Correlation ($\rho \ge 0.70$) for rubric correctness against 30 human ground-truth labels.
-* **DSPy Prompt Optimization:** Compiled few-shot RAG generation pipelines with `BootstrapFewShot` teleprompters trained on `train`/`dev` splits and benchmarked out-of-sample against the quarantined `test` holdout split.
-* **Industrial MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, and full JSON run reports into `sqlite:///mlflow.db`.
+* **Deterministic Information Retrieval Scoring:** Formulations for exact `Hit Rate@K`, `MRR@K`, `Context Precision@K`, and `Context Recall@K` with 2,000-resample bootstrap 95% confidence intervals and span-overlap matching (RAGAS-style; Es et al. 2024).
+* **Vector Engine & Embeddings:** ChromaDB in-process vector store (`PersistentClient`; SQLite metadata + HNSW index) using normalized 384-dimensional `sentence-transformers/all-MiniLM-L6-v2` embeddings (Reimers & Gurevych 2019).
+* **Hybrid Retrieval (BM25 + Dense RRF):** Reciprocal Rank Fusion ($k=60$; Cormack et al. 2009) combining lexical BM25 Okapi (Robertson & Zaragoza 2009) with dense embeddings, followed by optional Cross-Encoder reranking (`cross-encoder/ms-marco-MiniLM-L6-v2`).
+* **Provider Layer & Cost Accounting:** Multi-provider LLM abstraction via LiteLLM with disk-backed response caching (`.cache/llm_responses/`) and deterministic token/pricing models in EUR derived from published USD rates (`src/llm/pricing.py`).
+* **Curated Golden Evaluation Suite (v2):** 80 manually verified question-answer pairs (author-written, fictional corpus; see `data/README.md`) stratified into 40% train, 20% dev, and a strictly quarantined 40% test split across 10 architectural runbooks.
+* **Human-in-the-Loop Judge Validation:** Judge calibration framework computing Raw Agreement %, Cohen's Kappa ($\kappa$; Cohen 1960; Landis & Koch 1977 band 0.61–0.80 for substantial agreement) for binary faithfulness, and Spearman Rank Correlation ($\rho$) for rubric correctness against 30 author-written probe labels.
+* **DSPy Prompt Optimization:** Few-shot RAG generation pipelines with `BootstrapFewShotWithRandomSearch` teleprompters (Khattab et al. 2023) trained on `train`/`dev` splits with demo quality gates; offline mode serves as a deterministic compilation smoke test.
+* **Industrial MLflow Tracking:** Persists all runs, hyperparameter sweeps, metric distributions, environment telemetry, and full JSON run reports into `sqlite:///mlflow.db`.
 
 ---
 
@@ -246,19 +256,33 @@ rag-eval-harness/
 │   │   └── runner.py              # End-to-end evaluation runner
 │   ├── optimize/
 │   │   ├── dspy_program.py        # Typed DSPy RAGModule and signature
-│   │   ├── compile.py             # BootstrapFewShot compilation & delta evaluation
-│   │   └── compiled_dspy_rag.json # Compiled few-shot program artifact
+│   │   └── compile.py             # Teleprompter compilation & delta evaluation
 │   └── utils/
 │       ├── config.py              # Pydantic schema validation & YAML loader
 │       └── tracking.py            # MLflow run & artifact logger
 ├── experiments/
 │   ├── run_eval.py                # Benchmark evaluation CLI
 │   └── run_pipeline.py            # Interactive ad-hoc query CLI
-├── tests/                         # Comprehensive pytest test suite (39 tests)
+├── scripts/
+│   ├── compare_runs.py            # Paired run comparison & exact McNemar test
+│   └── dataset_card.py            # Dataset split & query type cross-tabulation
+├── tests/                         # Comprehensive pytest test suite (43 tests)
 ├── Makefile                       # Developer automation shortcuts
 ├── pyproject.toml                 # Package definition & dependencies
 └── README.md
 ```
+
+---
+
+## References
+
+- Cormack, G. V., Clarke, C. L. A., & Büttcher, S. (2009). Reciprocal rank fusion outperforms Condorcet and individual rank learning methods. *SIGIR 2009*. https://doi.org/10.1145/1571941.1572114
+- Robertson, S., & Zaragoza, H. (2009). The Probabilistic Relevance Framework: BM25 and Beyond. *Foundations and Trends in Information Retrieval*, 3(4). https://doi.org/10.1561/1500000019
+- Reimers, N., & Gurevych, I. (2019). Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks. *EMNLP-IJCNLP 2019*. https://doi.org/10.18653/v1/D19-1410
+- Khattab, O., et al. (2023). DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines. arXiv:2310.03714.
+- Es, S., James, J., Espinosa-Anke, L., & Schockaert, S. (2024). RAGAs: Automated Evaluation of Retrieval Augmented Generation. *EACL 2024 System Demonstrations*. https://doi.org/10.18653/v1/2024.eacl-demo.16
+- Cohen, J. (1960). A Coefficient of Agreement for Nominal Scales. *Educational and Psychological Measurement*, 20(1). https://doi.org/10.1177/001316446002000104
+- Landis, J. R., & Koch, G. G. (1977). The Measurement of Observer Agreement for Categorical Data. *Biometrics*, 33(1). https://doi.org/10.2307/2529310
 
 ---
 

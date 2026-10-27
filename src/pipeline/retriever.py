@@ -48,7 +48,7 @@ class RAGRetriever:
     def reranker(self) -> CrossEncoder | None:
         """Lazy-loaded CrossEncoder reranker model."""
         if self.config.use_reranker and self._reranker is None:
-            model_name = self.config.reranker_model or "cross-encoder/ms-marco-MiniLM-L-6-v2"
+            model_name = self.config.reranker_model or "cross-encoder/ms-marco-MiniLM-L6-v2"
             self._reranker = CrossEncoder(model_name)
         return self._reranker
 

@@ -33,7 +33,7 @@ class RetrieverConfig(BaseModel):
     retrieval_mode: Literal["dense", "bm25", "hybrid"] = "dense"
     rrf_k: int = Field(default=60, gt=0)
     use_reranker: bool = False
-    reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_model: str | None = "cross-encoder/ms-marco-MiniLM-L6-v2"
     reranker_top_n: int = Field(default=4, gt=0)
 
 
