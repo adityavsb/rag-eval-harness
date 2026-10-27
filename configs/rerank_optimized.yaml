@@ -21,7 +21,7 @@ vector_store:
 retriever:
   top_k: 15
   use_reranker: true
-  reranker_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  reranker_model: "cross-encoder/ms-marco-MiniLM-L6-v2"
   reranker_top_n: 4
 
 generation:

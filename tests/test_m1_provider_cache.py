@@ -2,15 +2,17 @@
 
 from pathlib import Path
 
+import pytest
+
 from src.llm.cache import DiskResponseCache
 from src.llm.pricing import estimate_batch_cost_eur, estimate_cost_eur
 from src.llm.provider import call_llm
 
 
 def test_pricing_calculations():
-    # gpt-4o-mini: 0.14 EUR per 1M input, 0.56 EUR per 1M output
+    # gpt-4o-mini: $0.15 / $0.60 per 1M tokens converted at USD_EUR_RATE (0.94) -> ~0.705 EUR
     cost = estimate_cost_eur("gpt-4o-mini", prompt_tokens=1_000_000, completion_tokens=1_000_000)
-    assert round(cost, 2) == 0.70
+    assert abs(cost - 0.705) < 0.02
 
     # Ollama / local is always 0.0 EUR
     ollama_cost = estimate_cost_eur("ollama/qwen2.5:7b", 500_000, 500_000)
@@ -19,6 +21,11 @@ def test_pricing_calculations():
     batch_cost = estimate_batch_cost_eur("gpt-4o-mini", num_queries=30)
     assert batch_cost > 0.0
     assert batch_cost < 0.10
+
+
+def test_pricing_unknown_model_raises_key_error():
+    with pytest.raises(KeyError, match="No price for 'unknown-unpriced-model'"):
+        estimate_cost_eur("unknown-unpriced-model", 1000, 1000)
 
 
 def test_disk_cache_operations(tmp_path: Path):
