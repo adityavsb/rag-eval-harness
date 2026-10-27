@@ -8,6 +8,7 @@ Implements standard IR metrics:
 """
 
 from collections.abc import Iterable, Sequence
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,67 +32,74 @@ class AggregateRetrievalMetrics(BaseModel):
     sample_count: int = Field(ge=0)
 
 
-def is_chunk_relevant(retrieved_id: str, ground_truth_ids: Iterable[str]) -> bool:
-    """Checks whether a retrieved chunk ID satisfies any ground truth ID reference.
-
-    Matches exact chunk ID, prefix stem (e.g. matching '02_dependency_injection' with
-    '02_dependency_injection_c002'), or vice-versa.
-    """
-    for gt_id in ground_truth_ids:
-        if (
-            retrieved_id == gt_id
-            or retrieved_id.startswith(gt_id)
-            or gt_id.startswith(retrieved_id)
-        ):
+def is_chunk_relevant(
+    retrieved: dict[str, Any], ground_truth: Iterable[dict[str, Any]], min_overlap: float = 0.5
+) -> bool:
+    """Checks whether a retrieved chunk's character span overlaps significantly with ground truth spans."""
+    for gt in ground_truth:
+        if retrieved.get("doc") != gt.get("doc"):
+            continue
+        if gt.get("char_end") == -1:  # whole-document relevance span
+            return True
+        gt_start = gt.get("char_start", 0)
+        gt_end = gt.get("char_end", 0)
+        r_start = retrieved.get("char_start", 0)
+        r_end = retrieved.get("char_end", 0)
+        inter = min(r_end, gt_end) - max(r_start, gt_start)
+        gt_len = max(1, gt_end - gt_start)
+        if inter / gt_len >= min_overlap:
             return True
     return False
 
 
 def compute_hit_rate_at_k(
-    retrieved_ids: Sequence[str], ground_truth_ids: Iterable[str], k: int
+    retrieved: Sequence[dict[str, Any]], ground_truth: Iterable[dict[str, Any]], k: int
 ) -> float:
-    """Returns 1.0 if at least one ground-truth ID appears in the top-K retrieved IDs."""
-    if not ground_truth_ids:
+    """Returns 1.0 if at least one ground-truth span is covered in the top-K retrieved chunks."""
+    gt_list = list(ground_truth)
+    if not gt_list:
         return 0.0
-    top_k = retrieved_ids[:k]
-    return 1.0 if any(is_chunk_relevant(doc_id, ground_truth_ids) for doc_id in top_k) else 0.0
+    top_k = retrieved[:k]
+    return 1.0 if any(is_chunk_relevant(chunk, gt_list) for chunk in top_k) else 0.0
 
 
 def compute_mrr_at_k(
-    retrieved_ids: Sequence[str], ground_truth_ids: Iterable[str], k: int
+    retrieved: Sequence[dict[str, Any]], ground_truth: Iterable[dict[str, Any]], k: int
 ) -> float:
     """Computes Mean Reciprocal Rank (MRR) at cutoff K.
 
-    MRR = 1 / rank of the first relevant document in top-K (1-indexed).
+    MRR = 1 / rank of the first relevant document chunk in top-K (1-indexed).
     Returns 0.0 if no relevant document appears in top-K.
     """
-    if not ground_truth_ids:
+    gt_list = list(ground_truth)
+    if not gt_list:
         return 0.0
-    for rank, doc_id in enumerate(retrieved_ids[:k], start=1):
-        if is_chunk_relevant(doc_id, ground_truth_ids):
+    for rank, chunk in enumerate(retrieved[:k], start=1):
+        if is_chunk_relevant(chunk, gt_list):
             return 1.0 / rank
     return 0.0
 
 
 def compute_context_precision_at_k(
-    retrieved_ids: Sequence[str], ground_truth_ids: Iterable[str], k: int
+    retrieved: Sequence[dict[str, Any]], ground_truth: Iterable[dict[str, Any]], k: int
 ) -> float:
     """Computes Context Precision at K.
 
     Evaluates whether relevant chunks are ranked higher than irrelevant ones.
     Calculated as Average Precision: sum(Precision@i * relevance_indicator_i) / num_relevant_in_top_k
     """
-    if not ground_truth_ids:
+    gt_list = list(ground_truth)
+    if not gt_list:
         return 0.0
-    top_k = retrieved_ids[:k]
+    top_k = retrieved[:k]
     if not top_k:
         return 0.0
 
     relevant_hits = 0
     precision_sum = 0.0
 
-    for i, doc_id in enumerate(top_k, start=1):
-        if is_chunk_relevant(doc_id, ground_truth_ids):
+    for i, chunk in enumerate(top_k, start=1):
+        if is_chunk_relevant(chunk, gt_list):
             relevant_hits += 1
             precision_sum += relevant_hits / i
 
@@ -101,32 +109,33 @@ def compute_context_precision_at_k(
 
 
 def compute_context_recall_at_k(
-    retrieved_ids: Sequence[str], ground_truth_ids: Iterable[str], k: int
+    retrieved: Sequence[dict[str, Any]], ground_truth: Iterable[dict[str, Any]], k: int
 ) -> float:
     """Computes Context Recall at K.
 
-    Proportion of ground-truth relevant chunks that were successfully retrieved in top-K.
+    Proportion of ground-truth relevant spans that were successfully retrieved in top-K.
     """
-    gt_list = list(ground_truth_ids)
+    gt_list = list(ground_truth)
     if not gt_list:
         return 0.0
 
-    top_k = retrieved_ids[:k]
+    top_k = retrieved[:k]
     matched_gt = sum(
-        1 for gt_id in gt_list if any(is_chunk_relevant(doc_id, [gt_id]) for doc_id in top_k)
+        1 for gt_item in gt_list if any(is_chunk_relevant(chunk, [gt_item]) for chunk in top_k)
     )
     return matched_gt / len(gt_list)
 
 
 def evaluate_retrieval(
-    retrieved_ids: Sequence[str], ground_truth_ids: Iterable[str], k: int
+    retrieved: Sequence[dict[str, Any]], ground_truth: Iterable[dict[str, Any]], k: int
 ) -> RetrievalMetrics:
     """Calculates all 4 retrieval metrics for a single query."""
+    gt_list = list(ground_truth)
     return RetrievalMetrics(
-        hit_rate=compute_hit_rate_at_k(retrieved_ids, ground_truth_ids, k),
-        mrr=compute_mrr_at_k(retrieved_ids, ground_truth_ids, k),
-        context_precision=compute_context_precision_at_k(retrieved_ids, ground_truth_ids, k),
-        context_recall=compute_context_recall_at_k(retrieved_ids, ground_truth_ids, k),
+        hit_rate=compute_hit_rate_at_k(retrieved, gt_list, k),
+        mrr=compute_mrr_at_k(retrieved, gt_list, k),
+        context_precision=compute_context_precision_at_k(retrieved, gt_list, k),
+        context_recall=compute_context_recall_at_k(retrieved, gt_list, k),
     )
 
 

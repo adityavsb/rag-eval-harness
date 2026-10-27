@@ -26,3 +26,10 @@ mlartifacts/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Evaluation caches & artifacts
+.cache/
+.artifacts/
+data/sample_output/
+reports/**/latest.json
+

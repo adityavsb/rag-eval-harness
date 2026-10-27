@@ -27,12 +27,14 @@ test:
 	$(PYTEST) -v tests/
 
 eval:
-	$(PYTHON) experiments/run_eval.py --config configs/baseline.yaml
+	$(PYTHON) experiments/run_eval.py --config configs/baseline.yaml --mode offline
 
 eval-all:
-	$(PYTHON) experiments/run_eval.py --config configs/baseline.yaml
-	$(PYTHON) experiments/run_eval.py --config configs/chunk_optimized.yaml
-	$(PYTHON) experiments/run_eval.py --config configs/rerank_optimized.yaml
+	$(PYTHON) experiments/run_eval.py --config configs/baseline.yaml --mode offline
+	$(PYTHON) experiments/run_eval.py --config configs/chunk_optimized.yaml --mode offline
+	$(PYTHON) experiments/run_eval.py --config configs/rerank_optimized.yaml --mode offline
+	$(PYTHON) experiments/run_eval.py --config configs/hybrid.yaml --mode offline
+	$(PYTHON) experiments/run_eval.py --config configs/hybrid_rerank.yaml --mode offline
 
 mlflow:
 	$(MLFLOW) ui --backend-store-uri sqlite:///mlflow.db --port 5001

@@ -1,6 +1,7 @@
 """Vector store indexing using local Hugging Face embeddings and ChromaDB."""
 
 from pathlib import Path
+from typing import Any
 
 import chromadb
 from chromadb.api.models.Collection import Collection
@@ -38,19 +39,66 @@ class VectorIndexer:
             self._client = chromadb.PersistentClient(path=str(persist_path))
         return self._client
 
-    def get_or_create_collection(self) -> Collection:
+    @staticmethod
+    def corpus_fingerprint(data_dir: str | Path, pattern: str, chunking: Any) -> str:
+        """Computes a deterministic SHA-256 fingerprint of the corpus and chunking parameters."""
+        import hashlib
+        from pathlib import Path
+
+        h = hashlib.sha256()
+        base_path = Path(data_dir)
+        for p in sorted(base_path.rglob(pattern)):
+            if p.is_file():
+                h.update(p.name.encode())
+                h.update(p.read_bytes())
+        h.update(f"{chunking.strategy}|{chunking.chunk_size}|{chunking.chunk_overlap}".encode())
+        return h.hexdigest()[:16]
+
+    def stored_fingerprint(self) -> str | None:
+        """Retrieves the corpus fingerprint stored in the collection's metadata."""
+        try:
+            coll = self.get_or_create_collection()
+            return (coll.metadata or {}).get("fingerprint")
+        except Exception:
+            return None
+
+    def reset_collection(self) -> None:
+        """Deletes the existing Chroma collection to force a clean re-index."""
+        try:
+            self.client.delete_collection(self.store_config.collection_name)
+        except Exception:
+            pass
+
+    def get_or_create_collection(self, fingerprint: str | None = None) -> Collection:
         """Retrieves or creates the vector collection with cosine distance metric."""
+        metadata = {"hnsw:space": "cosine"}
+        if fingerprint:
+            metadata["fingerprint"] = fingerprint
         return self.client.get_or_create_collection(
             name=self.store_config.collection_name,
-            metadata={"hnsw:space": "cosine"},
+            metadata=metadata,
         )
 
-    def index_chunks(self, chunks: list[DocumentChunk], batch_size: int = 64) -> int:
+    def index_chunks(
+        self,
+        chunks: list[DocumentChunk],
+        batch_size: int = 64,
+        fingerprint: str | None = None,
+    ) -> int:
         """Encodes and indexes document chunks into the ChromaDB collection."""
         if not chunks:
             return 0
 
-        collection = self.get_or_create_collection()
+        collection = self.get_or_create_collection(fingerprint=fingerprint)
+        if fingerprint and (
+            not collection.metadata or collection.metadata.get("fingerprint") != fingerprint
+        ):
+            try:
+                new_meta = dict(collection.metadata or {})
+                new_meta["fingerprint"] = fingerprint
+                collection.modify(metadata=new_meta)
+            except Exception:
+                pass
 
         # Extract IDs, texts, and metadata
         ids = [chunk.chunk_id for chunk in chunks]

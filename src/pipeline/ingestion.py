@@ -57,47 +57,48 @@ def _split_recursive(
     chunk_overlap: int,
     separators: list[str] | None = None,
 ) -> list[str]:
-    """Splits text hierarchically using natural boundary separators."""
+    """LangChain-style recursive splitter: split on the highest-priority separator present,
+    recurse into any piece still longer than chunk_size, then pack pieces with overlap
+    measured in whole pieces (never mid-word)."""
     if separators is None:
         separators = ["\n\n", "\n", ". ", " ", ""]
-
+    text = text.strip()
+    if not text:
+        return []
     if len(text) <= chunk_size:
-        return [text.strip()] if text.strip() else []
-
-    # Find the highest-priority separator present in text
-    chosen_sep = separators[-1]
-    for sep in separators:
-        if sep in text:
-            chosen_sep = sep
-            break
-
-    splits = text.split(chosen_sep) if chosen_sep != "" else list(text)
-
-    # Recombine splits up to chunk_size
+        return [text]
+    sep = next((s for s in separators if s and s in text), "")
+    rest = separators[separators.index(sep) + 1 :] if sep else []
+    pieces = text.split(sep) if sep else list(text)
+    atoms: list[str] = []
+    for p in pieces:
+        if len(p) > chunk_size and rest:
+            atoms.extend(_split_recursive(p, chunk_size, chunk_overlap, rest))
+        elif p.strip():
+            atoms.append(p.strip())
     chunks: list[str] = []
-    current_chunk: list[str] = []
-    current_length = 0
+    cur: list[str] = []
 
-    for piece in splits:
-        piece_len = len(piece) + (len(chosen_sep) if current_chunk else 0)
-        if current_length + piece_len > chunk_size and current_chunk:
-            combined = chosen_sep.join(current_chunk).strip()
-            if combined:
-                chunks.append(combined)
-            # Retain overlap from end of current chunk
-            overlap_text = combined[-chunk_overlap:] if chunk_overlap > 0 else ""
-            current_chunk = [overlap_text, piece] if overlap_text else [piece]
-            current_length = len(overlap_text) + len(piece)
+    def joined(parts: list[str]) -> str:
+        return sep.join(parts) if sep else "".join(parts)
+
+    for a in atoms:
+        if cur and len(joined(cur + [a])) > chunk_size:
+            chunks.append(joined(cur))
+            keep: list[str] = []
+            size = 0
+            for prev in reversed(cur):  # overlap = trailing whole atoms up to chunk_overlap chars
+                new_size = size + len(prev) + (len(sep) if keep else 0)
+                if new_size > chunk_overlap or len(joined([prev] + keep + [a])) > chunk_size:
+                    break
+                keep.insert(0, prev)
+                size = new_size
+            cur = keep + [a]
         else:
-            current_chunk.append(piece)
-            current_length += piece_len
-
-    if current_chunk:
-        combined = chosen_sep.join(current_chunk).strip()
-        if combined:
-            chunks.append(combined)
-
-    return chunks
+            cur.append(a)
+    if cur:
+        chunks.append(joined(cur))
+    return [c for c in chunks if c]
 
 
 def chunk_documents(
@@ -116,7 +117,13 @@ def chunk_documents(
         else:
             text_chunks = _split_recursive(content, config.chunk_size, config.chunk_overlap)
 
+        cursor = 0
         for idx, text in enumerate(text_chunks, start=1):
+            start = content.find(text[:80], max(0, cursor - config.chunk_overlap - 5))
+            if start < 0:
+                start = content.find(text[:80])
+            end = start + len(text) if start >= 0 else -1
+            cursor = max(cursor, end)
             chunk_id = f"{stem}_c{idx:03d}"
             all_chunks.append(
                 DocumentChunk(
@@ -124,7 +131,10 @@ def chunk_documents(
                     content=text,
                     metadata={
                         "source": source,
+                        "doc": stem,
                         "chunk_index": idx,
+                        "char_start": start,
+                        "char_end": end,
                         "char_count": len(text),
                         "word_count": len(text.split()),
                     },
