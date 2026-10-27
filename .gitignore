@@ -33,4 +33,5 @@ Thumbs.db
 data/sample_output/
 reports/**/latest.json
 src/optimize/compiled_*.json
-
+# Internal engineering notes
+NOTES.md
