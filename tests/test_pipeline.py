@@ -38,6 +38,18 @@ def test_recursive_chunking_preserves_paragraphs():
     assert "Paragraph one" in chunks[0]
 
 
+def test_recursive_chunks_respect_size_and_word_boundaries():
+    from src.pipeline.ingestion import chunk_documents, load_raw_documents
+    from src.utils.config import ChunkingConfig
+
+    docs = load_raw_documents("data/raw", "*.md")
+    chunks = chunk_documents(
+        docs, ChunkingConfig(strategy="recursive", chunk_size=400, chunk_overlap=50)
+    )
+    assert max(len(c.content) for c in chunks) <= 400
+    assert not any(c.content[0].islower() for c in chunks), "chunk starts mid-word"
+
+
 def test_chunk_documents_id_generation():
     raw_docs = [
         {

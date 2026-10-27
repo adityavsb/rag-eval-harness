@@ -84,7 +84,7 @@ class MLflowTracker:
     def log_artifact_dict(self, data: dict[str, Any], artifact_name: str) -> None:
         """Saves a JSON dictionary as a run artifact."""
         mlf = self._get_mlflow()
-        output_dir = Path("data/sample_output")
+        output_dir = Path(".artifacts")
         output_dir.mkdir(parents=True, exist_ok=True)
         local_path = output_dir / artifact_name
 

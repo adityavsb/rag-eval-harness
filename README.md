@@ -62,7 +62,7 @@ An open-source, metric-driven benchmarking harness for Retrieval-Augmented Gener
 
 ## Empirical Benchmark Results
 
-The harness was comprehensively evaluated against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (40 single-hop factoids, 25 multi-hop synthesis queries, and 15 adversarial negative queries) and physical Apple M4 hardware:
+The harness was comprehensively evaluated against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (44 single-hop factoid, 17 multi-hop, 19 adversarial negative queries) and physical Apple M4 hardware:
 
 ### 1. Retrieval Pipeline Comparison (80-Item Golden Evaluation Suite)
 
