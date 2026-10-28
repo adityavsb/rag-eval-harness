@@ -70,6 +70,10 @@ A small, reproducible harness for comparing chunking, retrieval and reranking co
 > Offline mode exists so the harness can be exercised and regression-tested without API cost.
 > Retrieval metrics are therefore real; generation and judge figures are not evidence about any
 > language model. No `--mode live` run has been published yet.
+>
+> **Model selection rationale:**
+> - **Bi-encoder (`all-MiniLM-L6-v2`):** 22.7M parameters, 384-dimensional dense embeddings. Selected for parameter efficiency and low CPU / Apple Silicon query latency (<5 ms), enabling local vector retrieval without requiring GPU hardware.
+> - **Cross-encoder (`cross-encoder/ms-marco-MiniLM-L6-v2`):** 22.7M parameters, trained on MS MARCO ranking. Shares the identical 6-layer MiniLM backbone as the bi-encoder, which isolates the latency versus precision trade-off of full joint cross-attention against bi-encoder dot products while keeping model capacity constant.
 
 The harness was run once per configuration against the **80-query Golden Evaluation Suite (v2)** across 10 architectural runbooks (44 single-hop factoid, 17 multi-hop, 19 adversarial negative queries):
 
