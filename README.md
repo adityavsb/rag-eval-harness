@@ -4,6 +4,36 @@ A small, reproducible harness for comparing chunking, retrieval and reranking co
 
 ---
 
+## What I Learned: Systems Reality vs. Theoretical Claims
+
+Building and benchmarking this harness on Apple Silicon forced me to confront several gaps between theoretical Information Retrieval literature, LLM-as-a-judge claims, and physical systems reality:
+
+1. **The Ground Truth Coupling Illusion:**
+   In early iterations, what I realized that the naive fixed-chunk baseline (1000 characters, 0 overlap) reported an artificially depressed 12.5% Hit Rate@4, appearing to demonstrate a massive retrieval failure compared to recursive chunking (73.77%). Migrating ground truth to character span offsets (`ground_truth_spans`) revealed that the baseline actually achieves 98.36%. The 12.5% score was an evaluation artifact caused by scoring 1000-character chunks against chunk ID labels generated from a 400-character index. If ground truth references chunk IDs, you are no longer measuring semantic retrieval; you are testing whether your chunker reproduces its own IDs. So what I realized is that continuous document span overlap is essential for honest comparisons.
+
+2. **The Statistical Significance Illusion (Point Estimates vs. Paired Bootstrap Intervals):**
+   Comparing Dense Vector Retrieval (73.77% Hit Rate, 0.643 MRR) against Lexical-Dense Hybrid RRF (72.13% Hit Rate, 0.650 MRR) and Cross-Encoder Reranking (73.77% Hit Rate, 0.654 MRR) initially suggested distinct architectural tiers. From a statistical point of view, publishing only point estimates seemed really incomplete, and I am glad that I went ahead with calculating these confidence intervals, and then I realized the flaw: the 95% bootstrap difference interval spanned zero (+0.007 [-0.014, 0.033] for MRR; McNemar $p = 1.0000$). The difference between 73.77% and 72.13% Hit Rate was literally a single discordant query out of 61. Believing that Hybrid RRF is inherently superior to Dense retrieval on a 10-document corpus without an exact McNemar test mistakes sample noise for architectural progress.
+
+3. **The Physical Latency Cost of Joint Attention (Bi-Encoder HNSW vs. Cross-Encoder P95):**
+   Bi-encoder retrieval operates in 4.6 ms P95 on Apple Silicon arm64, while adding the cross-encoder reranker increases latency to 35.0 ms P95—a $\approx 7\times$ latency increase for a statistically negligible +0.011 MRR delta. This made the physical cost of self-attention tangible. Bi-encoders precompute embeddings offline, reducing query-time latency to a single vector projection plus approximate nearest-neighbour graph traversal (HNSW in SQLite/ChromaDB). One major learning for me is that cross-encoders by contrast must run full transformer cross-attention dynamically over all $(q, d_i)$ candidate pairs. A $7\times$ latency overhead is acceptable only when precision gains are statistically undeniable; on small corpora, joint cross-attention burns thermal budget (wasting energy and processor headroom) for zero measurable gain.
+
+4. **The Test Double Trap (Smoke Tests vs. Empirical Science):**
+   What I found out is that agentic coding still can hallucinate in strange ways, and in early automated commits, an offline test double (`OfflineRAGLM`) was written with an internal heuristic that rewarded prompt demonstrations with gold answer fragments. This produced a synthetic +53.9% Answer Correctness gain that was erroneously reported in earlier drafts as empirical proof of DSPy prompt compilation. This was a critical lesson: never let an integration test double masquerade as a scientific measurement. Mocks are designed to test parameter serialization and CLI control flow without API keys. The moment an offline mock contains conditional logic that mimics the metric you are trying to benchmark, it stops being a test and becomes a synthetic feedback loop. Prompt optimization frameworks like DSPy cannot be evaluated in a sandbox without an actual language model; real benchmark numbers must point to real model weights.
+
+5. **Metric Ceiling Distortion (The Adversarial Negative Denominator):**
+   Another interesting point was that in earlier revisions, the dataset mixed 19 unanswerable adversarial negative queries into the retrieval evaluation, artificially capping Hit Rate@4 at 76.25% ($61/80$). Scoring unanswerable queries in standard Information Retrieval recall and hit-rate denominators is a fundamental metric distortion. If a question cannot be answered from the corpus, a top-$K$ retrieved chunk is not a success—it is a false positive. Separating answerable queries ($n=61$) into the IR denominator while tracking negative query refusal rate as an independent guardrail instantly restored mathematical coherence to the benchmark.
+
+### Proposed Next Engineering Directions (A, B, C)
+
+* **Direction A: End-to-End Live Evaluation & Multi-Annotator Judge Calibration**  
+  Execute `configs/hybrid_live.yaml` on `gpt-4o-mini`, collect 30+ new human probe annotations on actual generated outputs (annotator/date stamped), compute live Cohen's $\kappa$ and Spearman $\rho$, and archive real live generation reports. Replaces offline heuristic test doubles with genuine empirical measurements at negligible cost (< €0.05).
+* **Direction B: Corpus Scaling & Complex Multi-Hop Query Expansion ($N > 500$)**  
+  Expand the raw corpus from 10 technical runbooks to 50+ documents ($> 500$ chunks) and construct 50+ multi-hop synthesis queries requiring cross-document retrieval. Benchmark whether Cross-Encoder reranking and BM25+Dense RRF yield statistically significant gains when candidate pool competition is stiff.
+* **Direction C: Deep Observability & MLflow Tracing (OpenInference Integration)**  
+  Upgrade `src/utils/tracking.py` to instrument `RAGRetriever`, `VectorIndexer`, `BM25Okapi`, and `RAGGenerator` with hierarchical MLflow Tracing / OpenTelemetry spans. Capture intermediate candidate similarity scores, chunk ranks, token counts, and step-by-step latencies for visual inspection in the local MLflow dashboard (`http://localhost:5001`).
+
+---
+
 ## Architecture
 
 ```
@@ -156,36 +186,6 @@ Offline optimization runs execute `OfflineRAGLM`, a deterministic test double de
 
 ### 5. Offline Heuristic Judge Guardrails
 The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`; Landis & Koch 1977 band 0.61–0.80). It serves solely as a regression guard for local offline development. Full model-based judge scoring requires live API execution (--mode live).
-
----
-
-## What I Learned: Systems Reality vs. Theoretical Claims
-
-Building and benchmarking this harness on Apple Silicon forced me to confront several gaps between theoretical Information Retrieval literature, LLM-as-a-judge claims, and physical systems reality:
-
-1. **The Ground Truth Coupling Illusion:**
-   In early iterations, what I realized that the naive fixed-chunk baseline (1000 characters, 0 overlap) reported an artificially depressed 12.5% Hit Rate@4, appearing to demonstrate a massive retrieval failure compared to recursive chunking (73.77%). Migrating ground truth to character span offsets (`ground_truth_spans`) revealed that the baseline actually achieves 98.36%. The 12.5% score was an evaluation artifact caused by scoring 1000-character chunks against chunk ID labels generated from a 400-character index. If ground truth references chunk IDs, you are no longer measuring semantic retrieval; you are testing whether your chunker reproduces its own IDs. So what I realized is that continuous document span overlap is essential for honest comparisons.
-
-2. **The Statistical Significance Illusion (Point Estimates vs. Paired Bootstrap Intervals):**
-   Comparing Dense Vector Retrieval (73.77% Hit Rate, 0.643 MRR) against Lexical-Dense Hybrid RRF (72.13% Hit Rate, 0.650 MRR) and Cross-Encoder Reranking (73.77% Hit Rate, 0.654 MRR) initially suggested distinct architectural tiers. From a statistical point of view, publishing only point estimates seemed really incomplete, and I am glad that I went ahead with calculating these confidence intervals, and then I realized the flaw: the 95% bootstrap difference interval spanned zero (+0.007 [-0.014, 0.033] for MRR; McNemar $p = 1.0000$). The difference between 73.77% and 72.13% Hit Rate was literally a single discordant query out of 61. Believing that Hybrid RRF is inherently superior to Dense retrieval on a 10-document corpus without an exact McNemar test mistakes sample noise for architectural progress.
-
-3. **The Physical Latency Cost of Joint Attention (Bi-Encoder HNSW vs. Cross-Encoder P95):**
-   Bi-encoder retrieval operates in 4.6 ms P95 on Apple Silicon arm64, while adding the cross-encoder reranker increases latency to 35.0 ms P95—a $\approx 7\times$ latency increase for a statistically negligible +0.011 MRR delta. This made the physical cost of self-attention tangible. Bi-encoders precompute embeddings offline, reducing query-time latency to a single vector projection plus approximate nearest-neighbour graph traversal (HNSW in SQLite/ChromaDB). One major learning for me is that cross-encoders by contrast must run full transformer cross-attention dynamically over all $(q, d_i)$ candidate pairs. A $7\times$ latency overhead is acceptable only when precision gains are statistically undeniable; on small corpora, joint cross-attention burns thermal budget (wasting energy and processor headroom) for zero measurable gain.
-
-4. **The Test Double Trap (Smoke Tests vs. Empirical Science):**
-   What I found out is that agentic coding still can hallucinate in strange ways, and in early automated commits, an offline test double (`OfflineRAGLM`) was written with an internal heuristic that rewarded prompt demonstrations with gold answer fragments. This produced a synthetic +53.9% Answer Correctness gain that was erroneously reported in earlier drafts as empirical proof of DSPy prompt compilation. This was a critical lesson: never let an integration test double masquerade as a scientific measurement. Mocks are designed to test parameter serialization and CLI control flow without API keys. The moment an offline mock contains conditional logic that mimics the metric you are trying to benchmark, it stops being a test and becomes a synthetic feedback loop. Prompt optimization frameworks like DSPy cannot be evaluated in a sandbox without an actual language model; real benchmark numbers must point to real model weights.
-
-5. **Metric Ceiling Distortion (The Adversarial Negative Denominator):**
-   Another interesting point was that in earlier revisions, the dataset mixed 19 unanswerable adversarial negative queries into the retrieval evaluation, artificially capping Hit Rate@4 at 76.25% ($61/80$). Scoring unanswerable queries in standard Information Retrieval recall and hit-rate denominators is a fundamental metric distortion. If a question cannot be answered from the corpus, a top-$K$ retrieved chunk is not a success—it is a false positive. Separating answerable queries ($n=61$) into the IR denominator while tracking negative query refusal rate as an independent guardrail instantly restored mathematical coherence to the benchmark.
-
-### Proposed Next Engineering Directions (A, B, C)
-
-* **Direction A: End-to-End Live Evaluation & Multi-Annotator Judge Calibration**  
-  Execute `configs/hybrid_live.yaml` on `gpt-4o-mini`, collect 30+ new human probe annotations on actual generated outputs (annotator/date stamped), compute live Cohen's $\kappa$ and Spearman $\rho$, and archive real live generation reports. Replaces offline heuristic test doubles with genuine empirical measurements at negligible cost (< €0.05).
-* **Direction B: Corpus Scaling & Complex Multi-Hop Query Expansion ($N > 500$)**  
-  Expand the raw corpus from 10 technical runbooks to 50+ documents ($> 500$ chunks) and construct 50+ multi-hop synthesis queries requiring cross-document retrieval. Benchmark whether Cross-Encoder reranking and BM25+Dense RRF yield statistically significant gains when candidate pool competition is stiff.
-* **Direction C: Deep Observability & MLflow Tracing (OpenInference Integration)**  
-  Upgrade `src/utils/tracking.py` to instrument `RAGRetriever`, `VectorIndexer`, `BM25Okapi`, and `RAGGenerator` with hierarchical MLflow Tracing / OpenTelemetry spans. Capture intermediate candidate similarity scores, chunk ranks, token counts, and step-by-step latencies for visual inspection in the local MLflow dashboard (`http://localhost:5001`).
 
 ---
 
