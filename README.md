@@ -111,6 +111,11 @@ The harness was run once per configuration against the **80-query Golden Evaluat
 
 All retrieval metrics are evaluated at effective $K=4$ over the $n = 61$ answerable test cases with 19 adversarial negative queries tracked separately. 95% bootstrap confidence intervals ($B = 2,000$ resamples) shown in brackets.
 
+> [!NOTE]
+> **Interpreting Run 1 vs. Runs 2–5 (Fixed-$K$ Context Volume Bias):**
+> * **Context Volume Distortion:** At fixed $K=4$, Run 1 (1000/0) retrieves **4,000 characters** ($\sim 1,000$ tokens; nearly **20% of the entire 10-document corpus** across only 21 total chunks). In contrast, Runs 2–5 (400/50) retrieve only **1,600 characters** ($\sim 400$ tokens; 6% of the corpus across 65 chunks).
+> * **The Downstream Trade-Off:** While large 1,000-character chunks mechanically elevate raw retrieval hit rate by returning massive text blocks, they impose a **$2.5\times$ prompt token cost penalty** and dilute context with irrelevant distractor text, increasing downstream model distraction. Real-world RAG optimization requires balancing retrieval coverage against prompt token economy and context signal-to-noise ratio.
+
 | Metric | Run 1: Baseline Naive (1000/0) | Run 2: Chunk-Optimized (400/50) | Run 3: Dense + Cross-Encoder | Run 4: Hybrid RRF (BM25 + Dense) | Run 5: Hybrid RRF + Cross-Encoder | Δ vs Chunk-Optimized (95% CI) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Hit Rate@K** | 98.36% [95.08%, 100.0%] | 73.77% [62.30%, 83.61%] | 73.77% [62.30%, 83.61%] | 72.13% [60.66%, 83.61%] | 73.77% [62.30%, 83.61%] | -1.64% [-4.92%, 0.00%] ($p=1.00$) |
