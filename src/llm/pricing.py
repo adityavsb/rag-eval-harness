@@ -38,13 +38,26 @@ def get_model_rates(model_name: str) -> tuple[float, float]:
     )
 
     if (
-        "ollama" in normalized
-        or "qwen" in normalized
-        or "llama" in normalized
+        ":free" in normalized
+        or "openrouter/free" in normalized
+        or "ollama" in normalized
         or "local" in normalized
         or "mock" in normalized
     ):
         return 0.0, 0.0
+
+    if "pplx-decider" in normalized:
+        # Perplexity decider flash list price: ~$0.05 per 1M tokens ($0.00005 per call)
+        decider_eur = round(0.05 * USD_EUR_RATE, 4)
+        return decider_eur, decider_eur
+
+    if "deepseek" in normalized:
+        # DeepSeek V4.1 flash: ~$0.14 input, $0.28 output per 1M tokens
+        return round(0.14 * USD_EUR_RATE, 4), round(0.28 * USD_EUR_RATE, 4)
+
+    if "qwen" in normalized:
+        # Qwen 3.7 flash: ~$0.05 input, $0.15 output per 1M tokens
+        return round(0.05 * USD_EUR_RATE, 4), round(0.15 * USD_EUR_RATE, 4)
 
     for key, rates in MODEL_PRICE_TABLE.items():
         if key in normalized:
@@ -62,6 +75,9 @@ def estimate_cost_eur(model_name: str, prompt_tokens: int, completion_tokens: in
         completion_tokens / 1_000_000.0
     ) * output_rate
     return round(cost, 6)
+
+
+calculate_cost_eur = estimate_cost_eur
 
 
 def estimate_batch_cost_eur(
