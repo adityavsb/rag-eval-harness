@@ -83,3 +83,26 @@ def test_call_llm_cache_hit_avoids_api_call(tmp_path: Path):
     assert response.cached is True
     assert response.cost_eur == 0.0
     assert response.content == "Token bucket allows bursts up to bucket capacity."
+
+
+def test_call_openrouter_decisions_missing_key_raises(monkeypatch):
+    from src.llm.provider import call_openrouter_decisions
+
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="OPENROUTER_API_KEY environment variable is missing"):
+        call_openrouter_decisions(
+            model="perplexity/pplx-decider-flash-v1.2",
+            state={"query": "test"},
+            questions={"q": {"type": "noul"}},
+        )
+
+
+def test_judge_is_decision_model_property():
+    from src.eval.llm_judge import LLMJudge
+
+    judge_decider = LLMJudge(model_name="perplexity/pplx-decider-flash-v1.2", mode="live")
+    assert judge_decider.is_decision_model is True
+
+    judge_chat = LLMJudge(model_name="gpt-4o-mini", mode="live")
+    assert judge_chat.is_decision_model is False
+
