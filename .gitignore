@@ -32,6 +32,7 @@ Thumbs.db
 .artifacts/
 data/sample_output/
 reports/**/latest.json
+reports/**/checkpoints/
 src/optimize/compiled_*.json
 # Internal engineering notes
 NOTES.md
