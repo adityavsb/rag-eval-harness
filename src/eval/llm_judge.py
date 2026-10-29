@@ -1,9 +1,68 @@
 """Structured LLM-as-a-Judge for evaluating RAG generation fidelity and correctness."""
 
+import json
 import os
 import re
+from typing import Any
 
 from pydantic import BaseModel, Field
+
+
+def extract_json_payload(response_text: str) -> dict[str, Any]:
+    """Extract valid JSON from LLM response, stripping reasoning tags and code fences."""
+    cleaned = response_text.strip()
+
+    # 1. Strip reasoning tags (<think>...</think> or [REASONING]...[/REASONING])
+    cleaned = re.sub(r"<think>.*?</think>", "", cleaned, flags=re.DOTALL).strip()
+    cleaned = re.sub(r"\[REASONING\].*?\[/REASONING\]", "", cleaned, flags=re.DOTALL).strip()
+
+    # 2. Extract the LAST markdown code fence if multiple exist
+    fence_matches = list(re.finditer(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned, re.IGNORECASE))
+    if fence_matches:
+        cleaned = fence_matches[-1].group(1).strip()
+
+    # 3. Find outermost braces
+    start_idx = cleaned.find("{")
+    end_idx = cleaned.rfind("}")
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        cleaned = cleaned[start_idx : end_idx + 1]
+
+    # 4. Parse with trailing comma recovery
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        sanitized = re.sub(r",\s*([\}\]])", r"\1", cleaned)
+        try:
+            return json.loads(sanitized)
+        except Exception:
+            import ast
+
+            return ast.literal_eval(cleaned)
+
+
+def normalize_decision_dict(raw_dict: dict[str, Any]) -> dict[str, Any]:
+    """Normalize decision payloads from perplexity decider or standard JSON schemas."""
+    d = dict(raw_dict)
+    # 1. Unwrap envelopes
+    for env_key in ["decision", "verdict_details", "result", "output", "data"]:
+        if env_key in d and isinstance(d[env_key], dict):
+            inner = d[env_key]
+            for k, v in inner.items():
+                if k not in d or d[k] is None:
+                    d[k] = v
+
+    # 2. Extract confidence / score / probability
+    if "score" not in d:
+        if "probability" in d:
+            d["score"] = float(d["probability"])
+        elif "confidence" in d:
+            d["score"] = float(d["confidence"])
+        elif "rubric_grade" in d:
+            d["score"] = max(0.0, min(1.0, (int(d["rubric_grade"]) - 1) / 4.0))
+        elif "noul" in d:
+            d["score"] = 1.0 if d["noul"] in (True, 1, "yes", "true") else 0.0
+
+    return d
 
 
 class FaithfulnessEvaluation(BaseModel):
@@ -38,6 +97,113 @@ class LLMJudge:
         self.mode = mode
         self.provider = provider
 
+    @property
+    def is_decision_model(self) -> bool:
+        """Returns True if model uses OpenRouter /api/alpha/decisions endpoint."""
+        target = self.model_name.lower()
+        return "decider" in target or "decision" in target or "pplx-decider" in target
+
+    def evaluate_sample(
+        self, query: str, context: str, answer: str, ground_truth: str
+    ) -> tuple[FaithfulnessEvaluation, CorrectnessEvaluation, dict[str, Any]]:
+        """Evaluates both faithfulness and correctness, batching questions into a single decisions call if supported."""
+        # Check for refusal
+        if "insufficient information" in ground_truth.lower() and "insufficient information" in answer.lower():
+            return (
+                FaithfulnessEvaluation(
+                    score=1.0,
+                    total_claims=1,
+                    grounded_claims=1,
+                    reasoning="Model appropriately identified insufficient context and refused.",
+                ),
+                CorrectnessEvaluation(
+                    score=1.0,
+                    rubric_grade=5,
+                    reasoning="Correctly refused out-of-scope query matching ground truth.",
+                ),
+                {"usage": {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}},
+            )
+        if "insufficient information" in ground_truth.lower() and "insufficient information" not in answer.lower():
+            return (
+                FaithfulnessEvaluation(
+                    score=0.0,
+                    total_claims=1,
+                    grounded_claims=0,
+                    reasoning="Failed to refuse: answered an out-of-scope adversarial query.",
+                ),
+                CorrectnessEvaluation(
+                    score=0.0,
+                    rubric_grade=1,
+                    reasoning="Failed to refuse: answered an out-of-scope adversarial query.",
+                ),
+                {"usage": {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}},
+            )
+
+        if self.mode == "live" and self.is_decision_model:
+            if not os.environ.get("OPENROUTER_API_KEY"):
+                raise ValueError(
+                    f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                    "but OPENROUTER_API_KEY environment variable is missing."
+                )
+
+            from src.llm.provider import call_openrouter_decisions
+
+            state = {
+                "context": context,
+                "query": query,
+                "answer": answer,
+                "ground_truth": ground_truth,
+            }
+            questions = {
+                "faithfulness": {
+                    "type": "noul",
+                    "instructions": "Is the generated answer strictly supported by the context without foreign entities or hallucinations?",
+                    "criteria": {
+                        "true": "All factual claims in the answer are directly grounded in the context.",
+                        "false": "The answer contains ungrounded assertions or foreign numerical data.",
+                    },
+                },
+                "correctness": {
+                    "type": "noul",
+                    "instructions": "Does the generated answer accurately match the ground truth reference answer?",
+                    "criteria": {
+                        "true": "The answer covers core factual details consistent with the ground truth.",
+                        "false": "The answer contradicts or misses critical facts from the ground truth.",
+                    },
+                },
+            }
+            res = call_openrouter_decisions(
+                model=self.model_name,
+                state=state,
+                questions=questions,
+            )
+            answers = res.get("answers", {})
+            f_noul = float(answers.get("faithfulness", {}).get("noul", 0.0))
+            c_noul = float(answers.get("correctness", {}).get("noul", 0.0))
+
+            f_score = round(max(0.0, min(1.0, f_noul)), 4)
+            c_score = round(max(0.0, min(1.0, c_noul)), 4)
+            grade = max(1, min(5, int(1 + round(c_score * 4))))
+
+            faith_eval = FaithfulnessEvaluation(
+                score=f_score,
+                total_claims=1,
+                grounded_claims=1 if f_score >= 0.5 else 0,
+                reasoning=f"Perplexity Decider live evaluation: faithfulness noul={f_score:.4f}",
+            )
+            corr_eval = CorrectnessEvaluation(
+                score=c_score,
+                rubric_grade=grade,
+                reasoning=f"Perplexity Decider live evaluation: correctness noul={c_score:.4f} (grade {grade}/5)",
+            )
+            usage = res.get("usage", {})
+            return faith_eval, corr_eval, usage
+
+        # Otherwise evaluate individually
+        f_eval = self.evaluate_faithfulness(query, context, answer)
+        c_eval = self.evaluate_correctness(query, answer, ground_truth)
+        return f_eval, c_eval, {}
+
     def evaluate_faithfulness(
         self, query: str, context: str, answer: str
     ) -> FaithfulnessEvaluation:
@@ -53,18 +219,70 @@ class LLMJudge:
 
         if self.mode == "live":
             provider = self.provider.lower()
-            if provider == "openai":
-                api_key = os.environ.get("OPENAI_API_KEY")
-                if not api_key:
+            model_target = self.model_name
+            if (
+                provider == "openrouter"
+                or "openrouter" in model_target
+                or "deepseek" in model_target
+                or "qwen" in model_target
+                or "perplexity" in model_target
+                or "pplx-decider" in model_target
+                or ":free" in model_target
+                or "nemotron" in model_target
+            ):
+                if not os.environ.get("OPENROUTER_API_KEY"):
+                    raise ValueError(
+                        f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                        "but OPENROUTER_API_KEY environment variable is missing."
+                    )
+            elif provider == "openai" or "gpt" in model_target:
+                if not os.environ.get("OPENAI_API_KEY"):
                     raise ValueError(
                         f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
                         "but OPENAI_API_KEY environment variable is missing."
                     )
-                try:
-                    from openai import OpenAI
+            elif provider == "anthropic" or "claude" in model_target:
+                if not os.environ.get("ANTHROPIC_API_KEY"):
+                    raise ValueError(
+                        f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                        "but ANTHROPIC_API_KEY environment variable is missing."
+                    )
 
-                    client = OpenAI(api_key=api_key)
-                    prompt = f"""You are an objective judge evaluating whether an AI assistant's answer is faithful to the provided context.
+            if self.is_decision_model:
+                from src.llm.provider import call_openrouter_decisions
+
+                state = {
+                    "context": context,
+                    "query": query,
+                    "answer": answer,
+                }
+                questions = {
+                    "faithfulness": {
+                        "type": "noul",
+                        "instructions": "Is the generated answer strictly supported by the context without foreign entities or hallucinations?",
+                        "criteria": {
+                            "true": "All factual claims in the answer are directly grounded in the context.",
+                            "false": "The answer contains ungrounded assertions or foreign numerical data.",
+                        },
+                    }
+                }
+                res = call_openrouter_decisions(
+                    model=self.model_name,
+                    state=state,
+                    questions=questions,
+                )
+                f_ans = res.get("answers", {}).get("faithfulness", {})
+                score = float(f_ans.get("noul", 0.0))
+                return FaithfulnessEvaluation(
+                    score=round(max(0.0, min(1.0, score)), 4),
+                    total_claims=1,
+                    grounded_claims=1 if score >= 0.5 else 0,
+                    reasoning=f"Evaluated via OpenRouter decisions ({self.model_name}): noul={score:.4f}",
+                )
+
+            from src.llm.provider import call_llm
+
+            prompt = f"""You are an objective judge evaluating whether an AI assistant's answer is faithful to the provided context.
 
 Context:
 {context}
@@ -75,31 +293,31 @@ Answer: {answer}
 Task:
 1. Break down the answer into atomic factual claims.
 2. Check if each claim is directly supported by the context.
-3. Output JSON with:
-   - "total_claims": integer
-   - "grounded_claims": integer
-   - "score": float between 0.0 and 1.0
-   - "reasoning": brief explanation
+3. Output ONLY a valid JSON object matching:
+{{
+  "total_claims": 1,
+  "grounded_claims": 1,
+  "score": 1.0,
+  "reasoning": "brief explanation"
+}}
 """
-                    response = client.chat.completions.create(
-                        model=self.model_name,
-                        messages=[{"role": "user", "content": prompt}],
-                        response_format={"type": "json_object"},
-                        temperature=0.0,
-                    )
-                    import json
-
-                    data = json.loads(response.choices[0].message.content or "{}")
-                    return FaithfulnessEvaluation(**data)
-                except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
-                    raise RuntimeError(
-                        f"Error during live LLM judge faithfulness evaluation: {e}"
-                    ) from e
-            elif provider in ("ollama", "local"):
-                # Offline/local Ollama judge fallback or call
-                return self._offline_faithfulness(context, answer)
-            else:
-                raise ValueError(f"Unsupported judge provider '{self.provider}' in live mode.")
+            llm_res = call_llm(model=self.model_name, prompt=prompt, temperature=0.0)
+            raw_dict = extract_json_payload(llm_res.content)
+            norm_dict = normalize_decision_dict(raw_dict)
+            total = int(norm_dict.get("total_claims", 1))
+            score = float(
+                norm_dict.get(
+                    "score",
+                    1.0 if norm_dict.get("is_discrepancy") is False else 0.0,
+                )
+            )
+            grounded = int(norm_dict.get("grounded_claims", round(score * total)))
+            return FaithfulnessEvaluation(
+                score=max(0.0, min(1.0, score)),
+                total_claims=total,
+                grounded_claims=grounded,
+                reasoning=str(norm_dict.get("reasoning", "Evaluated by judge model.")),
+            )
 
         # Offline deterministic heuristic fallback
         return self._offline_faithfulness(context, answer)
@@ -160,18 +378,70 @@ Task:
 
         if self.mode == "live":
             provider = self.provider.lower()
-            if provider == "openai":
-                api_key = os.environ.get("OPENAI_API_KEY")
-                if not api_key:
+            model_target = self.model_name
+            if (
+                provider == "openrouter"
+                or "openrouter" in model_target
+                or "deepseek" in model_target
+                or "qwen" in model_target
+                or "perplexity" in model_target
+                or "pplx-decider" in model_target
+                or ":free" in model_target
+                or "nemotron" in model_target
+            ):
+                if not os.environ.get("OPENROUTER_API_KEY"):
+                    raise ValueError(
+                        f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                        "but OPENROUTER_API_KEY environment variable is missing."
+                    )
+            elif provider == "openai" or "gpt" in model_target:
+                if not os.environ.get("OPENAI_API_KEY"):
                     raise ValueError(
                         f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
                         "but OPENAI_API_KEY environment variable is missing."
                     )
-                try:
-                    from openai import OpenAI
+            elif provider == "anthropic" or "claude" in model_target:
+                if not os.environ.get("ANTHROPIC_API_KEY"):
+                    raise ValueError(
+                        f"Live mode evaluation requested for LLMJudge with model '{self.model_name}', "
+                        "but ANTHROPIC_API_KEY environment variable is missing."
+                    )
 
-                    client = OpenAI(api_key=api_key)
-                    prompt = f"""You are an objective judge evaluating answer correctness against ground truth.
+            if self.is_decision_model:
+                from src.llm.provider import call_openrouter_decisions
+
+                state = {
+                    "query": query,
+                    "answer": answer,
+                    "ground_truth": ground_truth,
+                }
+                questions = {
+                    "correctness": {
+                        "type": "noul",
+                        "instructions": "Does the generated answer accurately match the ground truth reference answer?",
+                        "criteria": {
+                            "true": "The answer covers core factual details consistent with the ground truth.",
+                            "false": "The answer contradicts or misses critical facts from the ground truth.",
+                        },
+                    }
+                }
+                res = call_openrouter_decisions(
+                    model=self.model_name,
+                    state=state,
+                    questions=questions,
+                )
+                c_ans = res.get("answers", {}).get("correctness", {})
+                score = float(c_ans.get("noul", 0.0))
+                rubric_grade = max(1, min(5, int(1 + round(score * 4))))
+                return CorrectnessEvaluation(
+                    score=round(max(0.0, min(1.0, score)), 4),
+                    rubric_grade=rubric_grade,
+                    reasoning=f"Evaluated via OpenRouter decisions ({self.model_name}): noul={score:.4f}",
+                )
+
+            from src.llm.provider import call_llm
+
+            prompt = f"""You are an objective judge evaluating answer correctness against ground truth.
 
 Question: {query}
 Ground Truth: {ground_truth}
@@ -184,29 +454,31 @@ Rubric:
 2 - Mostly incorrect: factual contradictions or largely missing.
 1 - Completely incorrect or ungrounded.
 
-Output JSON with:
-- "rubric_grade": integer 1-5
-- "score": float ((rubric_grade - 1) / 4)
-- "reasoning": brief explanation
+Output ONLY a valid JSON object matching:
+{{
+  "rubric_grade": 5,
+  "score": 1.0,
+  "reasoning": "brief explanation"
+}}
 """
-                    response = client.chat.completions.create(
-                        model=self.model_name,
-                        messages=[{"role": "user", "content": prompt}],
-                        response_format={"type": "json_object"},
-                        temperature=0.0,
-                    )
-                    import json
-
-                    data = json.loads(response.choices[0].message.content or "{}")
-                    return CorrectnessEvaluation(**data)
-                except (RuntimeError, ValueError, KeyError, TypeError, OSError) as e:
-                    raise RuntimeError(
-                        f"Error during live LLM judge correctness evaluation: {e}"
-                    ) from e
-            elif provider in ("ollama", "local"):
-                return self._offline_correctness(answer, ground_truth)
+            llm_res = call_llm(model=self.model_name, prompt=prompt, temperature=0.0)
+            raw_dict = extract_json_payload(llm_res.content)
+            norm_dict = normalize_decision_dict(raw_dict)
+            if "score" in norm_dict and "rubric_grade" not in norm_dict:
+                score = float(norm_dict["score"])
+                grade = round(1 + score * 4)
+            elif "rubric_grade" in norm_dict:
+                grade = int(norm_dict["rubric_grade"])
+                score = float(norm_dict.get("score", (grade - 1) / 4.0))
             else:
-                raise ValueError(f"Unsupported judge provider '{self.provider}' in live mode.")
+                grade = 5 if norm_dict.get("is_discrepancy") is False else 1
+                score = (grade - 1) / 4.0
+
+            return CorrectnessEvaluation(
+                score=max(0.0, min(1.0, score)),
+                rubric_grade=max(1, min(5, grade)),
+                reasoning=str(norm_dict.get("reasoning", "Evaluated by judge model.")),
+            )
 
         # Offline deterministic lexical & semantic overlap fallback
         return self._offline_correctness(answer, ground_truth)
