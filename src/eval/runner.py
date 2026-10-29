@@ -1,6 +1,7 @@
 """End-to-end evaluation harness runner."""
 
 import json
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ from src.eval.retrieval_metrics import (
     aggregate_retrieval_metrics,
     evaluate_retrieval,
 )
+from src.llm.pricing import calculate_cost_eur
 from src.pipeline.generator import RAGGenerator
 from src.pipeline.indexing import VectorIndexer
 from src.pipeline.ingestion import chunk_documents, load_raw_documents
@@ -44,6 +46,9 @@ class EvaluationRecord(BaseModel):
     rubric_grade: int
     retrieval_latency_ms: float
     generation_latency_ms: float
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    cost_eur: float = 0.0
 
 
 def _get_git_sha() -> str:
@@ -169,24 +174,86 @@ class EvaluationRunner:
         with open(path, encoding="utf-8") as f:
             return json.load(f)
 
-    def run_benchmark(self, force_reindex: bool = False) -> EvaluationReport:
+    def run_benchmark(
+        self,
+        force_reindex: bool = False,
+        stage: str | None = None,
+        limit: int | None = None,
+        pacing_delay: float | None = None,
+    ) -> EvaluationReport:
         """Executes full evaluation benchmark, outputs summary table, and logs to MLflow."""
         self.prepare_index(force_reindex=force_reindex)
         golden_set = self.load_golden_set()
+
+        effective_stage = stage or getattr(self.config.evaluation, "stage", "full")
+        effective_delay = (
+            pacing_delay
+            if pacing_delay is not None
+            else getattr(self.config.generation, "pacing_delay_sec", 1.5)
+        )
+
+        # Stage cohort overrides
+        if effective_stage == "check-one":
+            golden_set = golden_set[:1]
+            # Stage 1: strictly test generator Model 1; keep judge offline to avoid multi-model API coupling
+            self.judge.mode = "offline"
+            self.console.print(
+                f"[cyan][STAGE 1/3: check-one][/cyan] Testing generator Model 1 ({self.generator.config.model_name}) on 1 query (Judge offline)..."
+            )
+        elif effective_stage == "check-remaining":
+            golden_set = golden_set[:1]
+            # Stage 2: switch generator to Model 2, enable live judge for Model 3
+            if self.config.generation.reasoning_model:
+                self.generator.config.model_name = self.config.generation.reasoning_model
+            self.judge.mode = "live"
+            self.console.print(
+                f"[cyan][STAGE 2/3: check-remaining][/cyan] Testing Generator Model 2 ({self.generator.config.model_name}) "
+                f"and Decision Judge Model 3 ({self.judge.model_name}) on 1 query..."
+            )
+        else:
+            # Stage 3: full benchmark
+            if limit is not None and limit > 0:
+                golden_set = golden_set[:limit]
+            self.console.print(
+                f"[cyan][STAGE 3/3: full][/cyan] Running full evaluation on {len(golden_set)} queries..."
+            )
+
+        ckpt_dir_path = getattr(
+            self.config.evaluation, "checkpoint_dir", "reports/live/checkpoints"
+        )
+        ckpt_dir = Path(ckpt_dir_path)
+        ckpt_dir.mkdir(parents=True, exist_ok=True)
+
         records: list[EvaluationRecord] = []
+        is_live = self.config.generation.mode == "live"
+        safe_model_tag = self.generator.config.model_name.replace("/", "_").replace(":", "_")
 
         self.console.print(
-            f"\n[bold]Evaluating run: [yellow]{self.config.run_name}[/yellow] ({len(golden_set)} queries)[/bold]"
+            f"\n[bold]Evaluating run: [yellow]{self.config.run_name}[/yellow] "
+            f"({len(golden_set)} queries, generator: {self.generator.config.model_name}, judge: {self.judge.model_name})[/bold]"
         )
 
         with self.tracker.start_run():
-            for item in golden_set:
+            for idx, item in enumerate(golden_set):
                 q_id = item["id"]
                 query = item["query"]
                 q_type = item.get("query_type", "factoid")
                 gt_ids = item.get("ground_truth_context_ids", [])
                 gt_spans = item.get("ground_truth_spans", [])
                 gt_ans = item["ground_truth_answer"]
+
+                ckpt_file = ckpt_dir / f"ckpt_{self.config.run_name}_{safe_model_tag}_{q_id}.json"
+                if ckpt_file.exists() and not force_reindex and effective_stage == "full":
+                    try:
+                        with open(ckpt_file, encoding="utf-8") as f:
+                            cached_rec = EvaluationRecord.model_validate(json.load(f))
+                            records.append(cached_rec)
+                            self.console.print(
+                                f"[dim]Loaded checkpoint for {q_id} ({idx + 1}/{len(golden_set)})[/dim]"
+                            )
+                            continue
+                    except Exception:
+                        pass
 
                 # 1. Retrieval
                 retrieval_res = self.retriever.retrieve(query)
@@ -208,8 +275,25 @@ class EvaluationRunner:
                 context_str = "\n".join(
                     [f"[{c.chunk_id}] {c.content}" for c in retrieval_res.chunks]
                 )
-                faith_res = self.judge.evaluate_faithfulness(query, context_str, gen_res.answer)
-                corr_res = self.judge.evaluate_correctness(query, gen_res.answer, gt_ans)
+                if hasattr(self.judge, "evaluate_sample") and self.judge.is_decision_model:
+                    faith_res, corr_res, judge_usage = self.judge.evaluate_sample(
+                        query, context_str, gen_res.answer, gt_ans
+                    )
+                    judge_cost = judge_usage.get("cost", 0.0)
+                else:
+                    faith_res = self.judge.evaluate_faithfulness(query, context_str, gen_res.answer)
+                    corr_res = self.judge.evaluate_correctness(query, gen_res.answer, gt_ans)
+                    judge_cost = 0.0
+
+                # Cost calculation
+                item_cost = (
+                    calculate_cost_eur(
+                        self.generator.config.model_name,
+                        gen_res.prompt_tokens,
+                        gen_res.completion_tokens,
+                    )
+                    + judge_cost
+                )
 
                 record = EvaluationRecord(
                     query_id=q_id,
@@ -230,8 +314,28 @@ class EvaluationRunner:
                     rubric_grade=corr_res.rubric_grade,
                     retrieval_latency_ms=retrieval_res.retrieval_latency_ms,
                     generation_latency_ms=gen_res.generation_latency_ms,
+                    prompt_tokens=gen_res.prompt_tokens,
+                    completion_tokens=gen_res.completion_tokens,
+                    cost_eur=item_cost,
                 )
                 records.append(record)
+
+                self.console.print(
+                    f"  [{idx + 1}/{len(golden_set)}] {q_id} ({q_type}) -> "
+                    f"Grade: {corr_res.rubric_grade}/5 | Faith: {faith_res.score:.2f} | "
+                    f"Gen: {gen_res.generation_latency_ms:.0f}ms"
+                )
+
+                # Write checkpoint immediately to disk
+                try:
+                    with open(ckpt_file, "w", encoding="utf-8") as f:
+                        json.dump(record.model_dump(), f, indent=2)
+                except Exception:
+                    pass
+
+                # Pacing delay between queries in live mode
+                if is_live and effective_delay > 0 and idx < len(golden_set) - 1:
+                    time.sleep(effective_delay)
 
             # Compute Aggregate Metrics: segregate answerable vs negative queries
             answerable = [r for r in records if r.ground_truth_context_ids]
@@ -327,6 +431,9 @@ class EvaluationRunner:
                     }
                 )
 
+            total_cost_eur = round(sum(r.cost_eur for r in records), 6)
+            metrics_summary["total_cost_eur"] = total_cost_eur
+
             # Log metrics and artifact to MLflow
             self.tracker.log_metrics(metrics_summary)
             stored_fp = self.indexer.stored_fingerprint() or "unknown"
@@ -339,7 +446,7 @@ class EvaluationRunner:
                 index_fingerprint=stored_fp,
                 timestamp=datetime.now(UTC).isoformat(),
                 git_sha=_get_git_sha(),
-                cost_eur=0.0,
+                cost_eur=total_cost_eur,
                 environment=_collect_environment_telemetry(),
                 metrics=metrics_summary,
                 records=records,
@@ -423,6 +530,8 @@ class EvaluationRunner:
             table.add_row(
                 "Average Rubric Grade", f"{metrics['mean_rubric_grade']:.2f} / 5.0", ">= 4.0 / 5"
             )
+        if "total_cost_eur" in metrics and metrics["total_cost_eur"] > 0:
+            table.add_row("Total Run Cost", f"€{metrics['total_cost_eur']:.4f}", "-")
 
         table.add_row(
             "P95 Retrieval Latency", f"{metrics['p95_retrieval_latency_ms']:.1f} ms", "< 150 ms"
