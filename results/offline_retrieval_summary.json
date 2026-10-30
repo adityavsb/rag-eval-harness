@@ -1,0 +1,81 @@
+{
+  "note": "Aggregate offline retrieval metrics only; full reports stay local under reports/ (gitignored).",
+  "git_sha": "d4ba471",
+  "runs": [
+    {
+      "run_name": "baseline-naive-rag",
+      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "metrics": {
+        "hit_rate_at_k": 0.125,
+        "mrr_at_k": 0.0594,
+        "context_precision_at_k": 0.0583,
+        "context_recall_at_k": 0.0896,
+        "mean_faithfulness": 1.0,
+        "mean_correctness": 0.025,
+        "mean_rubric_grade": 1.1,
+        "p95_retrieval_latency_ms": 5.21,
+        "p95_generation_latency_ms": 0.02
+      }
+    },
+    {
+      "run_name": "chunk-optimized-rag",
+      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "metrics": {
+        "hit_rate_at_k": 0.75,
+        "mrr_at_k": 0.6458,
+        "context_precision_at_k": 0.6472,
+        "context_recall_at_k": 0.6833,
+        "mean_faithfulness": 0.9875,
+        "mean_correctness": 0.1344,
+        "mean_rubric_grade": 1.54,
+        "p95_retrieval_latency_ms": 4.02,
+        "p95_generation_latency_ms": 0.02
+      }
+    },
+    {
+      "run_name": "hybrid-rerank-rag",
+      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "metrics": {
+        "hit_rate_at_k": 0.75,
+        "mrr_at_k": 0.7312,
+        "context_precision_at_k": 0.7073,
+        "context_recall_at_k": 0.7167,
+        "mean_faithfulness": 0.9833,
+        "mean_correctness": 0.1812,
+        "mean_rubric_grade": 1.73,
+        "p95_retrieval_latency_ms": 51.72,
+        "p95_generation_latency_ms": 0.03
+      }
+    },
+    {
+      "run_name": "hybrid-rrf-rag",
+      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "metrics": {
+        "hit_rate_at_k": 0.7625,
+        "mrr_at_k": 0.6896,
+        "context_precision_at_k": 0.6802,
+        "context_recall_at_k": 0.7083,
+        "mean_faithfulness": 0.9833,
+        "mean_correctness": 0.15,
+        "mean_rubric_grade": 1.6,
+        "p95_retrieval_latency_ms": 10.66,
+        "p95_generation_latency_ms": 0.02
+      }
+    },
+    {
+      "run_name": "rerank-two-stage-rag",
+      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "metrics": {
+        "hit_rate_at_k": 0.75,
+        "mrr_at_k": 0.7312,
+        "context_precision_at_k": 0.7073,
+        "context_recall_at_k": 0.7167,
+        "mean_faithfulness": 0.9802,
+        "mean_correctness": 0.1812,
+        "mean_rubric_grade": 1.73,
+        "p95_retrieval_latency_ms": 48.76,
+        "p95_generation_latency_ms": 0.02
+      }
+    }
+  ]
+}

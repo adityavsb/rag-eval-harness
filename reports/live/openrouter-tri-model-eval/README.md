@@ -1,23 +1,13 @@
-# OpenRouter tri-model live evaluation (2026-10-29)
+# OpenRouter tri-model live evaluation
 
-Config: [`configs/openrouter_cohort.yaml`](../../../configs/openrouter_cohort.yaml). Git SHA at run time: `99f16f5`.
+Config: [`configs/openrouter_cohort.yaml`](../../../configs/openrouter_cohort.yaml).
 
-## Canonical reports (Decider judge, apples-to-apples)
+Full run JSON (80 queries × generator outputs × **JEV** scores) is **local-only** under this directory after you run eval. Do not commit those files.
 
-Use these for README tables and comparisons:
+Published **aggregate** metrics for the README live table: [`results/openrouter_cohort_summary.json`](../../../results/openrouter_cohort_summary.json).
 
-| File | Generator |
-|------|-----------|
-| [`deepseek_v4.1_perplexity_judged.json`](deepseek_v4.1_perplexity_judged.json) | `deepseek/deepseek-v4.1-flash` |
-| [`qwen_3.7_perplexity_judged.json`](qwen_3.7_perplexity_judged.json) | `qwen/qwen3.7-flash` |
+Re-score a **local** saved generator report with **JEV**:
 
-Judge: `perplexity/pplx-decider-flash-v1.2` via OpenRouter `/api/alpha/decisions`. Produced with [`scripts/rejudge_saved_reports.py`](../../../scripts/rejudge_saved_reports.py).
-
-## Raw generator exports
-
-Timestamped full runs (judge scores from the inline live path at generation time):
-
-- [`20261029T210935_99f16f5.json`](20261029T210935_99f16f5.json) — DeepSeek
-- [`20261029T211925_99f16f5.json`](20261029T211925_99f16f5.json) — Qwen
-
-Prefer `*_perplexity_judged.json` when comparing generators under one judge.
+```bash
+.venv/bin/python scripts/rejudge_saved_reports.py --report reports/live/openrouter-tri-model-eval/YOUR_RUN.json
+```

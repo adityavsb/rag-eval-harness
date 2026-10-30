@@ -23,8 +23,9 @@ load_dotenv()
 console = Console()
 
 MODEL_REPORT_MAP = {
-    "deepseek": "reports/live/openrouter-tri-model-eval/20261029T210935_99f16f5.json",
-    "qwen": "reports/live/openrouter-tri-model-eval/20261029T211925_99f16f5.json",
+    # Local paths only (not in git). Override with --report after you run eval.
+    "deepseek": "reports/live/openrouter-tri-model-eval/deepseek_run.json",
+    "qwen": "reports/live/openrouter-tri-model-eval/qwen_run.json",
 }
 
 

@@ -2,7 +2,7 @@
 
 **Hybrid RAG on an authored corpus—local retrieval science, live [OpenRouter](https://openrouter.ai/) LLMs, and JEV (Judge Evaluation via decision models) on generation quality.**
 
-Compare chunking strategies, **BM25 + dense RRF**, and cross-encoder reranking with real IR numbers (Hit Rate@K, MRR, context precision/recall, **2,000-resample bootstrap CIs**, McNemar checks). Switch to **`--mode live`** and the same pipeline calls **OpenRouter chat models** (e.g. DeepSeek V4.1 Flash, Qwen 3.7 Flash) for grounded answers, then runs **JEV**: **LLM-specific metrics** (faithfulness, rubric correctness, mean grade) from **Perplexity PPLX Decider Flash** over OpenRouter’s **`/api/alpha/decisions`** decision API—one judge model for apples-to-apples generator comparison, not a lexical offline mock. Track **negative-query refusal** beside retrieval hit rate; archive full JSON under [`reports/live/openrouter-tri-model-eval/`](reports/live/openrouter-tri-model-eval/). Offline mode runs without API keys for regression; the published OpenRouter cohort is [documented below](#benchmark-results-live-mode).
+Compare chunking strategies, **BM25 + dense RRF**, and cross-encoder reranking with real IR numbers (Hit Rate@K, MRR, context precision/recall, **2,000-resample bootstrap CIs**, McNemar checks). Switch to **`--mode live`** and the same pipeline calls **OpenRouter chat models** (e.g. DeepSeek V4.1 Flash, Qwen 3.7 Flash) for grounded answers, then runs **JEV**: **LLM-specific metrics** (faithfulness, rubric correctness, mean grade) from **Perplexity PPLX Decider Flash** over OpenRouter’s **`/api/alpha/decisions`** decision API—one judge model for apples-to-apples generator comparison, not a lexical offline mock. Track **negative-query refusal** beside retrieval hit rate. Full per-query traces stay **local** under `reports/` (gitignored); README numbers are backed by aggregate [`results/`](results/). Offline mode runs without API keys for regression; the published OpenRouter cohort is [documented below](#benchmark-results-live-mode).
 
 ---
 
@@ -18,7 +18,7 @@ Building and benchmarking this harness on Apple Silicon forced me to confront se
 
 4. **Same retrieval, different generators (live OpenRouter):** With hybrid RRF fixed (72.13% Hit@4, 0.650 MRR), **DeepSeek V4.1 Flash** and **Qwen 3.7 Flash** diverged sharply on generation: mean correctness 0.826 vs 0.481 and **100% vs 31.6%** refusal on 19 adversarial negatives. Retrieval tables alone miss whether the model grounds answers or hallucinates on unanswerable prompts.
 
-5. **JEV (Judge Evaluation via decision models):** Scoring both generators with **Perplexity PPLX Decider Flash** through OpenRouter’s `/api/alpha/decisions` is the harness’s **JEV** path—structured verdicts instead of generator-self or lexical judging. Canonical reports: `reports/live/openrouter-tri-model-eval/*_perplexity_judged.json` (re-run **JEV** alone via `scripts/rejudge_saved_reports.py` without regenerating answers).
+5. **JEV (Judge Evaluation via decision models):** Scoring both generators with **Perplexity PPLX Decider Flash** through OpenRouter’s `/api/alpha/decisions` is the harness’s **JEV** path—structured verdicts instead of generator-self or lexical judging. Re-run **JEV** on a local saved report with `scripts/rejudge_saved_reports.py` (see [`reports/README.md`](reports/README.md)).
 
 ### Proposed Next Engineering Directions (A, B, C)
 
@@ -137,9 +137,8 @@ All retrieval metrics are evaluated at effective **K = 4** over the **n = 61** a
 >
 > **Scope:** All **80** golden queries (train + dev + test) were evaluated in one pass per generator; IR metrics
 > use **n = 61** answerable cases, generation quality on **n = 61**, and **negative refusal rate** on **n = 19** adversarial
-> negatives. Canonical JSON:
-> [`reports/live/openrouter-tri-model-eval/`](reports/live/openrouter-tri-model-eval/)
-> (`*_perplexity_judged.json`, git `99f16f5`, 2026-10-29).
+> negatives. Aggregate metrics (no per-query traces in git): [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json)
+> (from local runs at git `99f16f5`, 2026-10-29).
 
 ### OpenRouter cohort (hybrid RRF retrieval, JEV / Decider judge)
 
@@ -154,19 +153,18 @@ guardrail signal (answers when the corpus cannot support one), not captured in H
 
 ### Live benchmark environment
 
-Copied from `reports/live/openrouter-tri-model-eval/deepseek_v4.1_perplexity_judged.json`:
+Environment block shape (from local run; platform packages vary by install):
 
 ```json
 {
   "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
   "python_version": "3.13.6",
-  "machine": "arm64",
-  "git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd"
+  "machine": "arm64"
 }
 ```
 
-* **Raw telemetry:** Timestamped generator reports and Decider-rejudged exports live under
-  [`reports/live/openrouter-tri-model-eval/`](reports/live/openrouter-tri-model-eval/).
+* **Full traces:** Written locally under [`reports/live/`](reports/live/) when you run eval (gitignored).
+* **Aggregates in git:** [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json).
 
 ---
 
@@ -190,8 +188,7 @@ The offline (no-API) judge is a lexical heuristic (`LLMJudge._offline_faithfulne
 ---
 
 ### Benchmark environment
-Captured automatically into each report (`environment` key). Values below are copied from
-`reports/offline/hybrid-rrf-rag/latest.json` at commit `9a083af`:
+Captured automatically into each local report (`environment` key). Example package pins from an offline hybrid RRF run at commit `9a083af` (see [`results/offline_retrieval_summary.json`](results/offline_retrieval_summary.json)):
 
 ```json
 {
@@ -211,7 +208,7 @@ Captured automatically into each report (`environment` key). Values below are co
 }
 ```
 
-* **Raw Telemetry Logs:** Exported JSON reports are archived in [`reports/offline/`](reports/offline/) and [`reports/live/`](reports/live/).
+* **Aggregate metrics in git:** [`results/offline_retrieval_summary.json`](results/offline_retrieval_summary.json). **Full JSON traces** from eval runs stay local under [`reports/`](reports/) (gitignored).
 
 ---
 
@@ -350,9 +347,13 @@ rag-eval-harness/
 │   ├── golden_qa.json             # 80-case verified golden set (train/dev/test)
 │   ├── human_labels.jsonl         # 30 human-labeled QA records for judge calibration
 │   └── README.md                  # Dataset card, taxonomy, and split quarantine rules
-├── reports/
-│   ├── offline/                   # Deterministic offline benchmark evaluations
-│   └── live/                      # Live API runs (e.g. openrouter-tri-model-eval/)
+├── results/                       # Aggregate benchmark metrics (committed)
+│   ├── offline_retrieval_summary.json
+│   └── openrouter_cohort_summary.json
+├── reports/                       # Full eval JSON output (local, gitignored)
+│   ├── README.md
+│   ├── offline/
+│   └── live/
 ├── src/
 │   ├── llm/
 │   │   ├── cache.py               # SHA-256 disk response cache

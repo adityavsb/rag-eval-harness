@@ -1,0 +1,88 @@
+{
+  "run_name": "openrouter-tri-model-eval",
+  "note": "Aggregate metrics only. Full per-query reports stay local under reports/ (gitignored).",
+  "generators": [
+    {
+      "model_id": "deepseek/deepseek-v4.1-flash",
+      "timestamp": "2026-10-29T21:09:35.477102+00:00",
+      "git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd",
+      "index_fingerprint": "aab84d8bac1d18ab",
+      "metrics": {
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.7213,
+        "mrr_at_k": 0.6503,
+        "context_precision_at_k": 0.6393,
+        "context_recall_at_k": 0.6339,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.6066,
+            0.8361
+          ],
+          "mrr_at_k": [
+            0.5355,
+            0.7568
+          ],
+          "context_precision_at_k": [
+            0.526,
+            0.7446
+          ],
+          "context_recall_at_k": [
+            0.5246,
+            0.7404
+          ]
+        },
+        "negative_refusal_rate": 1.0,
+        "p95_retrieval_latency_ms": 23.99,
+        "p95_generation_latency_ms": 3624.82,
+        "mean_faithfulness": 0.8898,
+        "mean_correctness": 0.8257,
+        "mean_rubric_grade": 4.36,
+        "judge_model": "perplexity/pplx-decider-flash-v1.2",
+        "judge_evaluation_mode": "openrouter_alpha_decisions"
+      }
+    },
+    {
+      "model_id": "qwen/qwen3.7-flash",
+      "timestamp": "2026-10-29T21:19:25.092551+00:00",
+      "git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd",
+      "index_fingerprint": "aab84d8bac1d18ab",
+      "metrics": {
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.7213,
+        "mrr_at_k": 0.6503,
+        "context_precision_at_k": 0.6393,
+        "context_recall_at_k": 0.6339,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.6066,
+            0.8361
+          ],
+          "mrr_at_k": [
+            0.5355,
+            0.7568
+          ],
+          "context_precision_at_k": [
+            0.526,
+            0.7446
+          ],
+          "context_recall_at_k": [
+            0.5246,
+            0.7404
+          ]
+        },
+        "negative_refusal_rate": 0.3158,
+        "p95_retrieval_latency_ms": 27.03,
+        "p95_generation_latency_ms": 5913.96,
+        "mean_faithfulness": 0.6061,
+        "mean_correctness": 0.4806,
+        "mean_rubric_grade": 2.95,
+        "judge_model": "perplexity/pplx-decider-flash-v1.2",
+        "judge_evaluation_mode": "openrouter_alpha_decisions"
+      }
+    }
+  ]
+}
