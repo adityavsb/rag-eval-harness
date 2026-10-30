@@ -4,6 +4,8 @@
 
 Compare chunking strategies, **BM25 + dense RRF**, and cross-encoder reranking with real IR numbers (Hit Rate@K, MRR, context precision/recall, **2,000-resample bootstrap CIs**, McNemar checks). Switch to **`--mode live`** and the same pipeline calls **OpenRouter chat models** (e.g. DeepSeek V4.1 Flash, Qwen 3.7 Flash) for grounded answers, then runs **JEV**: **LLM-specific metrics** (faithfulness, rubric correctness, mean grade) from **Perplexity PPLX Decider Flash** over OpenRouter’s **`/api/alpha/decisions`** decision API—one judge model for apples-to-apples generator comparison, not a lexical offline mock. Track **negative-query refusal** beside retrieval hit rate. Full per-query traces stay **local** under `reports/` (gitignored); README numbers are backed by aggregate [`results/`](results/). Offline mode runs without API keys for regression; the published OpenRouter cohort is [documented below](#benchmark-results-live-mode).
 
+**On this page:** [What I learned](#what-i-learned-systems-reality-vs-theoretical-claims) · [Architecture](#architecture) · [Offline results](#benchmark-results-offline-mode) · [Live results](#benchmark-results-live-mode) · [Quickstart](#quickstart--reproducibility) · [Repo layout](#repository-layout) · GitHub [About text](GITHUB_ABOUT.md)
+
 ---
 
 ## What I Learned: Systems Reality vs. Theoretical Claims
@@ -91,7 +93,7 @@ Building and benchmarking this harness on Apple Silicon forced me to confront se
 ## Benchmark Results (offline mode)
 
 > [!NOTE]
-> **How these numbers were produced.** Every figure on this page comes from `--mode offline`:
+> **How these numbers were produced.** Every figure in this section comes from `--mode offline`:
 > retrieval uses real local models (`all-MiniLM-L6-v2`, BM25, `cross-encoder/ms-marco-MiniLM-L6-v2`) on a
 > 10-document authored corpus; **generation is a deterministic mock** that echoes the top chunk;
 > **the "judge" is a lexical-overlap heuristic**, not an LLM; the DSPy run uses a scripted mock LM.
@@ -335,6 +337,7 @@ Open **`http://localhost:5001`** in your browser.
 
 ```
 rag-eval-harness/
+├── GITHUB_ABOUT.md                # Copy-paste GitHub description, topics, blurb
 ├── configs/                       # Declarative pipeline configs (YAML)
 │   ├── baseline.yaml              # Fixed chunking baseline
 │   ├── chunk_optimized.yaml       # Recursive chunking

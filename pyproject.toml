@@ -5,10 +5,18 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rag-eval-harness"
 version = "0.2.1"
-description = "An evaluation harness and benchmarking suite for Retrieval-Augmented Generation (RAG) pipelines"
+description = "Hybrid RAG evaluation harness: offline retrieval benchmarks and live OpenRouter generation with JEV (Decider) judging on an authored corpus."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+keywords = [
+    "rag",
+    "retrieval-augmented-generation",
+    "information-retrieval",
+    "benchmark",
+    "mlflow",
+    "evaluation",
+]
 authors = [
     { name = "Aditya Bhadoria", email = "adityavsb@users.noreply.github.com" }
 ]

@@ -9,3 +9,9 @@ repository-code: https://github.com/adityavsb/rag-eval-harness
 license: MIT
 version: 0.2.1
 date-released: 2026-10-30
+abstract: >-
+  Benchmark harness for retrieval-augmented generation on an authored technical
+  corpus. Offline mode reports IR metrics (Hit@K, MRR, bootstrap CIs) with BM25,
+  dense embeddings, RRF, and cross-encoder reranking; live mode scores OpenRouter
+  generators with JEV (Perplexity Decider via OpenRouter decisions API). Aggregate
+  results are versioned in git; full per-query traces remain local.

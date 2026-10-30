@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from src.utils.release_metadata import read_project_version, user_agent
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 EXPECTED_VERSION = "0.2.1"
 
@@ -28,3 +30,11 @@ def test_package_and_citation_versions_match():
     pkg = _read_pyproject_version()
     cff = _read_cff_version()
     assert pkg == cff == EXPECTED_VERSION
+    assert read_project_version() == EXPECTED_VERSION
+    assert user_agent() == f"rag-eval-harness/{EXPECTED_VERSION}"
+
+
+def test_scripts_use_release_user_agent():
+    text = (REPO_ROOT / "scripts/list_free_models.py").read_text(encoding="utf-8")
+    assert "0.3.0" not in text
+    assert "user_agent()" in text

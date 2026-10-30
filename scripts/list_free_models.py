@@ -1,10 +1,18 @@
 """Discover and inspect currently active free models from OpenRouter."""
 
 import json
+import sys
 import urllib.request
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.utils.release_metadata import user_agent  # noqa: E402
 
 console = Console()
 
@@ -14,7 +22,7 @@ def fetch_free_models():
     url = "https://openrouter.ai/api/v1/models"
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "rag-eval-harness/0.3.0"},
+        headers={"User-Agent": user_agent()},
     )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
