@@ -10,7 +10,7 @@ All material in this directory was **written by the repository author for this b
 
 - **`raw/`**: 10 engineering documents describing a fictional platform architecture, runbooks, infrastructure configurations, and incident response guides.
 - **`golden_qa.json`**: 80 manually verified question-answer pairs with source context annotations and strict train/dev/test splits.
-- **`human_labels.jsonl`**: 30 author-written probe QA items used for in-sample regression testing of the offline heuristic judge. Single annotator (`adityavsb`, 2026-10-24); answers are hand-authored probe targets, not live model outputs.
+- **`human_labels.jsonl`**: 30 author-written probe QA items used for in-sample regression testing of the offline heuristic judge. Single annotator (`adityavsb`, 2026-10-24); answers are hand-authored probe targets, not live model outputs. These labels are **not** independent multi-annotator consensus and must not be read as calibration gold for live **JEV** scores (see [`results/live_run_lineage.json`](../results/live_run_lineage.json)).
 
 ### Live benchmarks vs. split quarantine
 

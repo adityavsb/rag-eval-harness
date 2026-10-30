@@ -106,3 +106,62 @@ def test_judge_is_decision_model_property():
     judge_chat = LLMJudge(model_name="gpt-4o-mini", mode="live")
     assert judge_chat.is_decision_model is False
 
+
+def test_openrouter_decisions_http_error_redacts_body(monkeypatch):
+    import io
+    import urllib.error
+
+    from src.llm.provider import call_openrouter_decisions
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test-key-not-real")
+    monkeypatch.delenv("RAG_EVAL_DEBUG_PROVIDER_ERRORS", raising=False)
+
+    body = b'{"error":"SENSITIVE_MARKER_XYZ in payload"}'
+
+    def fake_urlopen(req, timeout=60.0):
+        raise urllib.error.HTTPError(
+            req.full_url, 400, "Bad Request", hdrs=None, fp=io.BytesIO(body)
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    with pytest.raises(RuntimeError) as exc:
+        call_openrouter_decisions(
+            model="perplexity/pplx-decider-flash-v1.2",
+            state={"query": "test"},
+            questions={"q": {"type": "noul"}},
+            max_retries=1,
+        )
+    assert "SENSITIVE_MARKER_XYZ" not in str(exc.value)
+    assert "HTTP 400" in str(exc.value)
+
+
+def test_openrouter_decisions_debug_mode_sanitizes_bearer(monkeypatch):
+    import io
+    import urllib.error
+
+    from src.llm.provider import call_openrouter_decisions
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test-key-not-real")
+    monkeypatch.setenv("RAG_EVAL_DEBUG_PROVIDER_ERRORS", "1")
+
+    body = b'{"hint":"Authorization Bearer sk-secret-leak-token"}'
+
+    def fake_urlopen(req, timeout=60.0):
+        raise urllib.error.HTTPError(
+            req.full_url, 502, "Bad Gateway", hdrs=None, fp=io.BytesIO(body)
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    with pytest.raises(RuntimeError) as exc:
+        call_openrouter_decisions(
+            model="perplexity/pplx-decider-flash-v1.2",
+            state={},
+            questions={"q": {"type": "noul"}},
+            max_retries=1,
+        )
+    msg = str(exc.value)
+    assert "sk-secret-leak-token" not in msg
+    assert "Bearer [REDACTED]" in msg or "REDACTED" in msg
+

@@ -1,0 +1,44 @@
+{
+  "description": "Which live artifacts to trust for JEV metrics. Full per-query JSON stays local under reports/ (gitignored).",
+  "canonical_metrics": {
+    "file": "results/openrouter_cohort_summary.json",
+    "generators": [
+      "deepseek/deepseek-v4.1-flash",
+      "qwen/qwen3.7-flash"
+    ],
+    "judge_model": "perplexity/pplx-decider-flash-v1.2",
+    "judge_endpoint": "https://openrouter.ai/api/alpha/decisions",
+    "judge_evaluation_mode": "openrouter_alpha_decisions",
+    "run_git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd",
+    "run_dates_utc": [
+      "2026-10-29T21:09:35+00:00",
+      "2026-10-29T21:19:25+00:00"
+    ]
+  },
+  "superseded_local_artifacts": [
+    {
+      "status": "superseded",
+      "local_path": "reports/live/openrouter-tri-model-eval/20261029T210935_99f16f5.json",
+      "generator": "deepseek/deepseek-v4.1-flash",
+      "reason": "Initial live run used chat-style judging path; scores may reflect offline lexical fallback—not comparable JEV Decider metrics."
+    },
+    {
+      "status": "superseded",
+      "local_path": "reports/live/openrouter-tri-model-eval/20261029T211925_99f16f5.json",
+      "generator": "qwen/qwen3.7-flash",
+      "reason": "Same as above; use JEV re-judge or compare aggregates in openrouter_cohort_summary.json."
+    }
+  ],
+  "valid_local_workflow": [
+    "Run experiments/run_eval.py with configs/openrouter_cohort.yaml --mode live --stage full per generator.",
+    "Optional: scripts/rejudge_saved_reports.py --report <local_generator.json> for JEV-only rescoring.",
+    "Compare aggregate metrics to results/openrouter_cohort_summary.json.",
+    "Optional audit: scripts/hash_local_reports.py <path> (SHA-256 to stdout, not committed)."
+  ],
+  "probe_labels_scope": {
+    "file": "data/human_labels.jsonl",
+    "count": 30,
+    "annotators": "single author (repository author)",
+    "purpose": "In-sample regression guard for offline lexical judge—not independent multi-annotator consensus on live model outputs."
+  }
+}

@@ -139,6 +139,7 @@ All retrieval metrics are evaluated at effective **K = 4** over the **n = 61** a
 > use **n = 61** answerable cases, generation quality on **n = 61**, and **negative refusal rate** on **n = 19** adversarial
 > negatives. Aggregate metrics (no per-query traces in git): [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json)
 > (from local runs at git `99f16f5`, 2026-10-29).
+> **Evidence & lineage:** [`results/live_run_lineage.json`](results/live_run_lineage.json) (canonical aggregates vs superseded local raw runs).
 
 ### OpenRouter cohort (hybrid RRF retrieval, JEV / Decider judge)
 
@@ -164,7 +165,7 @@ Environment block shape (from local run; platform packages vary by install):
 ```
 
 * **Full traces:** Written locally under [`reports/live/`](reports/live/) when you run eval (gitignored).
-* **Aggregates in git:** [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json).
+* **Aggregates in git:** [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json) and [`results/live_run_lineage.json`](results/live_run_lineage.json).
 
 ---
 
@@ -349,7 +350,8 @@ rag-eval-harness/
 │   └── README.md                  # Dataset card, taxonomy, and split quarantine rules
 ├── results/                       # Aggregate benchmark metrics (committed)
 │   ├── offline_retrieval_summary.json
-│   └── openrouter_cohort_summary.json
+│   ├── openrouter_cohort_summary.json
+│   └── live_run_lineage.json
 ├── reports/                       # Full eval JSON output (local, gitignored)
 │   ├── README.md
 │   ├── offline/
@@ -404,4 +406,5 @@ rag-eval-harness/
 ---
 
 ## License
-MIT License.
+
+MIT License. Third-party packages and model weights: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

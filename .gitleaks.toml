@@ -1,0 +1,14 @@
+title = "rag-eval-harness gitleaks config"
+
+[allowlist]
+description = "Test fixtures and aggregate result JSON without secrets"
+paths = [
+  '''tests/''',
+  '''results/''',
+]
+
+[allowlist.regexes]
+description = "Documentation examples only"
+regexes = [
+  '''sk-or-test-key-not-real''',
+]

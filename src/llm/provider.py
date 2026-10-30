@@ -26,6 +26,46 @@ def mask_secret(secret: str | None) -> str:
     return f"{secret[:6]}...{secret[-4:]}"
 
 
+def _provider_debug_errors() -> bool:
+    """When true, exception messages may include capped, redacted provider detail."""
+    return os.environ.get("RAG_EVAL_DEBUG_PROVIDER_ERRORS", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
+def _sanitize_error_detail(text: str, max_len: int = 200) -> str:
+    import re
+
+    redacted = re.sub(r"Bearer\s+\S+", "Bearer [REDACTED]", text, flags=re.IGNORECASE)
+    redacted = re.sub(r"sk-[a-zA-Z0-9_-]{8,}", "sk-[REDACTED]", redacted)
+    if len(redacted) > max_len:
+        return redacted[:max_len] + "..."
+    return redacted
+
+
+def _format_litellm_failure(model_slug: str, max_retries: int, last_error: Exception | None) -> str:
+    err_cls = type(last_error).__name__ if last_error else "UnknownError"
+    msg = f"LiteLLM call failed for model '{model_slug}' after {max_retries} attempts ({err_cls})"
+    if _provider_debug_errors() and last_error:
+        msg += f": {_sanitize_error_detail(str(last_error))}"
+    return msg
+
+
+def _format_openrouter_http_error(http_code: int, body: str) -> str:
+    if _provider_debug_errors():
+        return f"OpenRouter decisions HTTP {http_code}: {_sanitize_error_detail(body)}"
+    return f"OpenRouter decisions HTTP {http_code} (enable RAG_EVAL_DEBUG_PROVIDER_ERRORS=1 for detail)"
+
+
+def _format_openrouter_failure(max_retries: int, last_error: Exception | None) -> str:
+    err_cls = type(last_error).__name__ if last_error else "UnknownError"
+    msg = f"OpenRouter decisions call failed after {max_retries} attempts ({err_cls})"
+    if _provider_debug_errors() and last_error:
+        msg += f": {_sanitize_error_detail(str(last_error))}"
+    return msg
+
 class LLMResponse(BaseModel):
     """Encapsulates response text, token usage, cost, and cache provenance."""
 
@@ -127,7 +167,7 @@ def call_llm(
 
     if response is None:
         raise RuntimeError(
-            f"LiteLLM call failed for model '{model_slug}' after {max_retries} attempts: {last_error}"
+            _format_litellm_failure(model_slug, max_retries, last_error)
         ) from last_error
 
     choice = response.choices[0]
@@ -203,14 +243,12 @@ def call_openrouter_decisions(
             if e.code in (429, 503) and attempt < max_retries - 1:
                 time.sleep(2.0 * (attempt + 1))
                 continue
-            raise RuntimeError(f"OpenRouter decisions HTTP {e.code}: {err_body}") from e
+            raise RuntimeError(_format_openrouter_http_error(e.code, err_body)) from e
         except Exception as e:
             last_error = e
             if attempt < max_retries - 1:
                 time.sleep(1.5 * (attempt + 1))
                 continue
-            raise RuntimeError(f"OpenRouter decisions call failed: {e}") from e
+            raise RuntimeError(_format_openrouter_failure(max_retries, last_error)) from e
 
-    raise RuntimeError(
-        f"OpenRouter decisions call failed after {max_retries} attempts: {last_error}"
-    )
+    raise RuntimeError(_format_openrouter_failure(max_retries, last_error))
