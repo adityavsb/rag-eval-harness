@@ -1,4 +1,4 @@
-.PHONY: help install lint test eval mlflow clean
+.PHONY: help install lint test eval eval-all eval-live-openrouter mlflow clean
 
 VENV = .venv
 PYTHON = $(VENV)/bin/python
@@ -12,6 +12,7 @@ help:
 	@echo "  make lint        Run ruff linter and style checks"
 	@echo "  make test        Execute test suite"
 	@echo "  make eval        Run baseline evaluation benchmark"
+	@echo "  make eval-live-openrouter  Reminder + OpenRouter full eval (requires OPENROUTER_API_KEY)"
 	@echo "  make mlflow      Launch local MLflow UI dashboard"
 	@echo "  make clean       Remove caches, local DBs, and temp files"
 
@@ -36,6 +37,11 @@ eval-all:
 	$(PYTHON) experiments/run_eval.py --config configs/rerank_optimized.yaml --mode offline
 	$(PYTHON) experiments/run_eval.py --config configs/hybrid.yaml --mode offline
 	$(PYTHON) experiments/run_eval.py --config configs/hybrid_rerank.yaml --mode offline
+
+eval-live-openrouter:
+	@test -n "$$OPENROUTER_API_KEY" || (echo "Set OPENROUTER_API_KEY in .env or environment before live eval."; exit 1)
+	@echo "Live OpenRouter eval: full 80 queries, hybrid RRF — see README Quickstart for per-model commands."
+	$(PYTHON) experiments/run_eval.py --config configs/openrouter_cohort.yaml --mode live --stage full
 
 mlflow:
 	$(MLFLOW) ui --backend-store-uri sqlite:///mlflow.db --port 5001

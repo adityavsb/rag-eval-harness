@@ -12,6 +12,10 @@ All material in this directory was **written by the repository author for this b
 - **`golden_qa.json`**: 80 manually verified question-answer pairs with source context annotations and strict train/dev/test splits.
 - **`human_labels.jsonl`**: 30 author-written probe QA items used for in-sample regression testing of the offline heuristic judge. Single annotator (`adityavsb`, 2026-10-24); answers are hand-authored probe targets, not live model outputs.
 
+### Live benchmarks vs. split quarantine
+
+The **train / dev / test** quarantine in `golden_qa.json` still applies to **DSPy teleprompter training, demo pools, and prompt tuning**—do not optimize on `test`. Published **live OpenRouter** runs in this repo scored the **full 80-item suite** in one pass per generator for exploratory end-to-end reporting (retrieval + generation + Decider judge). Treat offline retrieval sweeps on answerable-only IR metrics as the controlled retrieval experiment; live tables add generation quality and negative refusal on top of the same hybrid index.
+
 <!-- dataset-card:start -->
 ## Dataset Composition
 
