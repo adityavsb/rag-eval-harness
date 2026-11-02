@@ -218,14 +218,16 @@ class EvaluationRunner:
                 f"[cyan][STAGE 3/3: full][/cyan] Running full evaluation on {len(golden_set)} queries..."
             )
 
+        is_live = self.config.generation.mode == "live"
         ckpt_dir_path = getattr(
             self.config.evaluation, "checkpoint_dir", "reports/live/checkpoints"
         )
+        if not is_live:
+            ckpt_dir_path = "reports/offline/checkpoints"
         ckpt_dir = Path(ckpt_dir_path)
         ckpt_dir.mkdir(parents=True, exist_ok=True)
 
         records: list[EvaluationRecord] = []
-        is_live = self.config.generation.mode == "live"
         safe_model_tag = self.generator.config.model_name.replace("/", "_").replace(":", "_")
 
         self.console.print(
@@ -269,11 +271,26 @@ class EvaluationRunner:
                 ret_metrics = evaluate_retrieval(retrieved_spans, gt_spans, k=self.effective_k)
 
                 # 2. Generation
-                gen_res = self.generator.generate(query, retrieval_res.chunks)
+                gen_res = self.generator.generate(
+                    query, retrieval_res.chunks, retriever=self.retriever
+                )
+
+                # If agentic multi-hop retrieval discovered additional context, update evaluation chunks
+                effective_chunks = gen_res.retrieved_chunks or retrieval_res.chunks
+                retrieved_ids = [c.chunk_id for c in effective_chunks]
+                retrieved_spans = [
+                    {
+                        "doc": c.metadata.get("doc", c.chunk_id.split("_c")[0]),
+                        "char_start": c.metadata.get("char_start", 0),
+                        "char_end": c.metadata.get("char_end", len(c.content)),
+                    }
+                    for c in effective_chunks
+                ]
+                ret_metrics = evaluate_retrieval(retrieved_spans, gt_spans, k=self.effective_k)
 
                 # 3. LLM-as-a-Judge Evaluation
                 context_str = "\n".join(
-                    [f"[{c.chunk_id}] {c.content}" for c in retrieval_res.chunks]
+                    [f"[{c.chunk_id}] {c.content}" for c in effective_chunks]
                 )
                 if hasattr(self.judge, "evaluate_sample") and self.judge.is_decision_model:
                     faith_res, corr_res, judge_usage = self.judge.evaluate_sample(

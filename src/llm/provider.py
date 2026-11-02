@@ -209,8 +209,17 @@ def call_openrouter_decisions(
     questions: dict[str, Any],
     timeout: float = 60.0,
     max_retries: int = 3,
+    use_cache: bool = True,
+    cache_dir: str = ".cache/llm_responses",
 ) -> dict[str, Any]:
     """Invokes OpenRouter /api/alpha/decisions for deterministic decision models (e.g. perplexity/pplx-decider-flash-v1.2)."""
+    cache = DiskResponseCache(cache_dir=cache_dir) if use_cache else None
+    cache_key_payload = json.dumps({"state": state, "questions": questions}, sort_keys=True)
+    if cache:
+        cached_data = cache.get(model=model, prompt=cache_key_payload)
+        if cached_data:
+            return cached_data
+
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise ValueError(
@@ -236,7 +245,10 @@ def call_openrouter_decisions(
         try:
             req = urllib.request.Request(url, data=data, headers=headers, method="POST")
             with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                result = json.loads(resp.read().decode("utf-8"))
+                if cache:
+                    cache.set(model=model, prompt=cache_key_payload, response=result)
+                return result
         except urllib.error.HTTPError as e:
             last_error = e
             err_body = e.read().decode("utf-8", errors="replace")
