@@ -1,0 +1,49 @@
+run_name: "dspy-compiled-rag"
+description: "DSPy Compiled RAG: Teleprompter optimized prompt signatures on train/dev with demo filtering"
+mode: "offline"
+
+corpus:
+  data_dir: "data/raw"
+  file_pattern: "*.md"
+
+chunking:
+  strategy: "recursive"
+  chunk_size: 400
+  chunk_overlap: 50
+
+embedding:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  device: "cpu"
+
+vector_store:
+  persist_directory: "chroma_db/hybrid"
+  collection_name: "hybrid_collection"
+
+retriever:
+  top_k: 4
+  retrieval_mode: "hybrid"
+  rrf_k: 60
+  use_reranker: false
+
+generation:
+  mode: "offline"
+  provider: "mock"
+  model_name: "offline-mock"
+  prompt_style: "dspy"
+  compiled_dspy_program_path: "src/optimize/compiled_dspy_rag.json"
+
+evaluation:
+  mode: "offline"
+  golden_qa_path: "data/golden_qa.json"
+  judge_model: "offline-heuristic"
+  stage: "full"
+  metrics:
+    - "hit_rate_at_k"
+    - "mrr_at_k"
+    - "context_recall"
+    - "faithfulness"
+    - "answer_correctness"
+
+tracking:
+  experiment_name: "rag-evaluation-benchmark"
+  tracking_uri: "sqlite:///mlflow.db"
