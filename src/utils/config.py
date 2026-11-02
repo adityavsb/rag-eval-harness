@@ -4,6 +4,10 @@ import os
 from pathlib import Path
 from typing import Literal
 
+# Ensure local Hugging Face model cache is preferred in sandboxed / offline execution
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 import yaml
 from pydantic import BaseModel, Field
 
@@ -83,7 +87,8 @@ class GenerationConfig(BaseModel):
     max_tokens: int = Field(default=500, gt=0)
     timeout_sec: float = Field(default=120.0, gt=0.0)
     pacing_delay_sec: float = Field(default=1.5, ge=0.0)
-    prompt_style: Literal["naive", "grounded", "dspy"] = "grounded"
+    prompt_style: Literal["naive", "grounded", "dspy", "agentic"] = "grounded"
+    max_agent_hops: int = Field(default=2, ge=1, le=5)
     compiled_dspy_program_path: str = "src/optimize/compiled_dspy_rag.json"
 
 

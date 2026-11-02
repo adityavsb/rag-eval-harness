@@ -3,6 +3,7 @@
 import os
 import time
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -16,6 +17,7 @@ class GenerationResult(BaseModel):
     query: str
     answer: str
     cited_chunk_ids: list[str] = Field(default_factory=list)
+    retrieved_chunks: list[RetrievedChunk] = Field(default_factory=list)
     generation_latency_ms: float = 0.0
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -69,8 +71,30 @@ class RAGGenerator:
             formatted_pieces.append(f"[{chunk.chunk_id}]\n{chunk.content}")
         return "\n\n".join(formatted_pieces)
 
-    def generate(self, query: str, chunks: list[RetrievedChunk]) -> GenerationResult:
+    def generate(
+        self,
+        query: str,
+        chunks: list[RetrievedChunk],
+        retriever: Any = None,
+    ) -> GenerationResult:
         """Generates a grounded answer from query and retrieved chunks."""
+        if self.config.prompt_style == "agentic":
+            from src.pipeline.agentic_graph import AgenticRAGGraph
+
+            if retriever is None:
+                from src.pipeline.retriever import RetrievalResult
+
+                class SimpleChunkRetriever:
+                    def retrieve(self, q: str):
+                        return RetrievalResult(
+                            query=q, chunks=chunks, retrieval_latency_ms=0.0, stage="agentic_initial"
+                        )
+
+                retriever = SimpleChunkRetriever()
+
+            agent = AgenticRAGGraph(retriever=retriever, config=self.config)
+            return agent.execute(query=query, initial_chunks=chunks)
+
         context_str = self._format_context(chunks)
 
         if self.config.prompt_style == "dspy":
