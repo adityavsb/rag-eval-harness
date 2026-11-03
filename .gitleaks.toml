@@ -6,9 +6,7 @@ paths = [
   '''tests/''',
   '''results/''',
 ]
-
-[allowlist.regexes]
-description = "Documentation examples only"
 regexes = [
   '''sk-or-test-key-not-real''',
 ]
+
