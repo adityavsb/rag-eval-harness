@@ -108,7 +108,10 @@ class LLMJudge:
     ) -> tuple[FaithfulnessEvaluation, CorrectnessEvaluation, dict[str, Any]]:
         """Evaluates both faithfulness and correctness, batching questions into a single decisions call if supported."""
         # Check for refusal
-        if "insufficient information" in ground_truth.lower() and "insufficient information" in answer.lower():
+        if (
+            "insufficient information" in ground_truth.lower()
+            and "insufficient information" in answer.lower()
+        ):
             return (
                 FaithfulnessEvaluation(
                     score=1.0,
@@ -123,7 +126,10 @@ class LLMJudge:
                 ),
                 {"usage": {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}},
             )
-        if "insufficient information" in ground_truth.lower() and "insufficient information" not in answer.lower():
+        if (
+            "insufficient information" in ground_truth.lower()
+            and "insufficient information" not in answer.lower()
+        ):
             return (
                 FaithfulnessEvaluation(
                     score=0.0,

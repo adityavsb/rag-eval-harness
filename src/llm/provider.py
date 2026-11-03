@@ -66,6 +66,7 @@ def _format_openrouter_failure(max_retries: int, last_error: Exception | None) -
         msg += f": {_sanitize_error_detail(str(last_error))}"
     return msg
 
+
 class LLMResponse(BaseModel):
     """Encapsulates response text, token usage, cost, and cache provenance."""
 

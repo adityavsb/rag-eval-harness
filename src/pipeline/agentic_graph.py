@@ -59,7 +59,9 @@ def _decompose_query_offline(query: str) -> list[str]:
     return [query]
 
 
-def _decompose_query_live(query: str, model_name: str, timeout: float = 60.0) -> tuple[list[str], int, int]:
+def _decompose_query_live(
+    query: str, model_name: str, timeout: float = 60.0
+) -> tuple[list[str], int, int]:
     """Decompose complex queries into 1 to 2 targeted sub-queries via LLM."""
     from src.llm.provider import call_llm
 
@@ -86,15 +88,30 @@ Question: {query}
     return [query], res.prompt_tokens, res.completion_tokens
 
 
-
 def _grade_chunks_offline(query: str, chunks: list[RetrievedChunk]) -> bool:
     """Deterministic document relevance grading for offline execution."""
     if not chunks:
         return False
 
     stopwords = {
-        "what", "how", "why", "which", "where", "when", "does", "the", "system",
-        "and", "with", "from", "for", "are", "is", "can", "occur", "handle",
+        "what",
+        "how",
+        "why",
+        "which",
+        "where",
+        "when",
+        "does",
+        "the",
+        "system",
+        "and",
+        "with",
+        "from",
+        "for",
+        "are",
+        "is",
+        "can",
+        "occur",
+        "handle",
     }
     q_words = [w for w in re.findall(r"\w+", query.lower()) if len(w) > 3 and w not in stopwords]
     if not q_words:
@@ -304,7 +321,9 @@ class AgenticRAGGraph:
             raw = res.content or ""
             # Strip reasoning tags
             cleaned = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
-            cleaned = re.sub(r"\[REASONING\].*?\[/REASONING\]", "", cleaned, flags=re.DOTALL).strip()
+            cleaned = re.sub(
+                r"\[REASONING\].*?\[/REASONING\]", "", cleaned, flags=re.DOTALL
+            ).strip()
             answer_text = cleaned if cleaned else raw
             p_tokens = res.prompt_tokens
             c_tokens = res.completion_tokens
@@ -313,7 +332,7 @@ class AgenticRAGGraph:
             if not chunks:
                 answer_text = "Based on the provided documentation, there is insufficient information to answer this question."
             else:
-                top_chunks = chunks[:min(3, len(chunks))]
+                top_chunks = chunks[: min(3, len(chunks))]
                 citations_text = " ".join([f"[{c.chunk_id}]" for c in top_chunks])
                 snippet = top_chunks[0].content[:160].replace("\n", " ").strip()
                 answer_text = f"According to {citations_text}, {snippet}."
@@ -340,7 +359,9 @@ class AgenticRAGGraph:
             "completion_tokens": state.get("completion_tokens", 0) + 15,
         }
 
-    def execute(self, query: str, initial_chunks: list[RetrievedChunk] | None = None) -> GenerationResult:
+    def execute(
+        self, query: str, initial_chunks: list[RetrievedChunk] | None = None
+    ) -> GenerationResult:
         """Executes the full agentic graph and returns structured GenerationResult."""
         start_time = time.perf_counter()
 

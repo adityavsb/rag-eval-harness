@@ -84,7 +84,9 @@ def test_decompose_query_offline_single_vs_multi_hop():
     assert "authentication token" in sub_qs[1].lower()
 
     # Multi-hop query with 'between X and Y'
-    between_q = "What is the difference between synchronous web workers and the background worker fleet?"
+    between_q = (
+        "What is the difference between synchronous web workers and the background worker fleet?"
+    )
     sub_between = _decompose_query_offline(between_q)
     assert len(sub_between) == 2
     assert "synchronous web workers" in sub_between[0].lower()

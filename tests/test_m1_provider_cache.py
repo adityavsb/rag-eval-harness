@@ -164,4 +164,3 @@ def test_openrouter_decisions_debug_mode_sanitizes_bearer(monkeypatch):
     msg = str(exc.value)
     assert "sk-secret-leak-token" not in msg
     assert "Bearer [REDACTED]" in msg or "REDACTED" in msg
-

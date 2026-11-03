@@ -103,7 +103,9 @@ def main() -> None:
 
     if args.limit and args.limit > 0:
         records = records[: args.limit]
-        console.print(f"[yellow]Limiting re-evaluation to first {len(records)} test cases.[/yellow]")
+        console.print(
+            f"[yellow]Limiting re-evaluation to first {len(records)} test cases.[/yellow]"
+        )
 
     # Connect to ChromaDB to reconstruct retrieved context
     import chromadb
@@ -149,9 +151,7 @@ def main() -> None:
         if retrieved_ids:
             res = collection.get(ids=retrieved_ids)
             id_to_doc = dict(zip(res["ids"], res["documents"]))
-            context_str = "\n".join(
-                [f"[{cid}] {id_to_doc.get(cid, '')}" for cid in retrieved_ids]
-            )
+            context_str = "\n".join([f"[{cid}] {id_to_doc.get(cid, '')}" for cid in retrieved_ids])
         else:
             context_str = ""
 
@@ -191,8 +191,12 @@ def main() -> None:
     grades = [r["rubric_grade"] for r in updated_records]
 
     # Calculate refusal rate on adversarial queries
-    neg_queries = [r for r in updated_records if "insufficient information" in r["ground_truth_answer"].lower()]
-    neg_refused = [r for r in neg_queries if "insufficient information" in r["generated_answer"].lower()]
+    neg_queries = [
+        r for r in updated_records if "insufficient information" in r["ground_truth_answer"].lower()
+    ]
+    neg_refused = [
+        r for r in neg_queries if "insufficient information" in r["generated_answer"].lower()
+    ]
     neg_refusal_rate = (len(neg_refused) / len(neg_queries)) if neg_queries else 1.0
 
     mean_faith = float(sum(faith_scores) / len(faith_scores)) if faith_scores else 0.0
@@ -227,7 +231,9 @@ def main() -> None:
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(updated_data, f, indent=2)
 
-    console.print(f"\n[bold green]✔ Successfully saved updated judged report to {out_path}[/bold green]")
+    console.print(
+        f"\n[bold green]✔ Successfully saved updated judged report to {out_path}[/bold green]"
+    )
 
     # Print summary table
     summary_table = Table(title=f"Evaluation Summary: {model_id} (Judged by {args.judge_model})")
@@ -237,7 +243,10 @@ def main() -> None:
     summary_table.add_row("Mean Faithfulness (noul)", f"{mean_faith:.4f} ({mean_faith * 100:.1f}%)")
     summary_table.add_row("Mean Correctness (noul)", f"{mean_corr:.4f} ({mean_corr * 100:.1f}%)")
     summary_table.add_row("Mean Rubric Grade (1-5)", f"{mean_grade:.2f} / 5.0")
-    summary_table.add_row("Negative Refusal Rate", f"{neg_refusal_rate * 100:.1f}% ({len(neg_refused)}/{len(neg_queries)})")
+    summary_table.add_row(
+        "Negative Refusal Rate",
+        f"{neg_refusal_rate * 100:.1f}% ({len(neg_refused)}/{len(neg_queries)})",
+    )
     summary_table.add_row("Judge Tokens / Cost Added", f"${total_judge_cost:.6f}")
     summary_table.add_row("Total Run Cost (Gen + Judge)", f"€{total_cost:.6f}")
 

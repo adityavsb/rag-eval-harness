@@ -87,7 +87,10 @@ class RAGGenerator:
                 class SimpleChunkRetriever:
                     def retrieve(self, q: str):
                         return RetrievalResult(
-                            query=q, chunks=chunks, retrieval_latency_ms=0.0, stage="agentic_initial"
+                            query=q,
+                            chunks=chunks,
+                            retrieval_latency_ms=0.0,
+                            stage="agentic_initial",
                         )
 
                 retriever = SimpleChunkRetriever()

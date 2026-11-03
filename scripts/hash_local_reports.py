@@ -8,7 +8,9 @@ from pathlib import Path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="SHA-256 checksum for a local eval report JSON file.")
+    parser = argparse.ArgumentParser(
+        description="SHA-256 checksum for a local eval report JSON file."
+    )
     parser.add_argument("paths", nargs="+", help="Path(s) to local report JSON under reports/")
     args = parser.parse_args()
 

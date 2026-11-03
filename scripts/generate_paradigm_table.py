@@ -73,7 +73,9 @@ def load_report_metrics(report_path: Path) -> dict[str, Any]:
     mh_grade = mean([r.get("rubric_grade", 1.0) for r in multi_hop])
 
     neg_refused = [
-        r for r in negatives if "insufficient information" in str(r.get("generated_answer", "")).lower()
+        r
+        for r in negatives
+        if "insufficient information" in str(r.get("generated_answer", "")).lower()
     ]
     neg_refusal_rate = (len(neg_refused) / len(negatives)) if negatives else 1.0
 

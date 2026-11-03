@@ -289,9 +289,7 @@ class EvaluationRunner:
                 ret_metrics = evaluate_retrieval(retrieved_spans, gt_spans, k=self.effective_k)
 
                 # 3. LLM-as-a-Judge Evaluation
-                context_str = "\n".join(
-                    [f"[{c.chunk_id}] {c.content}" for c in effective_chunks]
-                )
+                context_str = "\n".join([f"[{c.chunk_id}] {c.content}" for c in effective_chunks])
                 if hasattr(self.judge, "evaluate_sample") and self.judge.is_decision_model:
                     faith_res, corr_res, judge_usage = self.judge.evaluate_sample(
                         query, context_str, gen_res.answer, gt_ans
