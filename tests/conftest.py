@@ -4,9 +4,15 @@ import os
 import sys
 from pathlib import Path
 
-# Use offline HuggingFace mode locally when cache exists; allow downloads on CI runners
-_hf_cache = Path.home() / ".cache" / "huggingface" / "hub"
-if not os.environ.get("CI") and _hf_cache.exists():
+# Use offline HuggingFace mode locally when the embedding model cache exists; allow downloads on CI
+_minilm_cache = (
+    Path.home()
+    / ".cache"
+    / "huggingface"
+    / "hub"
+    / "models--sentence-transformers--all-MiniLM-L6-v2"
+)
+if not os.environ.get("CI") and _minilm_cache.exists():
     os.environ.setdefault("HF_HUB_OFFLINE", "1")
     os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 

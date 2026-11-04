@@ -135,7 +135,7 @@ def main():
             pacing_delay=args.pacing_delay,
         )
     except Exception as e:
-        console.print(f"[bold red]Benchmark execution failed: {e}[/bold red]")
+        console.print(f"[bold red]Benchmark execution failed: {e}[/bold red]", soft_wrap=True)
         sys.exit(1)
 
     console.print(

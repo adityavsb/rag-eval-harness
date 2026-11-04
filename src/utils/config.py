@@ -4,12 +4,20 @@ import os
 from pathlib import Path
 from typing import Literal
 
-# Ensure local Hugging Face model cache is preferred in sandboxed / offline execution
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
-os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
-
 import yaml
 from pydantic import BaseModel, Field
+
+# Prefer local Hugging Face cache when the embedding model is already cached locally
+_minilm_cache = (
+    Path.home()
+    / ".cache"
+    / "huggingface"
+    / "hub"
+    / "models--sentence-transformers--all-MiniLM-L6-v2"
+)
+if not os.environ.get("CI") and _minilm_cache.exists():
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 
 def load_dotenv(env_path: str | Path = ".env") -> dict[str, str]:
