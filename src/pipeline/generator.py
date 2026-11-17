@@ -105,15 +105,24 @@ class RAGGenerator:
                 RAGModule,
                 configure_dspy_lm,
                 load_compiled_program,
+                sum_history_tokens,
             )
 
             start_time = time.perf_counter()
-            configure_dspy_lm(mode=self.config.mode, model_name=self.config.model_name)
+            lm = configure_dspy_lm(
+                mode=self.config.mode,
+                model_name=self.config.model_name,
+                provider=self.config.provider,
+                max_tokens=self.config.max_tokens,
+                temperature=self.config.temperature,
+            )
             dspy_path = Path(self.config.compiled_dspy_program_path)
             if dspy_path.exists():
                 prog = load_compiled_program(dspy_path)
             else:
                 prog = RAGModule()
+            history = getattr(lm, "history", None) or []
+            history_before = len(history)
             pred = prog(question=query, context=context_str)
             latency_ms = (time.perf_counter() - start_time) * 1000.0
             answer_text = getattr(pred, "answer", "")
@@ -124,13 +133,17 @@ class RAGGenerator:
                 if c.strip() and c.strip().lower() != "none"
             ]
             is_ref = "insufficient information" in answer_text.lower()
+            prompt_tokens, completion_tokens = sum_history_tokens(lm, history_before)
+            if prompt_tokens == 0 and completion_tokens == 0:
+                prompt_tokens = len(context_str.split()) + len(query.split())
+                completion_tokens = len(answer_text.split())
             return GenerationResult(
                 query=query,
                 answer=answer_text,
                 cited_chunk_ids=citations,
                 generation_latency_ms=latency_ms,
-                prompt_tokens=len(context_str.split()) + len(query.split()),
-                completion_tokens=len(answer_text.split()),
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
                 is_refusal=is_ref,
             )
 

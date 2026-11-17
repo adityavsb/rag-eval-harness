@@ -1,17 +1,26 @@
 """Unit tests for Milestone M5: DSPy generation prompt optimization and teleprompter compilation."""
 
 import dspy
+import pytest
 from pydantic import BaseModel
 
+from src.eval.llm_judge import LLMJudge
 from src.optimize.compile import (
     build_chunk_map,
+    demo_is_broken,
+    evaluate_program_on_split,
     load_dspy_splits,
     rag_optimization_metric,
 )
 from src.optimize.dspy_program import (
+    GenerateAnswerWithCitations,
+    LenientChatAdapter,
     RAGModule,
     configure_dspy_lm,
     load_compiled_program,
+    normalize_dspy_field_headers,
+    openrouter_model_slug,
+    resolve_dspy_provider,
 )
 from src.pipeline.generator import RAGGenerator
 from src.pipeline.retriever import RetrievedChunk
@@ -139,6 +148,117 @@ def test_rag_generator_with_dspy_prompt_style():
     assert len(res.answer) > 0
     assert res.generation_latency_ms >= 0.0
     assert not res.is_refusal
+
+
+def test_openrouter_slug_and_provider_resolution():
+    """DeepSeek and Qwen route through LiteLLM's openrouter/ prefix."""
+    assert openrouter_model_slug("deepseek/deepseek-v4.1-flash") == (
+        "openrouter/deepseek/deepseek-v4.1-flash"
+    )
+    assert openrouter_model_slug("qwen/qwen3.7-flash") == "openrouter/qwen/qwen3.7-flash"
+    assert openrouter_model_slug("openrouter/qwen/qwen3.7-flash") == (
+        "openrouter/qwen/qwen3.7-flash"
+    )
+    assert resolve_dspy_provider("openrouter", "deepseek/deepseek-v4.1-flash") == "openrouter"
+    assert resolve_dspy_provider(None, "qwen/qwen3.7-flash") == "openrouter"
+    assert resolve_dspy_provider("openai", "gpt-4o-mini") == "openai"
+
+
+def test_dspy_live_openrouter_missing_key_raises(monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="OPENROUTER_API_KEY environment variable is missing"):
+        configure_dspy_lm(
+            mode="live",
+            model_name="deepseek/deepseek-v4.1-flash",
+            provider="openrouter",
+        )
+
+
+def test_dspy_live_openrouter_builds_litellm_client(monkeypatch):
+    captured = {}
+
+    class FakeLM:
+        def __init__(self, model, **kwargs):
+            captured["model"] = model
+            captured["kwargs"] = kwargs
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test-key")
+    monkeypatch.setattr("src.optimize.dspy_program.dspy.LM", FakeLM)
+    monkeypatch.setattr("src.optimize.dspy_program.dspy.settings.configure", lambda **kwargs: None)
+    configure_dspy_lm(
+        mode="live",
+        model_name="qwen/qwen3.7-flash",
+        provider="openrouter",
+    )
+    assert captured["model"] == "openrouter/qwen/qwen3.7-flash"
+    assert captured["kwargs"]["api_base"] == "https://openrouter.ai/api/v1"
+    assert captured["kwargs"]["engine"] == "litellm"
+    assert captured["kwargs"]["api_key"] == "sk-or-test-key"
+    assert captured["kwargs"]["max_tokens"] == 4000
+
+
+def test_configure_dspy_lm_default_max_tokens(monkeypatch):
+    captured = {}
+
+    class FakeLM:
+        def __init__(self, model, **kwargs):
+            captured["max_tokens"] = kwargs.get("max_tokens")
+
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test-key")
+    monkeypatch.setattr("src.optimize.dspy_program.dspy.LM", FakeLM)
+    monkeypatch.setattr("src.optimize.dspy_program.dspy.settings.configure", lambda **kwargs: None)
+    configure_dspy_lm(mode="live", model_name="deepseek/deepseek-v4.1-flash", provider="openrouter")
+    assert captured["max_tokens"] == 4000
+
+
+def test_normalize_dspy_field_headers_fixes_missing_space():
+    raw = "[[ ## citations ##]]"
+    assert normalize_dspy_field_headers(raw) == "[[ ## citations ## ]]"
+
+
+def test_lenient_chat_adapter_parses_export_job_style_reply():
+    adapter = LenientChatAdapter()
+    completion = """[[ ## citations ##]]
+08_asynchronous_worker_fleet_c002, 06_database_migrations_and_schema_c006
+
+[[ ## answer ## ]]
+The context states that bulk export jobs such as PDF exports are assigned to the bulk priority tier with an SLA of under 15 minutes.
+
+[[ ## completed ## ]]"""
+    fields = adapter.parse(GenerateAnswerWithCitations, completion)
+    assert "citations" in fields
+    assert "answer" in fields
+    assert "08_asynchronous_worker_fleet_c002" in fields["citations"]
+
+
+def test_evaluate_program_on_split_continues_on_parse_failure():
+    from dspy.utils.exceptions import AdapterParseError
+
+    class BrokenModule:
+        def __call__(self, question: str, context: str):
+            raise AdapterParseError(
+                adapter_name="LenientChatAdapter",
+                signature=GenerateAnswerWithCitations,
+                lm_response="",
+            )
+
+    judge = LLMJudge(mode="offline")
+    ex = dspy.Example(
+        question="Q?",
+        context="C",
+        answer="A",
+        query_type="factoid",
+    ).with_inputs("question", "context")
+    metrics = evaluate_program_on_split(BrokenModule(), [ex], judge)
+    assert metrics["parse_failures"] == 1.0
+    assert metrics["answer_correctness"] == 0.0
+
+
+def test_demo_sanity_gate_rejects_fragments():
+    assert demo_is_broken({"answer": "mid sentence fragment."})
+    assert demo_is_broken({"answer": "# Heading"})
+    assert demo_is_broken({"answer": ""})
+    assert not demo_is_broken({"answer": "Tokens expire after 15 minutes."})
 
 
 def test_offline_lm_is_demo_agnostic():

@@ -1,5 +1,13 @@
 {
   "description": "Which live artifacts to trust for JEV metrics. Full per-query JSON stays local under reports/ (gitignored).",
+  "dspy_holdout": {
+    "file": "results/dspy_openrouter_summary.json",
+    "generator": "deepseek/deepseek-v4.1-flash",
+    "judge_model": "perplexity/pplx-decider-flash-v1.2",
+    "scope": "Quarantined 32-item test split (train/dev excluded from compile); retrieved hybrid top-4 vs oracle-context arms in summary JSON",
+    "run_date_utc": "2026-11-17",
+    "supersedes": "Any Tier 3 compiled row from offline OfflineRAGLM reports"
+  },
   "canonical_metrics": {
     "file": "results/openrouter_cohort_summary.json",
     "generators": [
@@ -33,6 +41,7 @@
     "Run experiments/run_eval.py with configs/openrouter_cohort.yaml --mode live --stage full per generator.",
     "Optional: scripts/rejudge_saved_reports.py --report <local_generator.json> for JEV-only rescoring.",
     "Compare aggregate metrics to results/openrouter_cohort_summary.json.",
+    "DSPy compile/holdout: src/optimize/compile.py --mode live; publish results/dspy_openrouter_summary.json.",
     "Optional audit: scripts/hash_local_reports.py <path> (SHA-256 to stdout, not committed)."
   ],
   "probe_labels_scope": {

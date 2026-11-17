@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a 4-tier paradigm comparison table across Baseline, Optimized, Compiled, and Agentic RAG."""
+"""Generate the published paradigm comparison table (Baseline, Optimized, Agentic; DSPy is separate)."""
 
 import argparse
 import json
@@ -29,12 +29,6 @@ PARADIGM_MAP = [
         "name": "hybrid-rerank-rag",
         "description": "Two-Stage Hybrid (Recursive 400/50, RRF Top-15 -> Rerank Top-4)",
         "report": "reports/offline/hybrid-rerank-rag/latest.json",
-    },
-    {
-        "tier": "Tier 3: Compiled",
-        "name": "dspy-compiled-rag",
-        "description": "DSPy Teleprompter Program (Signatures & FewShot Demos)",
-        "report": "reports/offline/dspy-compiled-rag/latest.json",
     },
     {
         "tier": "Tier 4: Agentic",
@@ -111,7 +105,7 @@ def load_report_metrics(report_path: Path) -> dict[str, Any]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate 4-tier paradigm comparison table.")
+    parser = argparse.ArgumentParser(description="Generate published paradigm comparison table (no offline DSPy mock row).")
     parser.add_argument(
         "--live-deepseek",
         action="store_true",
@@ -127,7 +121,7 @@ def main():
             "description": "Two-Stage Hybrid (Live DeepSeek V4.1 Flash + Perplexity Decider)",
             "report": "reports/live/openrouter-tri-model-eval/deepseek_v4.1_perplexity_judged.json",
         }
-        paradigm_configs[3] = {
+        paradigm_configs[2] = {
             "tier": "Tier 4: Agentic (Live)",
             "name": "agentic-langgraph-live",
             "description": "LangGraph CRAG (Live DeepSeek V4.1 Flash + Perplexity Decider)",
@@ -135,7 +129,7 @@ def main():
         }
 
     table = Table(
-        title="RAG Paradigm Comparison Matrix: Baseline vs. Optimized vs. Compiled vs. Agentic",
+        title="RAG Paradigm Comparison Matrix: Baseline vs. Optimized vs. Agentic",
         show_header=True,
         header_style="bold cyan",
     )
@@ -188,7 +182,9 @@ def main():
 
     # Save to reports/paradigm_comparison_table.md
     out_path = REPO_ROOT / "reports/paradigm_comparison_table.md"
-    md_header = """# 4-Tier RAG Paradigm Comparison: Baseline vs. Optimized vs. Compiled vs. Agentic
+    md_header = """# RAG Paradigm Comparison: Baseline vs. Optimized vs. Agentic
+
+Live DSPy few-shot compilation is reported separately in `results/dspy_openrouter_summary.json` (quarantined 32-item test split).
 
 | Paradigm | Architecture Summary | Hit Rate@K | Multi-Hop Recall (17 Qs) | Multi-Hop Correctness | Negative Refusal (19 Qs) | Mean Faithfulness | Mean Correctness | P95 Gen Latency | Cost (80 Qs) |
 |---|---|---|---|---|---|---|---|---|---|

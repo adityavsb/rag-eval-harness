@@ -1,0 +1,68 @@
+{
+  "mode": "live",
+  "provider": "openrouter",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "judge_model": "perplexity/pplx-decider-flash-v1.2",
+  "n_train": 32,
+  "n_dev": 16,
+  "n_test": 32,
+  "n_demos": 4,
+  "n_demos_dropped": 0,
+  "candidate_dev_lexical_scores": [],
+  "test_split_quarantined": true,
+  "optimizer_metric": "lexical_overlap_plus_citation",
+  "published_judge": "perplexity/pplx-decider-flash-v1.2",
+  "baseline_oracle": {
+    "answer_correctness": 0.414696875,
+    "faithfulness": 0.9675343750000001,
+    "mean_latency_ms": 1659.2628007814483,
+    "multi_hop_correctness": 0.143075,
+    "n_multi_hop": 8.0,
+    "negative_refusal_rate": 1.0,
+    "n_negative": 8.0,
+    "parse_failures": 0.0
+  },
+  "compiled_oracle": {
+    "answer_correctness": 0.420115625,
+    "faithfulness": 0.969965625,
+    "mean_latency_ms": 651.730489625038,
+    "multi_hop_correctness": 0.164425,
+    "n_multi_hop": 8.0,
+    "negative_refusal_rate": 1.0,
+    "n_negative": 8.0,
+    "parse_failures": 0.0
+  },
+  "baseline_retrieved": {
+    "answer_correctness": 0.815134375,
+    "faithfulness": 0.957671875,
+    "mean_latency_ms": 2572.6427097189344,
+    "multi_hop_correctness": 0.53155,
+    "n_multi_hop": 8.0,
+    "negative_refusal_rate": 1.0,
+    "n_negative": 8.0,
+    "parse_failures": 0.0
+  },
+  "compiled_retrieved": {
+    "answer_correctness": 0.819971875,
+    "faithfulness": 0.967978125,
+    "mean_latency_ms": 1082.2859791560404,
+    "multi_hop_correctness": 0.556875,
+    "n_multi_hop": 8.0,
+    "negative_refusal_rate": 1.0,
+    "n_negative": 8.0,
+    "parse_failures": 0.0
+  },
+  "compile_prompt_tokens": 0,
+  "compile_completion_tokens": 0,
+  "eval_prompt_tokens": 113244,
+  "eval_completion_tokens": 28154,
+  "generator_cost_eur": 0.022313,
+  "compiled_program": "src/optimize/compiled_dspy_rag.openrouter.json",
+  "reasoning": "enabled",
+  "parse_failures": {
+    "baseline_oracle": 0.0,
+    "compiled_oracle": 0.0,
+    "baseline_retrieved": 0.0,
+    "compiled_retrieved": 0.0
+  }
+}

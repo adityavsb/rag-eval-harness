@@ -167,23 +167,22 @@ Environment block shape (from local run; platform packages vary by install):
 ```
 
 * **Full traces:** Written locally under [`reports/live/`](reports/live/) when you run eval (gitignored).
-* **Aggregates in git:** [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json) and [`results/live_run_lineage.json`](results/live_run_lineage.json).
+* **Aggregates in git:** [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json), [`results/dspy_openrouter_summary.json`](results/dspy_openrouter_summary.json), and [`results/live_run_lineage.json`](results/live_run_lineage.json).
 
 ---
 
-### 4-Tier Paradigm Benchmark: Baseline vs. Optimized vs. Compiled vs. LangGraph Agentic CRAG
+### Paradigm Benchmark: Baseline vs. Optimized vs. LangGraph Agentic CRAG
 
-To understand how retrieval paradigms evolve from naive single-shot lookup to autonomous orchestration, I benchmarked all 80 golden queries across four distinct architectures using the same corpus and evaluation suite:
+To understand how retrieval paradigms evolve from naive single-shot lookup to autonomous orchestration, I benchmarked all 80 golden queries across three published architectures using the same corpus and evaluation suite:
 
 | Paradigm | Architecture Summary | Hit Rate@4 | Multi-Hop Recall (17 Qs) | Multi-Hop Correctness (17 Qs) | Negative Refusal (19 Qs) | Mean Faithfulness | Mean Correctness | P95 Gen Latency |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Tier 1: Baseline** | Naive Single-Shot (Fixed 1000/0, Dense Top-4) | 98.4% | 85.3% | 7.4% (1.3/5) | 0.0% | 97.1% | 9.4% (1.38/5) | < 1 ms |
 | **Tier 2: Optimized (Live)** | Two-Stage Hybrid (Live DeepSeek V4.1 Flash + Perplexity Decider) | 72.1% | 59.8% | 32.4% (2.3/5) | 100.0% | 97.8% | 80.0% (4.20/5) | 3,625 ms |
-| **Tier 3: Compiled** | DSPy Teleprompter Program (Signatures & FewShot Demos) | 72.1% | 59.8% | 58.8% (3.4/5) | 15.8% | 96.9% | 64.4% (3.58/5) | 2 ms |
 | **Tier 4: Agentic (Live)** | LangGraph CRAG (Live DeepSeek V4.1 Flash + Perplexity Decider) | 72.1% | 59.8% | 47.9% (2.9/5) | 100.0% | 90.2% | 78.8% (4.17/5) | 9,163 ms |
 
 > [!NOTE]
-> All rows evaluate the exact same 80-item benchmark set (`n = 61` answerable, `n = 19` adversarial negative). Tiers 2 and 4 evaluate live on `deepseek/deepseek-v4.1-flash` scored by `perplexity/pplx-decider-flash-v1.2` over OpenRouter `/api/alpha/decisions` (`openrouter_alpha_decisions`). Tiers 1 and 3 are evaluated with the offline deterministic harness.
+> All rows evaluate the exact same 80-item benchmark set (`n = 61` answerable, `n = 19` adversarial negative). Tiers 2 and 4 evaluate live on `deepseek/deepseek-v4.1-flash` scored by `perplexity/pplx-decider-flash-v1.2` over OpenRouter `/api/alpha/decisions` (`openrouter_alpha_decisions`). Tier 1 uses the offline deterministic harness. An earlier “compiled DSPy” table row came from the offline `OfflineRAGLM` smoke path, not live few-shot compilation, and is withdrawn from this table. Live DSPy holdout numbers are in [§2 DSPy](#2-dspy-generation-prompt-optimization) and [`results/dspy_openrouter_summary.json`](results/dspy_openrouter_summary.json).
 
 #### Engineering Observations & Trade-Offs
 
@@ -193,7 +192,7 @@ To investigate whether agentic loops could overcome this retrieval bottleneck, I
 
 1. **Where metrics improved (Multi-hop reasoning breakthrough):**
    * Multi-hop correctness climbed from **32.4% to 47.9%** (+15.6 percentage points / +48% relative boost), lifting the mean rubric grade from 2.29/5 to 2.88/5.
-   * **Why it improved:** The LangGraph agent decomposes compound inquiries into targeted sub-queries and executes an iterative retrieval loop over ChromaDB. For instance, on `qa_053` (coordinating API Gateway rate limits with Auth Service JWT token expirations), static RAG retrieved only Gateway chunks and failed completely (0.00 / Grade 1). The agent retrieved Gateway specs on Hop 1 and Auth specs on Hop 2, synthesizing a fully grounded response (0.84 / Grade 4). Similar recoveries occurred on cache invalidation (`qa_057`: 0.00 → 0.82) and transaction deadlocks (`qa_058`: 0.00 → 0.87).
+   * **Why it improved:** The LangGraph agent decomposes compound inquiries into targeted sub-queries and executes an iterative retrieval loop over ChromaDB. For instance, on `qa_053` (API Gateway token-bucket/Redis rate limiting in `01_architecture_overview` plus tier quotas and RFC 7807/429 behavior in `03_authentication_and_security`), static RAG retrieved only Gateway chunks and failed completely (0.00 / Grade 1). The agent retrieved architecture specs on Hop 1 and auth rate-limit policy on Hop 2, synthesizing a fully grounded response (0.84 / Grade 4). Similar recoveries occurred on cache invalidation (`qa_057`: 0.00 → 0.82) and transaction deadlocks (`qa_058`: 0.00 → 0.87).
 
 2. **Why Hit Rate@4 & Multi-Hop Recall appear flat in the table (72.1% & 59.8%):**
    * In the top-level table, Hit Rate@4 and Multi-Hop Recall appear identical between Tier 2 and Tier 4. This is an evaluation cutoff artifact: the runner was configured with cutoff `k = 4`. When the agent executed its second hop and accumulated 6 to 8 total chunks across both hops, `compute_hit_rate_at_k(retrieved[:4])` truncated the evaluation window back to 4.
@@ -214,7 +213,25 @@ To investigate whether agentic loops could overcome this retrieval bottleneck, I
 
 ### 2. DSPy Generation Prompt Optimization
 
-`src/optimize/compile.py` compiles `RAGModule` with `BootstrapFewShotWithRandomSearch` on the `train` split, selects on `dev`, and evaluates on the quarantined `test` split. **No generation results are published yet**: the only runs so far used the deterministic offline mock LM (`OfflineRAGLM`), which cannot produce evidence about prompt quality. A live run (`--mode live --model gpt-4o-mini`) is required before any number appears here.
+`src/optimize/compile.py` compiles `RAGModule` with `BootstrapFewShotWithRandomSearch` on the `train` split, selects on `dev`, and scores only the quarantined `test` split (32 items: 16 factoid, 8 multi-hop, 8 adversarial). The search metric is lexical overlap. The holdout table uses the same Perplexity Decider judge as the live cohort.
+
+Live compilation uses OpenRouter. The default generator is `deepseek/deepseek-v4.1-flash`, the same model as Tiers 2 and 4, so a delta is the prompt program and not a model swap. Qwen 3.7 Flash is the same path with `--model qwen/qwen3.7-flash`.
+
+**2026-11-17 holdout (`n = 32` test split, hybrid top-4 context, Decider judge):**
+
+| Arm | Mean correctness | Multi-hop correctness (`n = 8`) | Negative refusal | Faithfulness |
+|:---:|:---:|:---:|:---:|:---:|
+| Zero-shot signature | 81.5% | 53.2% | 100% | 95.8% |
+| Compiled (4 demos) | 82.0% | 55.7% | 100% | 96.8% |
+
+Aggregate JSON: [`results/dspy_openrouter_summary.json`](results/dspy_openrouter_summary.json). Compile on `train`/`dev` only; score with `--eval-only` on the saved program.
+
+**What we learned:** `BootstrapFewShotWithRandomSearch` only added four few-shot demonstrations; the signature instruction already specified grounding, chunk citations, and the fixed refusal sentence. DSPy papers report larger gains when the starting prompt is underspecified and when the compiler metric matches the published judge. Here the teleprompter used lexical overlap on gold passages while holdout scoring used the Decider on retrieved context, and the zero-shot model was already strong on refusal and factoids—so the retrieved-context lift was small (+0.5 pp correctness, +2.5 pp multi-hop on eight items).
+
+```bash
+.venv/bin/python src/optimize/compile.py --mode live --model deepseek/deepseek-v4.1-flash
+.venv/bin/python src/optimize/compile.py --mode live --eval-only --model deepseek/deepseek-v4.1-flash
+```
 
 ---
 
@@ -272,7 +289,7 @@ Dense vector search and lexical BM25 Okapi were fused using Reciprocal Rank Fusi
 * **Latency:** Preserves bi-encoder retrieval latency (4.6 ms P95), offering hybrid vocabulary matching without the 7× inference overhead of a cross-encoder reranker.
 
 ### 4. Generation Prompt Optimization Status
-Offline optimization runs execute `OfflineRAGLM`, a deterministic test double designed strictly to validate teleprompter compilation, parameter serialization, and pipeline integration without external network calls. **DSPy compile deltas are still offline-only**; live OpenRouter results above evaluate the fixed grounded prompt, not a compiled DSPy program.
+Offline optimization runs execute `OfflineRAGLM`, a deterministic test double for teleprompter wiring. It does not measure prompt quality. Live compilation is `src/optimize/compile.py --mode live` against OpenRouter (`deepseek/deepseek-v4.1-flash` or `qwen/qwen3.7-flash`), with the Decider judge on the quarantined 32-item test split. The 2026-11-17 holdout found a modest compiled-vs-zero-shot delta on retrieved context (81.5% → 82.0% correctness; see [`results/dspy_openrouter_summary.json`](results/dspy_openrouter_summary.json)). The 80-query OpenRouter cohort table above still uses the fixed grounded prompt for Tier 2—not the compiled program—because DSPy optimization is evaluated on the quarantined split only.
 
 ### 5. Offline Heuristic Judge Guardrails
 The offline evaluation mode relies on regex entity checking and keyword overlap rules calibrated against 30 in-sample probe labels (`data/human_labels.jsonl`; Landis & Koch 1977 band 0.61–0.80). It serves solely as a regression guard for local offline development. Published live scores use **JEV** with the Perplexity Decider (see live benchmark section).
@@ -333,8 +350,12 @@ make eval
 # Run judge calibration against human ground-truth annotations
 .venv/bin/python src/eval/judge_agreement.py --mode offline
 
-# Compile DSPy generation program using BootstrapFewShot teleprompter
+# Compile DSPy generation program (offline smoke test; no generation metrics)
 .venv/bin/python src/optimize/compile.py --mode offline
+
+# Live compile on train/dev, then score the quarantined test split
+# Requires OPENROUTER_API_KEY. Qwen: --model qwen/qwen3.7-flash
+.venv/bin/python src/optimize/compile.py --mode live --model deepseek/deepseek-v4.1-flash
 ```
 
 ### 4. Live evaluation (OpenRouter)

@@ -1,5 +1,5 @@
 run_name: "dspy-compiled-rag"
-description: "DSPy Compiled RAG: Teleprompter optimized prompt signatures on train/dev with demo filtering"
+description: "Offline DSPy wiring smoke test (OfflineRAGLM); not a teleprompter benchmark"
 mode: "offline"
 
 corpus:
