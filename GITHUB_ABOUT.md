@@ -1,31 +1,19 @@
-# GitHub repository profile (copy-paste)
+# GitHub Repository Profile Copy
 
-Use this for **Settings → General → Description**, topics, and the short blurb on your portfolio or CV. Keep the one-line description under GitHub’s ~350-character limit.
+Use this for **Settings → General → Description**, repository topics, and portfolio/LinkedIn blurbs.
 
 ## One-line description (GitHub About)
 
 ```text
-Rigorous RAG harness comparing hybrid search, DSPy compilation, and LangGraph agentic CRAG on an authored corpus. Live OpenRouter generation + Perplexity Decider JEV.
+Evaluation harness for engineering-runbook RAG: compares hybrid search, cross-encoder reranking, DSPy compilation, and LangGraph Corrective RAG with bootstrap CIs and live LLM-as-a-Judge scoring.
 ```
 
 ## Suggested topics
 
-`retrieval-augmented-generation`, `rag`, `agentic-rag`, `langgraph`, `langchain`, `dspy`, `information-retrieval`, `benchmark`, `mlflow`, `openrouter`, `llm-evaluation`, `python`
+`retrieval-augmented-generation`, `rag`, `agentic-rag`, `langgraph`, `dspy`, `hybrid-search`, `information-retrieval`, `llm-evaluation`, `mlflow`, `chromadb`, `openrouter`, `python`
 
-## Longer blurb (README intro, LinkedIn, applications)
+## Short blurb (LinkedIn / Resume / Portfolio)
 
 ```text
-rag-eval-harness — compare chunking, dense+BM25 hybrid retrieval, cross-encoder reranking, and LangGraph agentic CRAG with honest IR denominators and uncertainty (bootstrap CIs, McNemar). Offline mode runs without API keys for regression; live mode calls OpenRouter models and scores generation with JEV (Perplexity Decider continuous decision judging). Published metrics are aggregate JSON under results/; full per-query traces stay local. Fictional enterprise corpus and golden QA authored for this benchmark (MIT).
+Built rag-eval-harness to evaluate internal engineering-runbook RAG systems before shipping—separating retrieval quality (span-overlap Hit@K, MRR, 2,000-resample bootstrap CIs, exact McNemar), grounded generation, multi-hop synthesis, and unanswerable-query refusal. Benchmarked BM25+dense RRF, cross-encoder reranking, DSPy prompt compilation on a quarantined test split, and a LangGraph Corrective RAG state machine using OpenRouter models scored by Perplexity Decider.
 ```
-
-## Update via GitHub CLI (optional)
-
-```bash
-gh repo edit adityavsb/rag-eval-harness \
-  --description "Rigorous RAG harness comparing hybrid search, DSPy compilation, and LangGraph agentic CRAG on an authored corpus. Live OpenRouter generation + Perplexity Decider JEV." \
-  --add-topic retrieval-augmented-generation --add-topic rag --add-topic agentic-rag \
-  --add-topic langgraph --add-topic langchain --add-topic dspy \
-  --add-topic benchmark --add-topic mlflow --add-topic python
-```
-
-Website field (optional): leave blank or point to the README live-results anchor on GitHub.
