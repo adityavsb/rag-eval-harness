@@ -86,3 +86,16 @@ def test_cli_live_mode_without_key_exits_nonzero(monkeypatch):
 def test_readme_discloses_offline_mode():
     text = open("README.md", encoding="utf-8").read()
     assert "deterministic mock" in text and "lexical-overlap heuristic" in text
+
+
+def test_offline_retrieval_summary_has_post_fix_schema():
+    import json
+
+    summary = json.load(open("results/offline_retrieval_summary.json", encoding="utf-8"))
+    runs = summary.get("runs", [])
+    assert len(runs) >= 5
+    for run in runs:
+        m = run["metrics"]
+        assert m.get("n_answerable") == 61
+        assert m.get("n_negative") == 19
+        assert "ci95" in m and "hit_rate_at_k" in m["ci95"]

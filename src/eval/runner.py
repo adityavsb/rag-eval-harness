@@ -16,7 +16,7 @@ from src.eval.retrieval_metrics import (
     aggregate_retrieval_metrics,
     evaluate_retrieval,
 )
-from src.llm.pricing import calculate_cost_eur
+from src.llm.pricing import USD_EUR_RATE, calculate_cost_eur
 from src.pipeline.generator import RAGGenerator
 from src.pipeline.indexing import VectorIndexer
 from src.pipeline.ingestion import chunk_documents, load_raw_documents
@@ -71,6 +71,7 @@ def _collect_environment_telemetry() -> dict[str, Any]:
         "mlflow",
         "sentence-transformers",
         "dspy",
+        "langgraph",
         "rank-bm25",
         "torch",
         "scipy",
@@ -294,13 +295,14 @@ class EvaluationRunner:
                     faith_res, corr_res, judge_usage = self.judge.evaluate_sample(
                         query, context_str, gen_res.answer, gt_ans
                     )
-                    judge_cost = judge_usage.get("cost", 0.0)
+                    judge_cost_usd = float(judge_usage.get("cost", 0.0) or 0.0)
+                    judge_cost = round(judge_cost_usd * USD_EUR_RATE, 6)
                 else:
                     faith_res = self.judge.evaluate_faithfulness(query, context_str, gen_res.answer)
                     corr_res = self.judge.evaluate_correctness(query, gen_res.answer, gt_ans)
                     judge_cost = 0.0
 
-                # Cost calculation
+                # Cost calculation (0.0 in offline mock mode)
                 item_cost = (
                     calculate_cost_eur(
                         self.generator.config.model_name,
@@ -308,6 +310,8 @@ class EvaluationRunner:
                         gen_res.completion_tokens,
                     )
                     + judge_cost
+                    if is_live
+                    else 0.0
                 )
 
                 record = EvaluationRecord(
@@ -431,18 +435,83 @@ class EvaluationRunner:
             }
 
             is_live = self.config.generation.mode == "live"
+            multi_hop = [r for r in answerable if r.query_type == "multi_hop"]
+            factoids = [r for r in answerable if r.query_type == "factoid"]
+
+            # Also evaluate full accumulated chunks (for multi-hop agentic runs exceeding K)
+            if answerable and any(len(r.retrieved_spans) > self.effective_k for r in answerable):
+                agg_all_hops = aggregate_retrieval_metrics(
+                    [
+                        evaluate_retrieval(
+                            r.retrieved_spans,
+                            r.ground_truth_spans,
+                            k=max(self.effective_k, len(r.retrieved_spans)),
+                        )
+                        for r in answerable
+                    ]
+                )
+                metrics_summary["all_hops_hit_rate"] = round(agg_all_hops.mean_hit_rate, 4)
+                metrics_summary["all_hops_context_recall"] = round(
+                    agg_all_hops.mean_context_recall, 4
+                )
+                if multi_hop:
+                    mh_all_hops = aggregate_retrieval_metrics(
+                        [
+                            evaluate_retrieval(
+                                r.retrieved_spans,
+                                r.ground_truth_spans,
+                                k=max(self.effective_k, len(r.retrieved_spans)),
+                            )
+                            for r in multi_hop
+                        ]
+                    )
+                    metrics_summary["all_hops_multi_hop_recall"] = round(
+                        mh_all_hops.mean_context_recall, 4
+                    )
+
+            if multi_hop:
+                metrics_summary["multi_hop_recall_at_k"] = round(
+                    float(np.mean([r.retrieval_recall for r in multi_hop])), 4
+                )
+
             if is_live:
+                judge_eval_mode = (
+                    "openrouter_alpha_decisions"
+                    if self.judge.is_decision_model and self.judge.mode == "live"
+                    else ("live_chat_judge" if self.judge.mode == "live" else "offline_heuristic")
+                )
                 metrics_summary.update(
                     {
                         "mean_faithfulness": round(
                             float(np.mean([r.faithfulness_score for r in answerable])), 4
-                        ),
+                        )
+                        if answerable
+                        else 0.0,
                         "mean_correctness": round(
                             float(np.mean([r.correctness_score for r in answerable])), 4
-                        ),
+                        )
+                        if answerable
+                        else 0.0,
                         "mean_rubric_grade": round(
                             float(np.mean([r.rubric_grade for r in answerable])), 2
+                        )
+                        if answerable
+                        else 0.0,
+                        "factoid_correctness": round(
+                            float(np.mean([r.correctness_score for r in factoids])), 4
+                        )
+                        if factoids
+                        else 0.0,
+                        "multi_hop_correctness": round(
+                            float(np.mean([r.correctness_score for r in multi_hop])), 4
+                        )
+                        if multi_hop
+                        else 0.0,
+                        "empty_answer_count": sum(
+                            1 for r in records if not str(r.generated_answer).strip()
                         ),
+                        "judge_model": self.judge.model_name,
+                        "judge_evaluation_mode": judge_eval_mode,
                     }
                 )
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the published paradigm comparison table (Baseline, Optimized, Agentic; DSPy is separate)."""
+"""Generate paradigm comparison tables and canonical aggregate JSON summaries under results/."""
 
 import argparse
 import json
@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from rich.console import Console
 from rich.table import Table
 
@@ -15,56 +16,73 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from src.eval.retrieval_metrics import evaluate_retrieval  # noqa: E402
+
 console = Console()
 
-PARADIGM_MAP = [
-    {
-        "tier": "Tier 1: Baseline",
-        "name": "baseline-naive-rag",
-        "description": "Naive Single-Shot (Fixed 1000/0, Dense Top-4)",
-        "report": "reports/offline/baseline-naive-rag/latest.json",
-    },
-    {
-        "tier": "Tier 2: Optimized",
-        "name": "hybrid-rerank-rag",
-        "description": "Two-Stage Hybrid (Recursive 400/50, RRF Top-15 -> Rerank Top-4)",
-        "report": "reports/offline/hybrid-rerank-rag/latest.json",
-    },
-    {
-        "tier": "Tier 4: Agentic",
-        "name": "agentic-langgraph-crag",
-        "description": "LangGraph CRAG (Decompose -> Retrieve -> Grade -> Generate/Refuse)",
-        "report": "reports/offline/agentic-langgraph-crag/latest.json",
-    },
+OFFLINE_RUNS = [
+    ("baseline-naive-rag", "reports/offline/baseline-naive-rag/latest.json"),
+    ("chunk-optimized-rag", "reports/offline/chunk-optimized-rag/latest.json"),
+    ("rerank-two-stage-rag", "reports/offline/rerank-two-stage-rag/latest.json"),
+    ("hybrid-rrf-rag", "reports/offline/hybrid-rrf-rag/latest.json"),
+    ("hybrid-rerank-rag", "reports/offline/hybrid-rerank-rag/latest.json"),
 ]
 
 
-def load_report_metrics(report_path: Path) -> dict[str, Any]:
-    """Loads and aggregates detailed metrics including multi-hop and negative breakdowns."""
+def load_report_metrics(
+    report_path: Path, require_live_decider: bool = False
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Loads a local report JSON and computes standardized n=61 answerable / n=19 negative metrics."""
     if not report_path.exists():
-        return {}
+        return {}, {}
 
     with open(report_path, encoding="utf-8") as f:
         data = json.load(f)
 
+    stored_metrics = data.get("metrics", {})
+    if require_live_decider:
+        jmode = stored_metrics.get("judge_evaluation_mode")
+        if jmode != "openrouter_alpha_decisions":
+            raise ValueError(
+                f"Report '{report_path}' has judge_evaluation_mode={jmode!r}, expected "
+                "'openrouter_alpha_decisions'. Refusing to mix incompatible judges."
+            )
+
     records = data.get("records", [])
     if not records:
-        return data.get("metrics", {})
+        return stored_metrics, data
 
     answerable = [r for r in records if r.get("ground_truth_context_ids")]
     negatives = [r for r in records if not r.get("ground_truth_context_ids")]
-    multi_hop = [r for r in records if r.get("query_type") == "multi_hop"]
+    factoids = [r for r in answerable if r.get("query_type") == "factoid"]
+    multi_hop = [r for r in answerable if r.get("query_type") == "multi_hop"]
 
-    def mean(vals):
+    def mean(vals: list[float]) -> float:
         return sum(vals) / len(vals) if vals else 0.0
 
     hit_rate = mean([r.get("retrieval_hit_rate", 0.0) for r in answerable])
+    context_precision = mean([r.get("retrieval_precision", 0.0) for r in answerable])
     context_recall = mean([r.get("retrieval_recall", 0.0) for r in answerable])
     mrr = mean([r.get("retrieval_mrr", 0.0) for r in answerable])
+
+    # Full accumulated span retrieval (captures Hop-2 chunks in agentic CRAG)
+    all_hops_hits: list[float] = []
+    all_hops_recalls: list[float] = []
+    all_hops_mh_recalls: list[float] = []
+    for r in answerable:
+        spans = r.get("retrieved_spans", [])
+        gt_spans = r.get("ground_truth_spans", [])
+        k_all = max(4, len(spans))
+        rm = evaluate_retrieval(spans, gt_spans, k=k_all)
+        all_hops_hits.append(rm.hit_rate)
+        all_hops_recalls.append(rm.context_recall)
+        if r.get("query_type") == "multi_hop":
+            all_hops_mh_recalls.append(rm.context_recall)
 
     mh_recall = mean([r.get("retrieval_recall", 0.0) for r in multi_hop])
     mh_correctness = mean([r.get("correctness_score", 0.0) for r in multi_hop])
     mh_grade = mean([r.get("rubric_grade", 1.0) for r in multi_hop])
+    factoid_correctness = mean([r.get("correctness_score", 0.0) for r in factoids])
 
     neg_refused = [
         r
@@ -73,127 +91,195 @@ def load_report_metrics(report_path: Path) -> dict[str, Any]:
     ]
     neg_refusal_rate = (len(neg_refused) / len(negatives)) if negatives else 1.0
 
-    faithfulness = mean([r.get("faithfulness_score", 0.0) for r in records])
-    correctness = mean([r.get("correctness_score", 0.0) for r in records])
-    rubric_grade = mean([r.get("rubric_grade", 1.0) for r in records])
+    # Generation quality is averaged strictly over n=61 answerable queries (matching src/eval/runner.py)
+    faithfulness = mean([r.get("faithfulness_score", 0.0) for r in answerable])
+    correctness = mean([r.get("correctness_score", 0.0) for r in answerable])
+    rubric_grade = mean([r.get("rubric_grade", 1.0) for r in answerable])
+    empty_answers = sum(1 for r in records if not str(r.get("generated_answer", "")).strip())
 
     retrieval_latencies = [r.get("retrieval_latency_ms", 0.0) for r in records]
     gen_latencies = [r.get("generation_latency_ms", 0.0) for r in records]
-
-    import numpy as np
 
     p95_ret = float(np.percentile(retrieval_latencies, 95)) if retrieval_latencies else 0.0
     p95_gen = float(np.percentile(gen_latencies, 95)) if gen_latencies else 0.0
     total_cost = sum(r.get("cost_eur", 0.0) for r in records)
 
-    return {
+    computed = {
+        "k": stored_metrics.get("k", 4),
+        "n_answerable": len(answerable),
+        "n_negative": len(negatives),
         "total_samples": len(records),
-        "hit_rate": hit_rate,
-        "context_recall": context_recall,
-        "mrr": mrr,
-        "multi_hop_recall": mh_recall,
-        "multi_hop_correctness": mh_correctness,
-        "multi_hop_grade": mh_grade,
-        "neg_refusal_rate": neg_refusal_rate,
-        "faithfulness": faithfulness,
-        "correctness": correctness,
-        "rubric_grade": rubric_grade,
-        "p95_retrieval_ms": p95_ret,
-        "p95_gen_ms": p95_gen,
-        "total_cost_eur": total_cost,
+        "hit_rate_at_k": round(hit_rate, 4),
+        "mrr_at_k": round(mrr, 4),
+        "context_precision_at_k": round(context_precision, 4),
+        "context_recall_at_k": round(context_recall, 4),
+        "all_hops_hit_rate": round(mean(all_hops_hits), 4),
+        "all_hops_context_recall": round(mean(all_hops_recalls), 4),
+        "all_hops_multi_hop_recall": round(mean(all_hops_mh_recalls), 4),
+        "multi_hop_recall_at_k": round(mh_recall, 4),
+        "factoid_correctness": round(factoid_correctness, 4),
+        "multi_hop_correctness": round(mh_correctness, 4),
+        "multi_hop_grade": round(mh_grade, 2),
+        "negative_refusal_rate": round(neg_refusal_rate, 4),
+        "mean_faithfulness": round(faithfulness, 4),
+        "mean_correctness": round(correctness, 4),
+        "mean_rubric_grade": round(rubric_grade, 2),
+        "empty_answer_count": empty_answers,
+        "p95_retrieval_latency_ms": round(p95_ret, 2),
+        "p95_generation_latency_ms": round(p95_gen, 2),
+        "total_cost_eur": round(total_cost, 6),
+        "ci95": stored_metrics.get("ci95", {}),
+        "judge_model": stored_metrics.get("judge_model"),
+        "judge_evaluation_mode": stored_metrics.get("judge_evaluation_mode"),
     }
+    return computed, data
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate published paradigm comparison table (no offline DSPy mock row).")
+def export_offline_summary() -> Path:
+    """Exports canonical post-fix offline retrieval summary JSON to results/offline_retrieval_summary.json."""
+    runs: list[dict[str, Any]] = []
+    env_sample: dict[str, Any] = {}
+    git_sha = "unknown"
+
+    for run_name, rel_path in OFFLINE_RUNS:
+        rep_path = REPO_ROOT / rel_path
+        if not rep_path.exists():
+            raise FileNotFoundError(f"Offline report missing: {rep_path}. Run `make eval-all`.")
+        with open(rep_path, encoding="utf-8") as f:
+            data = json.load(f)
+        if not env_sample and data.get("environment"):
+            env_sample = data["environment"]
+        git_sha = str(data.get("git_sha", "unknown"))[:7]
+        m = data.get("metrics", {})
+        runs.append(
+            {
+                "run_name": run_name,
+                "git_sha": data.get("git_sha", "unknown"),
+                "index_fingerprint": data.get("index_fingerprint", "unknown"),
+                "metrics": {
+                    "k": m.get("k", 4),
+                    "n_answerable": m.get("n_answerable"),
+                    "n_negative": m.get("n_negative"),
+                    "hit_rate_at_k": m.get("hit_rate_at_k"),
+                    "mrr_at_k": m.get("mrr_at_k"),
+                    "context_precision_at_k": m.get("context_precision_at_k"),
+                    "context_recall_at_k": m.get("context_recall_at_k"),
+                    "ci95": m.get("ci95", {}),
+                    "p95_retrieval_latency_ms": m.get("p95_retrieval_latency_ms"),
+                },
+            }
+        )
+
+    out_path = REPO_ROOT / "results/offline_retrieval_summary.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "note": (
+            "Aggregate offline retrieval metrics only (n=61 answerable, span-overlap >= 50%, "
+            "B=2,000 bootstrap CIs). Full per-query traces stay local under reports/ (gitignored)."
+        ),
+        "git_sha": git_sha,
+        "environment": env_sample,
+        "runs": runs,
+    }
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
+        f.write("\n")
+    console.print(f"[bold green]✔ Exported offline summary to {out_path}[/bold green]")
+    return out_path
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate live RAG paradigm comparison tables (Static Hybrid RRF vs LangGraph CRAG) "
+            "and export canonical aggregate summaries under results/."
+        )
+    )
     parser.add_argument(
-        "--live-deepseek",
+        "--static-report",
+        type=str,
+        default="reports/live/openrouter-tri-model-eval/deepseek_latest.json",
+        help="Path to live Static Hybrid RRF report JSON (judged by Perplexity Decider).",
+    )
+    parser.add_argument(
+        "--agentic-report",
+        type=str,
+        default="reports/live/agentic-langgraph-crag/latest.json",
+        help="Path to live LangGraph Agentic CRAG report JSON (judged by Perplexity Decider).",
+    )
+    parser.add_argument(
+        "--export-offline",
         action="store_true",
-        help="Use live DeepSeek / Perplexity evaluation outputs for the comparison table.",
+        help="Export results/offline_retrieval_summary.json from local reports/offline/*/latest.json.",
     )
     args = parser.parse_args()
 
-    paradigm_configs = list(PARADIGM_MAP)
-    if args.live_deepseek:
-        paradigm_configs[1] = {
-            "tier": "Tier 2: Optimized (Live)",
-            "name": "hybrid-rerank-live",
-            "description": "Two-Stage Hybrid (Live DeepSeek V4.1 Flash + Perplexity Decider)",
-            "report": "reports/live/openrouter-tri-model-eval/deepseek_v4.1_perplexity_judged.json",
-        }
-        paradigm_configs[2] = {
-            "tier": "Tier 4: Agentic (Live)",
-            "name": "agentic-langgraph-live",
-            "description": "LangGraph CRAG (Live DeepSeek V4.1 Flash + Perplexity Decider)",
-            "report": "reports/live/agentic-langgraph-crag/latest.json",
-        }
+    if args.export_offline:
+        export_offline_summary()
+        return
+
+    arms = [
+        (
+            "Static Hybrid RRF (Live)",
+            "Recursive 400/50, BM25 + Dense RRF Top-4 (DeepSeek V4.1 Flash)",
+            REPO_ROOT / args.static_report,
+        ),
+        (
+            "LangGraph Agentic CRAG (Live)",
+            "Decompose -> Retrieve -> Grade -> Multi-Hop Synthesis (DeepSeek V4.1 Flash)",
+            REPO_ROOT / args.agentic_report,
+        ),
+    ]
 
     table = Table(
-        title="RAG Paradigm Comparison Matrix: Baseline vs. Optimized vs. Agentic",
+        title="Live RAG Paradigm Comparison (n=61 Answerable, n=19 Negative, Perplexity Decider)",
         show_header=True,
         header_style="bold cyan",
     )
     table.add_column("Paradigm", style="bold")
-    table.add_column("Architecture Summary", style="dim")
-    table.add_column("Hit Rate", justify="right")
-    table.add_column("Multi-Hop Recall (17 Qs)", justify="right")
-    table.add_column("Multi-Hop Correctness", justify="right")
-    table.add_column("Negative Refusal (19 Qs)", justify="right")
-    table.add_column("Mean Faithfulness", justify="right")
-    table.add_column("Mean Correctness", justify="right")
-    table.add_column("P95 Latency (Gen)", justify="right")
-    table.add_column("Cost (€ / 80 Qs)", justify="right")
+    table.add_column("Factoid Corr.", justify="right")
+    table.add_column("Multi-Hop Corr. (17 Qs)", justify="right")
+    table.add_column("All-Hops MH Recall", justify="right")
+    table.add_column("Neg. Refusal (19 Qs)", justify="right")
+    table.add_column("Mean Faith. (n=61)", justify="right")
+    table.add_column("Mean Corr. (n=61)", justify="right")
+    table.add_column("P95 Gen Latency", justify="right")
 
-    markdown_rows = []
-
-    for item in paradigm_configs:
-        rep_path = REPO_ROOT / item["report"]
-        m = load_report_metrics(rep_path)
+    md_rows: list[str] = []
+    for label, desc, path in arms:
+        m, _ = load_report_metrics(path, require_live_decider=True)
         if not m:
-            continue
+            raise FileNotFoundError(f"Required live report not found: {path}")
 
-        hit_str = f"{m.get('hit_rate', 0.0) * 100:.1f}%"
-        mh_rec_str = f"{m.get('multi_hop_recall', 0.0) * 100:.1f}%"
-        mh_corr_str = f"{m.get('multi_hop_correctness', 0.0) * 100:.1f}% ({m.get('multi_hop_grade', 1.0):.1f}/5)"
-        neg_str = f"{m.get('neg_refusal_rate', 0.0) * 100:.1f}%"
-        faith_str = f"{m.get('faithfulness', 0.0) * 100:.1f}%"
-        corr_str = f"{m.get('correctness', 0.0) * 100:.1f}% ({m.get('rubric_grade', 1.0):.2f}/5)"
-        lat_str = f"{m.get('p95_gen_ms', 0.0):.0f} ms"
-        cost_str = f"€{m.get('total_cost_eur', 0.0):.4f}"
-
-        table.add_row(
-            item["tier"],
-            item["description"],
-            hit_str,
-            mh_rec_str,
-            mh_corr_str,
-            neg_str,
-            faith_str,
-            corr_str,
-            lat_str,
-            cost_str,
-        )
-
-        markdown_rows.append(
-            f"| **{item['tier']}** | {item['description']} | {hit_str} | {mh_rec_str} | {mh_corr_str} | {neg_str} | {faith_str} | {corr_str} | {lat_str} | {cost_str} |"
+        row = [
+            label,
+            f"{m['factoid_correctness'] * 100:.1f}%",
+            f"{m['multi_hop_correctness'] * 100:.1f}% ({m['multi_hop_grade']:.2f}/5)",
+            f"{m['all_hops_multi_hop_recall'] * 100:.1f}%",
+            f"{m['negative_refusal_rate'] * 100:.1f}%",
+            f"{m['mean_faithfulness'] * 100:.1f}%",
+            f"{m['mean_correctness'] * 100:.1f}% ({m['mean_rubric_grade']:.2f}/5)",
+            f"{m['p95_generation_latency_ms']:.0f} ms",
+        ]
+        table.add_row(*row)
+        md_rows.append(
+            f"| **{label}** | {desc} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} | {row[6]} | {row[7]} |"
         )
 
     console.print(table)
 
-    # Save to reports/paradigm_comparison_table.md
-    out_path = REPO_ROOT / "reports/paradigm_comparison_table.md"
-    md_header = """# RAG Paradigm Comparison: Baseline vs. Optimized vs. Agentic
-
-Live DSPy few-shot compilation is reported separately in `results/dspy_openrouter_summary.json` (quarantined 32-item test split).
-
-| Paradigm | Architecture Summary | Hit Rate@K | Multi-Hop Recall (17 Qs) | Multi-Hop Correctness | Negative Refusal (19 Qs) | Mean Faithfulness | Mean Correctness | P95 Gen Latency | Cost (80 Qs) |
-|---|---|---|---|---|---|---|---|---|---|
-"""
+    out_path = REPO_ROOT / "results/paradigm_comparison.md"
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        f.write(md_header + "\n".join(markdown_rows) + "\n")
-
-    console.print(f"\n[bold green]✔ Saved markdown comparison table to {out_path}[/bold green]")
+    header = (
+        "# Live RAG Paradigm Comparison: Static Hybrid RRF vs. LangGraph Agentic CRAG\n\n"
+        "All metrics use identical generator (`deepseek/deepseek-v4.1-flash`, `max_tokens=4000`) "
+        "and judge (`perplexity/pplx-decider-flash-v1.2` via `/api/alpha/decisions`). "
+        "Generation quality is averaged over `n = 61` answerable queries; negative refusal over `n = 19`.\n\n"
+        "| Paradigm | Architecture | Factoid Corr. | Multi-Hop Corr. (17 Qs) | All-Hops MH Recall | Negative Refusal (19 Qs) | Mean Faithfulness | Mean Correctness | P95 Gen Latency |\n"
+        "|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|\n"
+    )
+    out_path.write_text(header + "\n".join(md_rows) + "\n", encoding="utf-8")
+    console.print(f"\n[bold green]✔ Saved comparison table to {out_path}[/bold green]")
 
 
 if __name__ == "__main__":

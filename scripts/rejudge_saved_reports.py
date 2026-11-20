@@ -17,6 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.eval.llm_judge import LLMJudge  # noqa: E402
+from src.llm.pricing import USD_EUR_RATE  # noqa: E402
 from src.utils.config import load_dotenv  # noqa: E402
 
 load_dotenv()
@@ -163,8 +164,9 @@ def main() -> None:
             ground_truth=gt_ans,
         )
 
-        cost_item = usage.get("cost", 0.0)
-        total_judge_cost += cost_item
+        cost_item_usd = float(usage.get("cost", 0.0) or 0.0)
+        cost_item_eur = round(cost_item_usd * USD_EUR_RATE, 6)
+        total_judge_cost += cost_item_usd
 
         updated_rec = dict(rec)
         updated_rec["faithfulness_score"] = faith_eval.score
@@ -173,22 +175,25 @@ def main() -> None:
         updated_rec["faithfulness_reasoning"] = faith_eval.reasoning
         updated_rec["correctness_reasoning"] = corr_eval.reasoning
         updated_rec["judge_model"] = args.judge_model
-        updated_rec["cost_eur"] = round(rec.get("cost_eur", 0.0) + cost_item, 6)
+        updated_rec["cost_eur"] = round(rec.get("cost_eur", 0.0) + cost_item_eur, 6)
         updated_records.append(updated_rec)
 
         console.print(
             f"  [{idx + 1}/{len(records)}] {q_id} ({q_type}) -> "
             f"Faith: {faith_eval.score:.4f} | Corr: {corr_eval.score:.4f} (Grade {corr_eval.rubric_grade}/5) | "
-            f"Cost: ${cost_item:.6f}"
+            f"Cost: ${cost_item_usd:.6f}"
         )
 
         if args.pacing_delay > 0:
             time.sleep(args.pacing_delay)
 
-    # Recompute aggregate metrics
-    faith_scores = [r["faithfulness_score"] for r in updated_records]
-    corr_scores = [r["correctness_score"] for r in updated_records]
-    grades = [r["rubric_grade"] for r in updated_records]
+    # Recompute aggregate metrics on answerable queries (matching src/eval/runner.py)
+    answerable = [r for r in updated_records if r.get("ground_truth_context_ids")]
+    faith_scores = [r["faithfulness_score"] for r in answerable]
+    corr_scores = [r["correctness_score"] for r in answerable]
+    grades = [r["rubric_grade"] for r in answerable]
+    factoids = [r for r in answerable if r.get("query_type") == "factoid"]
+    multi_hop = [r for r in answerable if r.get("query_type") == "multi_hop"]
 
     # Calculate refusal rate on adversarial queries
     neg_queries = [
@@ -202,13 +207,24 @@ def main() -> None:
     mean_faith = float(sum(faith_scores) / len(faith_scores)) if faith_scores else 0.0
     mean_corr = float(sum(corr_scores) / len(corr_scores)) if corr_scores else 0.0
     mean_grade = float(sum(grades) / len(grades)) if grades else 0.0
+    factoid_corr = (
+        float(sum(r["correctness_score"] for r in factoids) / len(factoids)) if factoids else 0.0
+    )
+    mh_corr = (
+        float(sum(r["correctness_score"] for r in multi_hop) / len(multi_hop)) if multi_hop else 0.0
+    )
     total_cost = sum(r["cost_eur"] for r in updated_records)
 
     metrics = dict(data.get("metrics", {}))
     metrics["mean_faithfulness"] = round(mean_faith, 4)
     metrics["mean_correctness"] = round(mean_corr, 4)
     metrics["mean_rubric_grade"] = round(mean_grade, 2)
+    metrics["factoid_correctness"] = round(factoid_corr, 4)
+    metrics["multi_hop_correctness"] = round(mh_corr, 4)
     metrics["negative_refusal_rate"] = round(neg_refusal_rate, 4)
+    metrics["empty_answer_count"] = sum(
+        1 for r in updated_records if not str(r.get("generated_answer", "")).strip()
+    )
     metrics["judge_model"] = args.judge_model
     metrics["judge_evaluation_mode"] = "openrouter_alpha_decisions"
 
@@ -240,8 +256,14 @@ def main() -> None:
     summary_table.add_column("Metric", style="cyan")
     summary_table.add_column("Value", style="bold green", justify="right")
     summary_table.add_row("Evaluated Test Cases", str(len(updated_records)))
-    summary_table.add_row("Mean Faithfulness (noul)", f"{mean_faith:.4f} ({mean_faith * 100:.1f}%)")
-    summary_table.add_row("Mean Correctness (noul)", f"{mean_corr:.4f} ({mean_corr * 100:.1f}%)")
+    summary_table.add_row(
+        "Mean Faithfulness (Perplexity Decider, n=61)",
+        f"{mean_faith:.4f} ({mean_faith * 100:.1f}%)",
+    )
+    summary_table.add_row(
+        "Mean Correctness (Perplexity Decider, n=61)",
+        f"{mean_corr:.4f} ({mean_corr * 100:.1f}%)",
+    )
     summary_table.add_row("Mean Rubric Grade (1-5)", f"{mean_grade:.2f} / 5.0")
     summary_table.add_row(
         "Negative Refusal Rate",
