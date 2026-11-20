@@ -74,7 +74,7 @@ def process_query(query: str, retriever: RAGRetriever, generator: RAGGenerator):
     console.print(table)
 
     # 2. Generate
-    gen_res = generator.generate(query, res.chunks)
+    gen_res = generator.generate(query, res.chunks, retriever=retriever)
     panel_title = f"Generated Answer ({gen_res.generation_latency_ms:.1f}ms)"
     console.print(Panel(gen_res.answer, title=panel_title, border_style="cyan"))
 

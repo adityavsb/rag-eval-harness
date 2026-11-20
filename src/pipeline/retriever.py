@@ -49,7 +49,13 @@ class RAGRetriever:
         """Lazy-loaded CrossEncoder reranker model."""
         if self.config.use_reranker and self._reranker is None:
             model_name = self.config.reranker_model or "cross-encoder/ms-marco-MiniLM-L6-v2"
-            self._reranker = CrossEncoder(model_name)
+            try:
+                self._reranker = CrossEncoder(model_name)
+            except Exception:
+                if model_name == "cross-encoder/ms-marco-MiniLM-L6-v2":
+                    self._reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+                else:
+                    raise
         return self._reranker
 
     def _init_bm25_if_needed(self) -> None:

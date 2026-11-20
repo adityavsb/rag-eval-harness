@@ -59,8 +59,15 @@ def _decompose_query_offline(query: str) -> list[str]:
     return [query]
 
 
+def _strip_reasoning_tags(text: str) -> str:
+    """Remove inline reasoning tags emitted by reasoning-capable models."""
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    cleaned = re.sub(r"\[REASONING\].*?\[/REASONING\]", "", cleaned, flags=re.DOTALL).strip()
+    return cleaned
+
+
 def _decompose_query_live(
-    query: str, model_name: str, timeout: float = 60.0
+    query: str, model_name: str, timeout: float = 60.0, max_tokens: int = 1500
 ) -> tuple[list[str], int, int]:
     """Decompose complex queries into 1 to 2 targeted sub-queries via LLM."""
     from src.llm.provider import call_llm
@@ -73,8 +80,14 @@ Respond ONLY with a JSON array of strings, e.g. ["sub-query 1", "sub-query 2"].
 
 Question: {query}
 """
-    res = call_llm(model=model_name, prompt=prompt, temperature=0.0, timeout=timeout)
-    content = res.content.strip()
+    res = call_llm(
+        model=model_name,
+        prompt=prompt,
+        temperature=0.0,
+        max_tokens=max_tokens,
+        timeout=timeout,
+    )
+    content = _strip_reasoning_tags(res.content or "")
     # Extract json array
     start = content.find("[")
     end = content.rfind("]")
@@ -124,15 +137,19 @@ def _grade_chunks_offline(query: str, chunks: list[RetrievedChunk]) -> bool:
 
 
 def _grade_chunks_live(
-    query: str, chunks: list[RetrievedChunk], model_name: str, timeout: float = 60.0
+    query: str,
+    chunks: list[RetrievedChunk],
+    model_name: str,
+    timeout: float = 60.0,
+    max_tokens: int = 1500,
 ) -> tuple[bool, int, int]:
-    """Live document grading assessing relevance against the question."""
+    """Live document grading assessing relevance against the question across all retrieved hops."""
     if not chunks:
         return False, 0, 0
 
     from src.llm.provider import call_llm
 
-    context_preview = "\n".join([f"[{c.chunk_id}] {c.content}" for c in chunks[:4]])
+    context_preview = "\n".join([f"[{c.chunk_id}] {c.content}" for c in chunks[:8]])
     prompt = f"""You are an objective document grading agent evaluating context relevance.
 Determine whether the provided context contains facts, concepts, or technical terms directly related to the question.
 If the context mentions relevant system components, configuration values, or operations related to the question, mark it as relevant.
@@ -146,8 +163,14 @@ Context:
 Respond ONLY with a JSON object:
 {{"is_relevant": true}} or {{"is_relevant": false}}
 """
-    res = call_llm(model=model_name, prompt=prompt, temperature=0.0, timeout=timeout)
-    content = res.content.strip()
+    res = call_llm(
+        model=model_name,
+        prompt=prompt,
+        temperature=0.0,
+        max_tokens=max_tokens,
+        timeout=timeout,
+    )
+    content = _strip_reasoning_tags(res.content or "")
     start = content.find("{")
     end = content.rfind("}")
     if start != -1 and end != -1:
@@ -206,10 +229,12 @@ class AgenticRAGGraph:
         c_tokens = 0
 
         if self.config.mode == "live":
+            aux_max_tokens = max(1500, self.config.max_tokens // 2)
             sub_queries, p_tokens, c_tokens = _decompose_query_live(
                 query=query,
                 model_name=self.config.model_name,
                 timeout=getattr(self.config, "timeout_sec", 60.0),
+                max_tokens=aux_max_tokens,
             )
         else:
             sub_queries = _decompose_query_offline(query)
@@ -261,11 +286,13 @@ class AgenticRAGGraph:
         c_tokens = 0
 
         if self.config.mode == "live":
+            aux_max_tokens = max(1500, self.config.max_tokens // 2)
             is_relevant, p_tokens, c_tokens = _grade_chunks_live(
                 query=query,
                 chunks=chunks,
                 model_name=self.config.model_name,
                 timeout=getattr(self.config, "timeout_sec", 60.0),
+                max_tokens=aux_max_tokens,
             )
         else:
             is_relevant = _grade_chunks_offline(query, chunks)

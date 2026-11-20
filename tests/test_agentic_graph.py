@@ -171,3 +171,62 @@ def test_generator_interface_with_agentic_prompt_style():
     assert len(result.retrieved_chunks) >= 2
     assert result.generation_latency_ms > 0.0
     assert result.prompt_tokens > 0
+
+
+def test_grade_chunks_live_inspects_hop2_chunks(monkeypatch):
+    """Ensures _grade_chunks_live includes chunks beyond index 4 so Hop-2 context is graded."""
+    from src.llm.provider import LLMResponse
+    from src.pipeline.agentic_graph import _grade_chunks_live
+
+    captured_prompts: list[str] = []
+
+    def fake_call_llm(model, prompt, temperature=0.0, max_tokens=500, timeout=60.0, **kwargs):
+        captured_prompts.append(prompt)
+        return LLMResponse(
+            content='<think>checking hop 2</think>{"is_relevant": true}',
+            prompt_tokens=50,
+            completion_tokens=10,
+            total_tokens=60,
+            model=model,
+        )
+
+    monkeypatch.setattr("src.llm.provider.call_llm", fake_call_llm)
+
+    chunks = [
+        RetrievedChunk(
+            chunk_id=f"hop1_c00{i}",
+            content=f"Irrelevant hop 1 chunk {i}",
+            score=0.2,
+            rank=i + 1,
+        )
+        for i in range(4)
+    ] + [
+        RetrievedChunk(
+            chunk_id="hop2_auth_c006",
+            content="Hop 2 relevant JWT expiry is 15 minutes.",
+            score=0.95,
+            rank=5,
+        )
+    ]
+
+    is_rel, p_tok, c_tok = _grade_chunks_live("What is JWT expiry?", chunks, "deepseek-test")
+    assert is_rel is True
+    assert p_tok == 50 and c_tok == 10
+    assert len(captured_prompts) == 1
+    assert "hop2_auth_c006" in captured_prompts[0]
+
+
+def test_run_pipeline_forwards_retriever_to_generator(monkeypatch):
+    """Ensures interactive CLI process_query passes retriever into generator.generate."""
+    from experiments.run_pipeline import process_query
+
+    retriever = MockRetriever()
+    received_kwargs: dict[str, object] = {}
+
+    class SpyGenerator:
+        def generate(self, query, chunks, retriever=None):
+            received_kwargs["retriever"] = retriever
+            return GenerationResult(query=query, answer="ok", retrieved_chunks=chunks)
+
+    process_query("What is rate limiting?", retriever, SpyGenerator())
+    assert received_kwargs["retriever"] is retriever

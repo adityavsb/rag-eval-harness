@@ -93,10 +93,10 @@ def call_llm(
     """Invokes LLM via LiteLLM with automated on-disk response caching, OpenRouter headers, and cost computation."""
     cache = DiskResponseCache(cache_dir=cache_dir) if use_cache else None
 
-    # Check disk cache first
+    # Check disk cache first (ignore empty truncated entries)
     if cache:
         cached_data = cache.get(model=model, prompt=prompt)
-        if cached_data:
+        if cached_data and str(cached_data.get("content", "")).strip():
             return LLMResponse(
                 content=cached_data["content"],
                 prompt_tokens=cached_data.get("prompt_tokens", 0),
@@ -190,7 +190,7 @@ def call_llm(
         "model": model,
     }
 
-    if cache:
+    if cache and content.strip():
         cache.set(model=model, prompt=prompt, response=payload)
 
     return LLMResponse(
