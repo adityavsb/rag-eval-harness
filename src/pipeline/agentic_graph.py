@@ -185,6 +185,67 @@ Respond ONLY with a JSON object:
     return _grade_chunks_offline(query, chunks), res.prompt_tokens, res.completion_tokens
 
 
+def _rewrite_query_offline(query: str) -> str:
+    """Deterministic query rewrite for corrective Hop 2 in offline/test mode."""
+    stopwords = {
+        "what",
+        "how",
+        "why",
+        "which",
+        "where",
+        "when",
+        "does",
+        "the",
+        "is",
+        "are",
+        "do",
+        "in",
+        "for",
+        "of",
+        "to",
+        "a",
+        "an",
+        "our",
+        "platform",
+    }
+    keywords = [w for w in re.findall(r"\w+", query.lower()) if len(w) > 2 and w not in stopwords]
+    if keywords:
+        return f"architecture configuration specification {' '.join(keywords)}"
+    return f"runbook details: {query}"
+
+
+def _rewrite_query_live(
+    query: str,
+    chunks: list[RetrievedChunk],
+    model_name: str,
+    timeout: float = 60.0,
+    max_tokens: int = 1500,
+) -> tuple[str, int, int]:
+    """Rewrites/broadens a query for corrective Hop 2 after initial context failed grading."""
+    from src.llm.provider import call_llm
+
+    tried_ids = ", ".join(c.chunk_id for c in chunks[:4]) if chunks else "none"
+    prompt = f"""You are a technical search query rewriter for an enterprise engineering runbook corpus.
+The initial retrieval for the question below returned irrelevant passages (chunks: {tried_ids}).
+Rewrite the question into a single concise alternative search query using synonyms, related component names, or broader operational terms to locate the missing documentation.
+
+Respond ONLY with the rewritten search query as plain text (no JSON, no explanation).
+
+Original question: {query}
+"""
+    res = call_llm(
+        model=model_name,
+        prompt=prompt,
+        temperature=0.0,
+        max_tokens=max_tokens,
+        timeout=timeout,
+    )
+    rewritten = _strip_reasoning_tags(res.content or "").strip().strip('"').strip("'")
+    if rewritten and rewritten.lower() != query.strip().lower():
+        return rewritten, res.prompt_tokens, res.completion_tokens
+    return _rewrite_query_offline(query), res.prompt_tokens, res.completion_tokens
+
+
 class AgenticRAGGraph:
     """Compiled LangGraph Agentic Corrective RAG pipeline."""
 
@@ -201,6 +262,7 @@ class AgenticRAGGraph:
         workflow.add_node("decompose", self._decompose_node)
         workflow.add_node("retrieve", self._retrieve_node)
         workflow.add_node("grade_documents", self._grade_node)
+        workflow.add_node("rewrite_query", self._rewrite_node)
         workflow.add_node("generate", self._generate_node)
         workflow.add_node("refuse", self._refuse_node)
 
@@ -215,9 +277,11 @@ class AgenticRAGGraph:
             {
                 "refuse": "refuse",
                 "retrieve": "retrieve",
+                "rewrite_query": "rewrite_query",
                 "generate": "generate",
             },
         )
+        workflow.add_edge("rewrite_query", "retrieve")
         workflow.add_edge("generate", END)
         workflow.add_edge("refuse", END)
 
@@ -303,9 +367,9 @@ class AgenticRAGGraph:
 
         # Corrective Routing Logic
         if not is_relevant:
-            # If context is not yet deemed relevant, and we have remaining hop capacity, attempt corrective retrieval
             if hop_count < self.max_hops:
-                route = "retrieve"
+                # If another decomposed sub-query is queued, fetch it; otherwise rewrite before Hop 2
+                route = "retrieve" if curr_idx < len(sub_queries) else "rewrite_query"
             else:
                 # Exhausted hops and still irrelevant context (adversarial negative / hallucination trigger)
                 route = "refuse"
@@ -320,6 +384,34 @@ class AgenticRAGGraph:
             "route": route,
             "prompt_tokens": state.get("prompt_tokens", 0) + p_tokens,
             "completion_tokens": state.get("completion_tokens", 0) + c_tokens,
+        }
+
+    def _rewrite_node(self, state: AgenticRAGState) -> dict[str, Any]:
+        query = state["query"]
+        chunks = state.get("retrieved_chunks", [])
+        p_tokens = 0
+        c_tokens = 0
+
+        if self.config.mode == "live":
+            aux_max_tokens = max(1500, self.config.max_tokens // 2)
+            rewritten, p_tokens, c_tokens = _rewrite_query_live(
+                query=query,
+                chunks=chunks,
+                model_name=self.config.model_name,
+                timeout=getattr(self.config, "timeout_sec", 60.0),
+                max_tokens=aux_max_tokens,
+            )
+        else:
+            rewritten = _rewrite_query_offline(query)
+
+        updated_sub_queries = list(state.get("sub_queries", [query]))
+        updated_sub_queries.append(rewritten)
+
+        return {
+            "sub_queries": updated_sub_queries,
+            "prompt_tokens": state.get("prompt_tokens", 0) + p_tokens,
+            "completion_tokens": state.get("completion_tokens", 0) + c_tokens,
+            "route": "retrieve",
         }
 
     def _route_decision(self, state: AgenticRAGState) -> str:

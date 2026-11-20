@@ -299,6 +299,43 @@ def test_evaluate_program_on_split_continues_on_parse_failure():
     metrics = evaluate_program_on_split(BrokenModule(), [ex], judge)
     assert metrics["parse_failures"] == 1.0
     assert metrics["answer_correctness"] == 0.0
+    assert metrics["n_answerable"] == 1.0
+
+
+def test_evaluate_program_on_split_excludes_negatives_from_correctness():
+    """Correctness and faithfulness must average over answerable items only, not unanswerable traps."""
+
+    class FixedModule:
+        def __call__(self, question: str, context: str):
+            if "Snowflake" in question:
+                return dspy.Prediction(
+                    answer="Based on the provided documentation, there is insufficient information to answer this question.",
+                    citations="none",
+                )
+            return dspy.Prediction(answer="Totally wrong answer.", citations="c1")
+
+    judge = LLMJudge(mode="offline")
+    examples = [
+        dspy.Example(
+            question="What is JWT TTL?",
+            context="[c1]\nShort-lived JWT access tokens expire after 15 minutes.",
+            answer="Short-lived JWT access tokens expire after 15 minutes.",
+            query_type="factoid",
+        ).with_inputs("question", "context"),
+        dspy.Example(
+            question="How does Snowflake cluster?",
+            context="No supporting context available.",
+            answer="Based on the provided documentation, there is insufficient information to answer this question.",
+            query_type="adversarial_negative",
+        ).with_inputs("question", "context"),
+    ]
+
+    metrics = evaluate_program_on_split(FixedModule(), examples, judge)
+    assert metrics["n_answerable"] == 1.0
+    assert metrics["n_negative"] == 1.0
+    assert metrics["negative_refusal_rate"] == 1.0
+    # If the negative refusal (1.0) were mixed in, correctness would be 0.5 instead of 0.0
+    assert metrics["answer_correctness"] == 0.0
 
 
 def test_demo_sanity_gate_rejects_fragments():

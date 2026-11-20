@@ -14,6 +14,7 @@ from rich.console import Console
 from rich.table import Table
 
 from src.eval.llm_judge import LLMJudge
+from src.eval.runner import _get_git_sha
 from src.optimize.dspy_program import (
     RAGModule,
     configure_dspy_lm,
@@ -193,7 +194,7 @@ def evaluate_program_on_split(
     judge: LLMJudge,
     retriever: Any | None = None,
 ) -> dict[str, float]:
-    """Evaluates a DSPy module against examples and calculates correctness, faithfulness, and latency."""
+    """Evaluates a DSPy module on answerable examples (correctness/faithfulness) and traps (refusal)."""
     correctness_scores = []
     faithfulness_scores = []
     latencies = []
@@ -203,6 +204,7 @@ def evaluate_program_on_split(
     parse_failures = 0
 
     for ex in examples:
+        is_negative = "insufficient information" in ex.answer.lower()
         if retriever is not None:
             ret_chunks = retriever.retrieve(ex.question).chunks
             ctx_str = "\n\n".join([f"[{c.chunk_id}]\n{c.content}" for c in ret_chunks])
@@ -221,14 +223,22 @@ def evaluate_program_on_split(
             answer = ""
             parse_failures += 1
             latencies.append((time.perf_counter() - start_t) * 1000.0)
-            correctness_scores.append(0.0)
-            faithfulness_scores.append(0.0)
-            if getattr(ex, "query_type", "") == "multi_hop":
-                multi_hop_scores.append(0.0)
-            if "insufficient information" in ex.answer.lower():
+            if is_negative:
                 negative_total += 1
+            else:
+                correctness_scores.append(0.0)
+                faithfulness_scores.append(0.0)
+                if getattr(ex, "query_type", "") == "multi_hop":
+                    multi_hop_scores.append(0.0)
             continue
         latencies.append((time.perf_counter() - start_t) * 1000.0)
+
+        if is_negative:
+            negative_total += 1
+            if "insufficient information" in answer.lower():
+                negative_refused += 1
+            continue
+
         if judge.mode == "live" and judge.is_decision_model:
             faith_eval, corr_eval, _usage = judge.evaluate_sample(
                 ex.question, ctx_str, answer, ex.answer
@@ -241,12 +251,9 @@ def evaluate_program_on_split(
         faithfulness_scores.append(faith_eval.score)
         if getattr(ex, "query_type", "") == "multi_hop":
             multi_hop_scores.append(corr_eval.score)
-        if "insufficient information" in ex.answer.lower():
-            negative_total += 1
-            if "insufficient information" in answer.lower():
-                negative_refused += 1
 
     return {
+        "n_answerable": float(len(correctness_scores)),
         "answer_correctness": (
             sum(correctness_scores) / len(correctness_scores) if correctness_scores else 0.0
         ),
@@ -500,6 +507,7 @@ def compile_dspy_pipeline(
 
         summary = {
             "mode": "live",
+            "git_sha": _get_git_sha(),
             "provider": resolved_provider,
             "model": model_name,
             "judge_model": resolved_judge,

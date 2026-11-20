@@ -55,9 +55,16 @@ def _get_git_sha() -> str:
     import subprocess
 
     try:
-        return subprocess.check_output(
+        sha = subprocess.check_output(
             ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL
         ).strip()
+        unstaged = subprocess.run(["git", "diff", "--quiet"], stderr=subprocess.DEVNULL).returncode
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"], stderr=subprocess.DEVNULL
+        ).returncode
+        if unstaged != 0 or staged != 0:
+            return f"{sha}-dirty"
+        return sha
     except Exception:
         return "unknown"
 

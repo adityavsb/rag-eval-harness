@@ -199,7 +199,13 @@ def main() -> None:
         "--static-report",
         type=str,
         default="reports/live/openrouter-tri-model-eval/deepseek_latest.json",
-        help="Path to live Static Hybrid RRF report JSON (judged by Perplexity Decider).",
+        help="Path to live Static Hybrid RRF (K=4) report JSON (judged by Perplexity Decider).",
+    )
+    parser.add_argument(
+        "--k8-report",
+        type=str,
+        default="reports/live/hybrid-k8-control/latest.json",
+        help="Optional path to live Static Hybrid RRF (K=8 control) report JSON.",
     )
     parser.add_argument(
         "--agentic-report",
@@ -220,16 +226,27 @@ def main() -> None:
 
     arms = [
         (
-            "Static Hybrid RRF (Live)",
+            "Single-shot Hybrid (K=4)",
             "Recursive 400/50, BM25 + Dense RRF Top-4 (DeepSeek V4.1 Flash)",
             REPO_ROOT / args.static_report,
         ),
-        (
-            "LangGraph Agentic CRAG (Live)",
-            "Decompose -> Retrieve -> Grade -> Multi-Hop Synthesis (DeepSeek V4.1 Flash)",
-            REPO_ROOT / args.agentic_report,
-        ),
     ]
+    k8_path = REPO_ROOT / args.k8_report
+    if k8_path.exists():
+        arms.append(
+            (
+                "Single-shot Hybrid (K=8 control)",
+                "Recursive 400/50, BM25 + Dense RRF Top-8 (DeepSeek V4.1 Flash)",
+                k8_path,
+            )
+        )
+    arms.append(
+        (
+            "LangGraph Agentic CRAG",
+            "Decompose -> Retrieve -> Grade -> Rewrite -> Multi-Hop Synthesis (DeepSeek V4.1 Flash)",
+            REPO_ROOT / args.agentic_report,
+        )
+    )
 
     table = Table(
         title="Live RAG Paradigm Comparison (n=61 Answerable, n=19 Negative, Perplexity Decider)",

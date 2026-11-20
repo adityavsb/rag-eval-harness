@@ -99,3 +99,20 @@ def test_offline_retrieval_summary_has_post_fix_schema():
         assert m.get("n_answerable") == 61
         assert m.get("n_negative") == 19
         assert "ci95" in m and "hit_rate_at_k" in m["ci95"]
+
+
+def test_get_git_sha_marks_dirty_working_tree(monkeypatch):
+    import types
+
+    from src.eval.runner import _get_git_sha
+
+    monkeypatch.setattr(subprocess, "check_output", lambda *a, **k: "abc1234\n")
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda cmd, **k: types.SimpleNamespace(returncode=1 if "--cached" not in cmd else 0),
+    )
+    assert _get_git_sha() == "abc1234-dirty"
+
+    monkeypatch.setattr(subprocess, "run", lambda cmd, **k: types.SimpleNamespace(returncode=0))
+    assert _get_git_sha() == "abc1234"

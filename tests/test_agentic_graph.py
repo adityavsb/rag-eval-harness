@@ -230,3 +230,101 @@ def test_run_pipeline_forwards_retriever_to_generator(monkeypatch):
 
     process_query("What is rate limiting?", retriever, SpyGenerator())
     assert received_kwargs["retriever"] is retriever
+
+
+def test_agentic_graph_rewrites_query_on_failed_single_hop():
+    """When a single-sub-query Hop 1 fails grading, Hop 2 must retrieve with a rewritten query."""
+    retriever = MockRetriever()
+    config = GenerationConfig(mode="offline", prompt_style="agentic", max_agent_hops=2)
+    graph = AgenticRAGGraph(retriever=retriever, config=config)
+
+    query = "How does quantum entanglement accelerate Snowflake clustering keys?"
+    result = graph.execute(query=query)
+
+    assert result.is_refusal is True
+    assert len(retriever.call_history) == 2
+    assert retriever.call_history[0] == query
+    assert retriever.call_history[1] != query
+
+
+def test_agentic_graph_live_rewrite_recovers_on_hop2(monkeypatch):
+    """In live mode, rewrite_query invokes the LLM and Hop 2 uses the rewritten query to recover."""
+    from src.llm.provider import LLMResponse
+
+    calls: list[str] = []
+
+    def fake_call_llm(model, prompt, temperature=0.0, max_tokens=500, timeout=60.0, **kwargs):
+        calls.append(prompt)
+        if "Respond ONLY with a JSON array" in prompt:
+            return LLMResponse(
+                content='["vague gateway question"]',
+                prompt_tokens=20,
+                completion_tokens=10,
+                total_tokens=30,
+                model=model,
+            )
+        if "Respond ONLY with a JSON object" in prompt:
+            # Fail Hop 1 (99_misc_c001), pass Hop 2 once rate-limit chunk appears
+            is_rel = "01_arch_c002" in prompt
+            return LLMResponse(
+                content=f'{{"is_relevant": {str(is_rel).lower()}}}',
+                prompt_tokens=30,
+                completion_tokens=8,
+                total_tokens=38,
+                model=model,
+            )
+        if "search query rewriter" in prompt:
+            return LLMResponse(
+                content="<think>broaden terms</think>API Gateway rate limiting Redis",
+                prompt_tokens=25,
+                completion_tokens=12,
+                total_tokens=37,
+                model=model,
+            )
+        return LLMResponse(
+            content="Rate limiting uses a Redis token bucket [01_arch_c002].",
+            prompt_tokens=40,
+            completion_tokens=15,
+            total_tokens=55,
+            model=model,
+        )
+
+    monkeypatch.setattr("src.llm.provider.call_llm", fake_call_llm)
+
+    class TwoHopRetriever:
+        def __init__(self):
+            self.queries: list[str] = []
+
+        def retrieve(self, q: str) -> RetrievalResult:
+            self.queries.append(q)
+            if "rate limiting" in q.lower():
+                chunk = RetrievedChunk(
+                    chunk_id="01_arch_c002",
+                    content="API Gateway enforces distributed rate limiting via Redis token bucket.",
+                    score=0.95,
+                    rank=1,
+                )
+            else:
+                chunk = RetrievedChunk(
+                    chunk_id="99_misc_c001",
+                    content="Unrelated logging daemonset note.",
+                    score=0.2,
+                    rank=1,
+                )
+            return RetrievalResult(query=q, chunks=[chunk], retrieval_latency_ms=1.0, stage="mock")
+
+    retriever = TwoHopRetriever()
+    config = GenerationConfig(
+        mode="live",
+        provider="openrouter",
+        model_name="deepseek/deepseek-v4.1-flash",
+        prompt_style="agentic",
+        max_agent_hops=2,
+        max_tokens=4000,
+    )
+    graph = AgenticRAGGraph(retriever=retriever, config=config)
+    res = graph.execute("vague gateway question")
+
+    assert res.is_refusal is False
+    assert retriever.queries == ["vague gateway question", "API Gateway rate limiting Redis"]
+    assert "01_arch_c002" in res.cited_chunk_ids

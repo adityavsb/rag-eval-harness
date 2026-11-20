@@ -30,7 +30,7 @@ This document records the core architectural trade-offs and design decisions beh
 * **Status:** Accepted
 * **Context:** Dense bi-encoders (`all-MiniLM-L6-v2`, 22.7M params, 384-dim) precompute chunk embeddings offline so query time is a single encode + HNSW lookup. Cross-encoders (`cross-encoder/ms-marco-MiniLM-L6-v2`, same 22.7M-param 6-layer MiniLM backbone) run full joint attention over each `(query, candidate)` pair.
 * **Decision:** Adopt BM25 Okapi + dense Reciprocal Rank Fusion (`k = 60`; Cormack et al. 2009) as the default live retriever, keeping cross-encoder reranking configurable (`use_reranker: true`) rather than always-on.
-* **Consequences:** On this 65-chunk corpus (`n = 61` answerable), cross-encoder reranking adds ~7× P95 retrieval latency (~4.8 ms → ~35 ms) for a +0.011 MRR shift whose 95% bootstrap CI spans zero. Hybrid RRF preserves ~5 ms latency while adding exact lexical matching for identifiers, error codes, and config keys.
+* **Consequences:** On this 65-chunk corpus (`n = 61` answerable), cross-encoder reranking adds ~13× P95 retrieval latency (4.4 ms → 59.7 ms) for a +0.011 MRR shift whose 95% bootstrap CI spans zero. Hybrid RRF preserves ~4.7 ms latency while adding exact lexical matching for identifiers, error codes, and config keys.
 
 ---
 
