@@ -1,5 +1,6 @@
 {
   "mode": "live",
+  "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
   "provider": "openrouter",
   "model": "deepseek/deepseek-v4.1-flash",
   "judge_model": "perplexity/pplx-decider-flash-v1.2",
@@ -8,44 +9,16 @@
   "n_test": 32,
   "n_demos": 4,
   "n_demos_dropped": 0,
-  "candidate_dev_lexical_scores": [
-    {
-      "seed": 0,
-      "dev_lexical_score": 91.59
-    },
-    {
-      "seed": 3,
-      "dev_lexical_score": 90.62
-    },
-    {
-      "seed": 2,
-      "dev_lexical_score": 90.47
-    },
-    {
-      "seed": 1,
-      "dev_lexical_score": 90.03
-    },
-    {
-      "seed": -2,
-      "dev_lexical_score": 89.47
-    },
-    {
-      "seed": -1,
-      "dev_lexical_score": 89.47
-    },
-    {
-      "seed": -3,
-      "dev_lexical_score": 87.28
-    }
-  ],
+  "candidate_dev_lexical_scores": [],
   "test_split_quarantined": true,
   "oracle_context_source": "ground_truth_spans",
   "optimizer_metric": "lexical_overlap_plus_citation",
   "published_judge": "perplexity/pplx-decider-flash-v1.2",
   "baseline_oracle": {
-    "answer_correctness": 0.8811875,
-    "faithfulness": 0.9710875,
-    "mean_latency_ms": 2059.890088375141,
+    "n_answerable": 24.0,
+    "answer_correctness": 0.8415833333333333,
+    "faithfulness": 0.96145,
+    "mean_latency_ms": 2.9122890941835067,
     "multi_hop_correctness": 0.5952625,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
@@ -53,9 +26,10 @@
     "parse_failures": 0.0
   },
   "compiled_oracle": {
-    "answer_correctness": 0.917440625,
-    "faithfulness": 0.957671875,
-    "mean_latency_ms": 2174.4305014374277,
+    "n_answerable": 24.0,
+    "answer_correctness": 0.8899208333333334,
+    "faithfulness": 0.9435625,
+    "mean_latency_ms": 1.7466171874502834,
     "multi_hop_correctness": 0.8541875,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
@@ -63,9 +37,10 @@
     "parse_failures": 1.0
   },
   "baseline_retrieved": {
-    "answer_correctness": 0.815134375,
-    "faithfulness": 0.957671875,
-    "mean_latency_ms": 1.166312499549349,
+    "n_answerable": 24.0,
+    "answer_correctness": 0.7535124999999999,
+    "faithfulness": 0.9435625,
+    "mean_latency_ms": 1.2008332811319633,
     "multi_hop_correctness": 0.53155,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
@@ -73,20 +48,21 @@
     "parse_failures": 0.0
   },
   "compiled_retrieved": {
-    "answer_correctness": 0.842171875,
-    "faithfulness": 0.97135,
-    "mean_latency_ms": 2204.794079312478,
+    "n_answerable": 24.0,
+    "answer_correctness": 0.7895625000000001,
+    "faithfulness": 0.9618000000000001,
+    "mean_latency_ms": 1.2950233121955534,
     "multi_hop_correctness": 0.6305000000000001,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
     "n_negative": 8.0,
     "parse_failures": 0.0
   },
-  "compile_prompt_tokens": 206789,
-  "compile_completion_tokens": 30124,
-  "eval_prompt_tokens": 110717,
-  "eval_completion_tokens": 23273,
-  "generator_cost_eur": 0.055838,
+  "compile_prompt_tokens": 0,
+  "compile_completion_tokens": 0,
+  "eval_prompt_tokens": 0,
+  "eval_completion_tokens": 0,
+  "generator_cost_eur": 0.0,
   "compiled_program": "src/optimize/compiled_dspy_rag.openrouter.json",
   "reasoning": "enabled",
   "parse_failures": {

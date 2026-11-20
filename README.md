@@ -41,15 +41,15 @@ All numbers come from committed JSON under [`results/`](results/). Retrieval met
 
 1. **Measurement bugs beat model choices.** My first run said a naive 1,000-character chunker got 12.5% Hit@4. It actually got 98.4%. The ground-truth labels were chunk IDs from a *different* chunker, so I was measuring whether chunk IDs lined up rather than whether retrieval worked. Moving to character-span labels fixed it ([details](#how-the-numbers-changed)).
 
-2. **On a 65-chunk corpus, nothing in retrieval clearly beats plain dense search.** Cross-encoder reranking costs 13× the P95 retrieval latency (4.4 ms → 59.7 ms) for +0.011 MRR, and the paired 95% CI includes zero. Hybrid BM25 + dense keeps latency at ~4.7 ms and matches exact identifiers better, but its Hit@4 difference from dense-only is one query (McNemar p = 1.00). I kept hybrid as the default because of how it behaves, not because the benchmark shows it winning.
+2. **On a 65-chunk corpus, nothing in retrieval clearly beats plain dense search.** Cross-encoder reranking costs ~13× the P95 retrieval latency (4.5 ms → 60.3 ms) for +0.011 MRR, and the paired 95% CI includes zero. Hybrid BM25 + dense keeps latency at ~4.4 ms and matches exact identifiers better, but its Hit@4 difference from dense-only is one query (McNemar p = 1.00). I kept hybrid as the default because of how it behaves, not because the benchmark shows it winning.
 
-3. **A token limit made a good model look like a hallucinator.** At `max_tokens: 500`, Qwen 3.7 Flash spent its budget on hidden reasoning and returned empty strings for 51 of 80 questions. Empty strings don't contain the refusal phrase, so it scored 31.6% refusal and 48% correctness. At 4,000 tokens: 0 empty outputs, 100% refusal, 84.3% correctness, basically tied with DeepSeek. The real difference between the two is latency (P95 17.4 s vs 6.0 s).
+3. **A token limit made a good model look like a hallucinator.** At `max_tokens: 500`, Qwen 3.7 Flash spent its budget on hidden reasoning and returned empty strings for 51 of 80 questions. Empty strings don't contain the refusal phrase, so it scored 31.6% refusal and 48% correctness. At 4,000 tokens: 0 empty outputs, 100% refusal, 83.5% correctness, basically tied with DeepSeek (84.0%). The real difference between the two is latency (P95 17.7 s vs 5.8 s).
 
-4. **The agentic loop helps, a little, at twice the latency.** Corrective RAG (decompose → retrieve → grade → maybe retrieve again) raised overall correctness from 83.8% to 86.5% (paired CI [+0.1, +6.1] pp) and doubled P95 generation latency (6.0 s → 12.5 s). The multi-hop gain (+4.3 pp) has a CI that crosses zero. An earlier version of this README claimed +15.5 pp on multi-hop; that number came from two bugs and is withdrawn.
+4. **The `K = 8` control beat the agentic loop.** Adding query rewriting on failed hops pushed Corrective RAG from 84.0% (`K = 4`) to 87.8% (paired CI [+0.9, +7.6] pp; multi-hop +9.4 pp [+2.6, +17.9]). That looked like a clean win—until I ran the context-matched control. Single-shot hybrid at `K = 8` (same 8-chunk budget as 2-hop CRAG) scored **91.0% overall** and **78.8% on multi-hop** at nearly half the latency (6.1 s vs 11.2 s) and half the cost. On a 65-chunk corpus, extra context did the work, not the agentic loop.
 
-5. **Prompt compilation only worked once its training contexts were fixed.** A mock LM once showed a "+53.9% DSPy gain" (the gain was literally in the mock's code). My first live compile gave just +0.5 pp on held-out data—and a bizarre 41.5% oracle score—because `compile.py` was still building train/dev/oracle contexts from legacy chunk IDs, giving the wrong passage on 29 of 37 train/dev and 20 of 24 test answerable questions. Resolving contexts from `ground_truth_spans` fixed the inversion (oracle: 88.1% → 91.7%) and lifted retrieved-context correctness on the 32-question test split from 81.5% to 84.2% (+2.7 pp; multi-hop +9.9 pp on n = 8).
+5. **Prompt compilation only worked once its training contexts were fixed.** A mock LM once showed a "+53.9% DSPy gain" (the gain was literally in the mock's code). My first live compile gave just +0.5 pp on held-out data—and a bizarre 41.5% oracle score—because `compile.py` was still building train/dev/oracle contexts from legacy chunk IDs, giving the wrong passage on 29 of 37 train/dev and 20 of 24 test answerable questions. Resolving contexts from `ground_truth_spans` and scoring strictly on the 24 answerable test items fixed the inversion (oracle: 84.2% → 89.0%, +4.8 pp) and lifted retrieved-context correctness from 75.4% to 79.0% (+3.6 pp; multi-hop +9.9 pp on n = 8).
 
-**What I'd recommend for the runbook assistant:** hybrid retrieval with no reranker at this corpus size, single-shot generation by default, and the agentic loop only for questions that clearly span several systems. Re-run the reranker comparison once the corpus is a few hundred chunks or more.
+**What I'd recommend for the runbook assistant:** single-shot hybrid retrieval at `K = 8` with no reranker and no agentic loop at this corpus size. Re-run both the reranker and CRAG comparisons once the corpus is large enough (hundreds of chunks) that top-8 stops covering secondary documents.
 
 ---
 
@@ -86,13 +86,14 @@ flowchart LR
     S([query]) --> D["decompose<br/>into ≤ 2 sub-queries"]
     D --> R["retrieve<br/>(hybrid top-4, deduped)"]
     R --> G{"grade all<br/>accumulated chunks"}
-    G -->|"relevant, sub-queries left,<br/>hops < 2"| R
-    G -->|"not relevant, hops < 2"| R
+    G -->|"sub-queries left,<br/>hops < 2"| R
+    G -->|"not relevant, no sub-queries,<br/>hops < 2"| RW["rewrite_query<br/>(broaden / rephrase)"]
+    RW --> R
     G -->|"relevant"| GEN["generate<br/>with citations"]
     G -->|"not relevant, hops = 2"| REF["refuse"]
 ```
 
-Source: [`src/pipeline/agentic_graph.py`](src/pipeline/agentic_graph.py). The grader looks at evidence from *every* hop. The first version only looked at the first four chunks, which are all from hop 1, so the second hop was retrieved and then never graded.
+Source: [`src/pipeline/agentic_graph.py`](src/pipeline/agentic_graph.py). The grader looks at evidence from *every* hop (up to 8 deduplicated chunks), and if a single-part query fails grading, `rewrite_query` rephrases it before hop 2 instead of re-running the identical query.
 
 ---
 
@@ -125,7 +126,7 @@ Source: [`src/pipeline/agentic_graph.py`](src/pipeline/agentic_graph.py). The gr
 | **MRR@4** | 0.906 | 0.643 | 0.654 | 0.650 | 0.654 | +0.007 [−0.014, +0.033] |
 | **Context precision@4** | 90.16% | 63.39% | 64.16% | 63.93% | 64.16% | +0.55 pp [−1.91, +3.42] |
 | **Context recall@4** | 94.26% | 63.11% | 65.57% | 63.39% | 65.57% | +0.27 pp [−1.64, +2.46] |
-| **P95 latency** | 5.5 ms | 4.4 ms | 59.7 ms | 4.7 ms | 59.9 ms | +0.3 ms |
+| **P95 latency** | 5.9 ms | 4.5 ms | 60.3 ms | 4.4 ms | 61.2 ms | −0.1 ms |
 
 The fixed 1000/0 column wins because it sends 4,000 characters per query (~20% of the corpus, 21 chunks in total). Recursive 400/50 sends ~1,600 characters out of 65 chunks. The 1000/0 column shows what happens when you retrieve a large slice of a small corpus, not a better retriever. Per-metric CIs: [`results/offline_retrieval_summary.json`](results/offline_retrieval_summary.json).
 
@@ -133,33 +134,36 @@ The fixed 1000/0 column wins because it sends 4,000 characters per query (~20% o
 
 Both models get the same hybrid top-4 context (`max_tokens: 4000`, 0/80 empty outputs) and are scored by the same judge. Source: [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json).
 
-| Generator | Single-fact (n=44) | Multi-hop (n=17) | Refusal (n=19) | Faithfulness | Correctness (n=61) | P95 latency |
+| Generator | Single-fact (n=44) | Multi-hop (n=17) | Refusal (n=19) | Faithfulness (n=61) | Correctness (n=61) | P95 latency |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `deepseek/deepseek-v4.1-flash` | 90.4% | 66.7% | 100% | 97.3% | 83.8% | 6.0 s |
-| `qwen/qwen3.7-flash` | 90.5% | 68.2% | 100% | 97.3% | 84.3% | 17.4 s |
+| `deepseek/deepseek-v4.1-flash` | 90.6% | 66.9% | 100% | 97.5% | 84.0% | 5.8 s |
+| `qwen/qwen3.7-flash` | 89.5% | 67.8% | 100% | 97.4% | 83.5% | 17.7 s |
 
-### 3. Single-shot vs. Corrective RAG (live, same generator and judge)
+### 3. Single-shot (`K = 4` vs. `K = 8` control) vs. Corrective RAG (live)
 
-Sources: [`results/agentic_crag_summary.json`](results/agentic_crag_summary.json), [`results/paradigm_comparison.md`](results/paradigm_comparison.md).
+All three rows use identical generator (`deepseek/deepseek-v4.1-flash`, `max_tokens: 4000`), judge (`perplexity/pplx-decider-flash-v1.2`), and commit (`22edfc7`). Sources: [`results/openrouter_cohort_summary.json`](results/openrouter_cohort_summary.json), [`results/hybrid_k8_summary.json`](results/hybrid_k8_summary.json), [`results/agentic_crag_summary.json`](results/agentic_crag_summary.json), [`results/paradigm_comparison.md`](results/paradigm_comparison.md).
 
 | | Single-fact (n=44) | Multi-hop (n=17) | Multi-hop recall (all hops) | Refusal (n=19) | Correctness (n=61) | P95 latency |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Single-shot hybrid** | 90.4% | 66.7% | 59.8% | 100% | 83.8% | 6.0 s |
-| **LangGraph CRAG** | 92.5% | 71.1% | 63.7% | 100% | 86.5% | 12.5 s |
-| **Paired Δ (95% CI)** | +2.1 pp [−0.2, +5.9] | +4.3 pp [−1.2, +10.7] | +3.9 pp | 0 | **+2.7 pp [+0.1, +6.1]** | 2.1× |
+| **Single-shot hybrid (`K = 4`)** | 90.6% | 66.9% | 59.8% | 100% | 84.0% | 5.8 s |
+| **LangGraph CRAG (≤ 2 hops)** | 92.3% | 76.3% | 66.7% | 100% | 87.8% | 11.2 s |
+| **Single-shot hybrid (`K = 8` control)** | **95.7%** | **78.8%** | **69.6%** | **100%** | **91.0%** | **6.1 s** |
+| *Paired Δ: CRAG vs. K = 4 (95% CI)* | +1.7 pp [−0.5, +5.4] | +9.4 pp [+2.6, +17.9] | +6.9 pp | 0 | +3.8 pp [+0.9, +7.6] | 1.9× |
+| *Paired Δ: K = 8 vs. K = 4 (95% CI)* | +5.1 pp [+0.2, +11.1] | +12.0 pp [+4.7, +20.9] | +9.8 pp | 0 | **+7.0 pp [+2.8, +12.1]** | 1.05× |
+| *Paired Δ: CRAG vs. K = 8 (95% CI)* | −3.4 pp [−9.3, +0.7] | −2.6 pp [−5.7, +0.2] | −2.9 pp | 0 | −3.2 pp [−7.7, +0.1] | 1.8× |
 
-### 4. DSPy compilation on the held-out test split (live, n = 32)
+### 4. DSPy compilation on the held-out test split (live, n = 24 answerable / n = 8 traps)
 
-`BootstrapFewShotWithRandomSearch` on train/dev (contexts resolved from `ground_truth_spans`), scored on the quarantined test split under both oracle spans and hybrid top-4 retrieval. Source: [`results/dspy_openrouter_summary.json`](results/dspy_openrouter_summary.json).
+`BootstrapFewShotWithRandomSearch` on train/dev (contexts resolved from `ground_truth_spans`), scored on the quarantined test split under both oracle spans and hybrid top-4 retrieval. Correctness and faithfulness average strictly over the 24 answerable test items, matching the n = 61 tables above. Source: [`results/dspy_openrouter_summary.json`](results/dspy_openrouter_summary.json).
 
-| Program | Correctness (all 32) | Multi-hop (n=8) | Refusal (n=8) | Faithfulness |
+| Program | Correctness (n=24) | Multi-hop (n=8) | Refusal (n=8) | Faithfulness (n=24) |
 | :--- | :---: | :---: | :---: | :---: |
-| Zero-shot (oracle spans) | 88.1% | 59.5% | 100% | 97.1% |
-| Compiled, 4 demos (oracle spans)\* | 91.7% | 85.4% | 100% | 95.8% |
-| Zero-shot (retrieved top-4) | 81.5% | 53.2% | 100% | 95.8% |
-| Compiled, 4 demos (retrieved top-4) | **84.2%** | **63.1%** | 100% | **97.1%** |
+| Zero-shot (oracle spans) | 84.2% | 59.5% | 100% | 96.1% |
+| Compiled, 4 demos (oracle spans)\* | 89.0% | 85.4% | 100% | 94.4% |
+| Zero-shot (retrieved top-4) | 75.4% | 53.2% | 100% | 94.4% |
+| Compiled, 4 demos (retrieved top-4) | **79.0%** | **63.1%** | 100% | **96.2%** |
 
-Correctness here averages over all 32 questions, *including* the 8 traps, so it isn't directly comparable to the n = 61 columns above. *\*`compiled_oracle` had 1/32 `AdapterParseError` scored as 0.0 faithfulness and correctness (explaining the 95.8% faithfulness); both retrieved arms had 0 parse failures.*
+*\*`compiled_oracle` had 1/24 `AdapterParseError` scored as 0.0 faithfulness and correctness (explaining the 94.4% faithfulness); both retrieved arms had 0 parse failures.*
 
 <details>
 <summary><strong>Offline judge regression guard and benchmark environment</strong></summary>
@@ -193,7 +197,8 @@ The project ran from 2026-10-21 to 2026-11-20. Most of that month went into find
 | Oct 29 → Nov 20 | Qwen: **31.6% refusal, 48% correctness**. CRAG: **+15.5 pp** on multi-hop | `max_tokens: 500` let reasoning traces eat the whole budget, producing empty answers (51/80 Qwen, 11/80 DeepSeek, 7/80 CRAG). The disk cache had also stored those empty responses, so reruns replayed them | Raised the cap to 4,000, stopped caching empty responses, and added an `empty_answer_count` metric to every report; published runs show 0 |
 | Nov 2 → Nov 20 | CRAG multi-hop gains | The grader only looked at `chunks[:4]`, which are always hop-1 chunks, so hop-2 evidence was never graded | Grader now sees up to 8 accumulated chunks, with a test that checks hop-2 chunks reach it. CRAG gain dropped to +4.3 pp (CI crosses 0) |
 | Nov 2 → Nov 17 | Published DSPy row: 58.8% multi-hop, 15.8% refusal | That row came from the offline mock. The live DSPy path only built an `openai/` client, so OpenRouter never reached DSPy, and the saved program had `demos: []` | Routed DSPy through LiteLLM → OpenRouter. Fixed a reasoning-truncation abort and a strict JSON-adapter retry with a lenient adapter. Withdrew the row and published the held-out result (+0.5 pp) |
-| Nov 17 → Nov 20 | DSPy oracle correctness **41.5%** (below retrieved 81.5%); compiled lift +0.5 pp | `compile.py` still built train/dev/oracle contexts from legacy `ground_truth_context_ids` instead of `ground_truth_spans`, mismatching 29/37 train/dev and 20/24 test answerable items | Resolved DSPy contexts and citations from `ground_truth_spans` with a regression test over all 80 items. Recompiled live: oracle jumped to **88.1% → 91.7%**, retrieved lift to **81.5% → 84.2%** (+9.9 pp multi-hop) |
+| Nov 17 → Nov 20 | DSPy oracle correctness **41.5%** (below retrieved 81.5%); compiled lift +0.5 pp | `compile.py` built train/dev/oracle contexts from legacy `ground_truth_context_ids` (mismatching 29/37 train/dev and 20/24 test items), and mixed 8 traps into the 32-item correctness denominator | Resolved DSPy contexts from `ground_truth_spans`, restricted correctness/faithfulness to n = 24 answerable items, and re-evaluated: oracle **84.2% → 89.0%**, retrieved **75.4% → 79.0%** (+9.9 pp multi-hop) |
+| Nov 20 → Nov 20 | CRAG beats `K = 4` (+3.8 pp with query rewrite); JSONs recorded `bb48ee3` | Earlier runs happened on uncommitted edits, hop 2 repeated the same query on failed single-part grading, and CRAG's 8-chunk budget lacked a `K = 8` single-shot control | Added `rewrite_query` node, `-dirty` git SHA guard, and `configs/hybrid_k8.yaml`; re-ran everything on clean commit `22edfc7`. Single-shot `K = 8` scored **91.0%** vs. CRAG's **87.8%** at nearly half the latency |
 
 Along the way I also took full per-query traces out of git history (they contained generated answers and retrieved context), kept only aggregate JSON in [`results/`](results/), and added [`results/live_run_lineage.json`](results/live_run_lineage.json) to record which runs were superseded and why.
 
@@ -205,9 +210,8 @@ Along the way I also took full per-query traces out of git history (they contain
 
 These are known, not hidden. Several are what I'd fix next.
 
-- **Small corpus.** 65 chunks is small enough that a 4-chunk window covers a meaningful share of it. Reranking and hybrid search may well pay off on a corpus 10× larger; this benchmark can't show that either way.
-- **CRAG sees more context than single-shot.** After two hops the generator gets up to 8 chunks, while single-shot gets 4. Some of the CRAG gain may come from more context rather than the agentic loop. The control I haven't run yet is single-shot hybrid at K = 8.
-- **The corrective hop doesn't rewrite the query.** If a single-sub-query question is graded "not relevant", the second hop retrieves with the same query, gets the same chunks (deduplicated), and refuses. True CRAG would rewrite or broaden the query. The grader also makes one yes/no call on the whole accumulated set rather than filtering individual chunks.
+- **Small corpus.** 65 chunks is small enough that a `K = 8` window already covers ~12% of the entire corpus—which is why single-shot `K = 8` beat CRAG here. Reranking and agentic loops may pay off on a corpus 10× larger; this benchmark can't show that either way.
+- **Coarse document grading.** The CRAG grader makes one yes/no decision on the whole accumulated chunk set rather than filtering out individual irrelevant chunks before generation.
 - **The labels have one author.** The corpus, the 80 questions, and the 30 probe labels are all mine. There's no inter-annotator agreement, and the live judge hasn't been validated against human labels on live outputs.
 - **The judge is a single model.** Using one judge for all generators keeps comparisons fair, but any bias in that judge carries into every table.
 - **Only the retrieval sweep is reproducible offline.** The live numbers need an OpenRouter key and depend on hosted model versions that can change.
@@ -228,10 +232,9 @@ I used AI coding assistants for much of the implementation. The direction, the d
 
 ## What's next
 
-1. Single-shot K = 8 control, to separate "more context" from "agentic loop" in the CRAG result.
-2. Query rewriting on the corrective hop, plus per-chunk grading.
+1. Scale the corpus to 50+ documents and 500+ chunks, then re-run the reranker, `K = 8`, and CRAG comparisons where candidates actually compete.
+2. Per-chunk relevance filtering in the CRAG grader instead of a single pass/fail decision on the whole set.
 3. A second annotator on a sample of live outputs, to measure how well the judge agrees with people.
-4. Scale the corpus to 50+ documents and 500+ chunks, then re-run the reranker comparison where candidates actually compete.
 
 ---
 
@@ -246,7 +249,7 @@ make install
 make test
 ```
 
-67 tests run offline (~15 s warm, ~40 s cold while the models download).
+71 tests run offline (~15 s warm, ~40 s cold while the models download).
 
 ### Offline retrieval benchmarks
 
@@ -292,7 +295,7 @@ make mlflow
 ## Repository layout
 
 ```text
-configs/        YAML configs per experiment (baseline, chunking, rerank, hybrid, agentic_crag, dspy_live, openrouter_cohort)
+configs/        YAML configs per experiment (baseline, chunking, rerank, hybrid, hybrid_k8, agentic_crag, dspy_live, openrouter_cohort)
 data/           10 runbooks, 80-question golden set with spans and splits, probe labels, dataset card
 docs/           Architecture decision records (ADR 001–006)
 results/        Committed aggregate metrics behind every README table, plus run lineage
@@ -303,7 +306,7 @@ src/llm/        LiteLLM/OpenRouter provider, SHA-256 response cache, EUR pricing
 src/optimize/   DSPy program and compile script
 experiments/    CLI entry points (run_eval, run_pipeline)
 scripts/        compare_runs, generate_paradigm_table, rejudge_saved_reports, dataset_card, …
-tests/          67 offline tests; CI on Python 3.11–3.13
+tests/          71 offline tests; CI on Python 3.11–3.13
 ```
 
 ---

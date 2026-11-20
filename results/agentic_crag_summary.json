@@ -1,11 +1,11 @@
 {
   "run_name": "agentic-langgraph-crag",
-  "note": "Aggregate metrics only (max_tokens=4000, max_agent_hops=2, Hop-2 grader fix, n=61 answerable, n=19 negatives). Paired bootstrap deltas compare against Static Hybrid RRF on the same generator and judge.",
+  "note": "LangGraph CRAG (max_tokens=4000, max_agent_hops=2, Hop-2 grader fix + rewrite_query node, n=61 answerable, n=19 negatives). Paired bootstrap deltas compare against both K=4 and K=8 single-shot Hybrid RRF.",
   "max_tokens": 4000,
   "max_agent_hops": 2,
   "model_id": "deepseek/deepseek-v4.1-flash",
-  "timestamp": "2026-11-20T11:05:46.728225+00:00",
-  "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
+  "timestamp": "2026-11-20T16:26:04.207466+00:00",
+  "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
   "index_fingerprint": "aab84d8bac1d18ab",
   "environment": {
     "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
@@ -50,45 +50,71 @@
       ]
     },
     "all_hops_hit_rate": 0.7377,
-    "all_hops_context_recall": 0.6448,
+    "all_hops_context_recall": 0.653,
     "multi_hop_recall_at_k": 0.598,
-    "all_hops_multi_hop_recall": 0.6373,
-    "factoid_correctness": 0.9251,
-    "multi_hop_correctness": 0.7107,
-    "multi_hop_grade": 3.94,
+    "all_hops_multi_hop_recall": 0.6667,
+    "factoid_correctness": 0.9232,
+    "multi_hop_correctness": 0.7627,
+    "multi_hop_grade": 4.0,
     "negative_refusal_rate": 1.0,
-    "mean_faithfulness": 0.9757,
-    "mean_correctness": 0.8653,
+    "mean_faithfulness": 0.9754,
+    "mean_correctness": 0.8784,
     "mean_rubric_grade": 4.57,
     "empty_answer_count": 0,
-    "p95_retrieval_latency_ms": 23.32,
-    "p95_generation_latency_ms": 12475.02,
+    "p95_retrieval_latency_ms": 23.99,
+    "p95_generation_latency_ms": 11223.77,
     "judge_model": "perplexity/pplx-decider-flash-v1.2",
     "judge_evaluation_mode": "openrouter_alpha_decisions"
   },
-  "paired_delta_vs_static_hybrid": {
+  "paired_delta_vs_static_k4": {
     "all_answerable": {
       "n": 61,
-      "delta_correctness": 0.0271,
+      "delta_correctness": 0.0383,
       "ci95": [
-        0.0009,
-        0.0607
+        0.0092,
+        0.0755
       ]
     },
     "factoid": {
       "n": 44,
-      "delta_correctness": 0.0208,
+      "delta_correctness": 0.0168,
       "ci95": [
-        -0.0024,
-        0.0587
+        -0.0051,
+        0.0543
       ]
     },
     "multi_hop": {
       "n": 17,
-      "delta_correctness": 0.0433,
+      "delta_correctness": 0.094,
       "ci95": [
-        -0.0117,
-        0.1074
+        0.0259,
+        0.1785
+      ]
+    }
+  },
+  "paired_delta_vs_static_k8": {
+    "all_answerable": {
+      "n": 61,
+      "delta_correctness": -0.0318,
+      "ci95": [
+        -0.0772,
+        0.0008
+      ]
+    },
+    "factoid": {
+      "n": 44,
+      "delta_correctness": -0.0341,
+      "ci95": [
+        -0.0925,
+        0.0073
+      ]
+    },
+    "multi_hop": {
+      "n": 17,
+      "delta_correctness": -0.0258,
+      "ci95": [
+        -0.057,
+        0.0022
       ]
     }
   }

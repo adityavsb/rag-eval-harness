@@ -1,12 +1,14 @@
 {
-  "description": "Canonical aggregate benchmark files in results/ and lineage of superseded local runs. Full per-query JSON traces stay local under reports/ (gitignored).",
+  "description": "Canonical aggregate benchmark files in results/ and lineage of superseded local runs. Every canonical file was run on a clean committed tree (zero -dirty SHAs). Full per-query traces stay local under reports/ (gitignored).",
   "canonical_offline_retrieval": {
     "file": "results/offline_retrieval_summary.json",
+    "git_sha": "22edfc7",
     "scope": "5 retrieval configurations on n=61 answerable (span-overlap >= 50%, B=2,000 bootstrap CIs) + n=19 negatives",
     "run_date_utc": "2026-11-20"
   },
   "canonical_live_cohort": {
     "file": "results/openrouter_cohort_summary.json",
+    "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
     "generators": [
       "deepseek/deepseek-v4.1-flash",
       "qwen/qwen3.7-flash"
@@ -16,36 +18,53 @@
     "judge_endpoint": "https://openrouter.ai/api/alpha/decisions",
     "judge_evaluation_mode": "openrouter_alpha_decisions",
     "run_dates_utc": [
-      "2026-11-20T10:43:41.663769+00:00",
-      "2026-11-20T10:57:17.928112+00:00"
+      "2026-11-20T15:12:12.881271+00:00",
+      "2026-11-20T15:26:10.738882+00:00"
     ]
+  },
+  "canonical_hybrid_k8_control": {
+    "file": "results/hybrid_k8_summary.json",
+    "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
+    "generator": "deepseek/deepseek-v4.1-flash",
+    "top_k": 8,
+    "max_tokens": 4000,
+    "judge_model": "perplexity/pplx-decider-flash-v1.2",
+    "judge_evaluation_mode": "openrouter_alpha_decisions",
+    "run_date_utc": "2026-11-20T15:31:14.787691+00:00"
   },
   "canonical_agentic_crag": {
     "file": "results/agentic_crag_summary.json",
+    "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
     "generator": "deepseek/deepseek-v4.1-flash",
     "max_tokens": 4000,
     "max_agent_hops": 2,
+    "query_rewrite": true,
     "judge_model": "perplexity/pplx-decider-flash-v1.2",
     "judge_evaluation_mode": "openrouter_alpha_decisions",
-    "run_date_utc": "2026-11-20T11:05:46.728225+00:00"
+    "run_date_utc": "2026-11-20T16:26:04.207466+00:00"
   },
   "canonical_dspy_holdout": {
     "file": "results/dspy_openrouter_summary.json",
+    "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
     "generator": "deepseek/deepseek-v4.1-flash",
     "max_tokens": 4000,
     "judge_model": "perplexity/pplx-decider-flash-v1.2",
     "oracle_context_source": "ground_truth_spans",
-    "scope": "Quarantined 32-item test split (train/dev excluded from compile); span-resolved oracle vs retrieved hybrid top-4 arms",
+    "scope": "Quarantined 32-item test split (n=24 answerable for correctness/faithfulness, n=8 traps for refusal); span-resolved oracle vs retrieved hybrid top-4 arms",
     "run_date_utc": "2026-11-20"
   },
   "superseded_runs": [
     {
       "period": "2026-10-29 to 2026-11-02",
-      "reason": "Used max_tokens=500 on reasoning models (truncating 11/80 DeepSeek static, 51/80 Qwen static, and 7/80 agentic outputs to empty strings), an un-rejudged lexical fallback report in the earlier paradigm table, and a Hop-2 grader slice bug (chunks[:4]). Superseded by the 2026-11-20 max_tokens=4000 runs."
+      "reason": "Used max_tokens=500 on reasoning models (truncating 11/80 DeepSeek static, 51/80 Qwen static, and 7/80 agentic outputs to empty strings), an un-rejudged lexical fallback report in the earlier paradigm table, and a Hop-2 grader slice bug (chunks[:4])."
     },
     {
       "period": "2026-11-17",
-      "reason": "DSPy compile/holdout built oracle, train, and dev contexts from stale ground_truth_context_ids instead of ground_truth_spans (mismatching 20/24 test and 29/37 train/dev answerable items, dragging oracle correctness to 41.5%). Superseded by the 2026-11-20 span-resolved run."
+      "reason": "DSPy compile/holdout built oracle, train, and dev contexts from stale ground_truth_context_ids instead of ground_truth_spans (mismatching 20/24 test and 29/37 train/dev answerable items, dragging oracle correctness to 41.5%)."
+    },
+    {
+      "period": "2026-11-20 (pre-22edfc7)",
+      "reason": "First max_tokens=4000 rerun was executed on uncommitted code (recording git_sha bb48ee3), lacked the K=8 control and CRAG query-rewrite node, and mixed 8 traps into DSPy correctness. Superseded by clean-SHA 22edfc7 runs."
     }
   ],
   "probe_labels_scope": {
