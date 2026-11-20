@@ -1,53 +1,52 @@
 {
-  "description": "Which live artifacts to trust for JEV metrics. Full per-query JSON stays local under reports/ (gitignored).",
-  "dspy_holdout": {
-    "file": "results/dspy_openrouter_summary.json",
-    "generator": "deepseek/deepseek-v4.1-flash",
-    "judge_model": "perplexity/pplx-decider-flash-v1.2",
-    "scope": "Quarantined 32-item test split (train/dev excluded from compile); retrieved hybrid top-4 vs oracle-context arms in summary JSON",
-    "run_date_utc": "2026-11-17",
-    "supersedes": "Any Tier 3 compiled row from offline OfflineRAGLM reports"
+  "description": "Canonical aggregate benchmark files in results/ and lineage of superseded local runs. Full per-query JSON traces stay local under reports/ (gitignored).",
+  "canonical_offline_retrieval": {
+    "file": "results/offline_retrieval_summary.json",
+    "scope": "5 retrieval configurations on n=61 answerable (span-overlap >= 50%, B=2,000 bootstrap CIs) + n=19 negatives",
+    "run_date_utc": "2026-11-20"
   },
-  "canonical_metrics": {
+  "canonical_live_cohort": {
     "file": "results/openrouter_cohort_summary.json",
     "generators": [
       "deepseek/deepseek-v4.1-flash",
       "qwen/qwen3.7-flash"
     ],
+    "max_tokens": 4000,
     "judge_model": "perplexity/pplx-decider-flash-v1.2",
     "judge_endpoint": "https://openrouter.ai/api/alpha/decisions",
     "judge_evaluation_mode": "openrouter_alpha_decisions",
-    "run_git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd",
     "run_dates_utc": [
-      "2026-10-29T21:09:35+00:00",
-      "2026-10-29T21:19:25+00:00"
+      "2026-11-20T10:43:41.663769+00:00",
+      "2026-11-20T10:57:17.928112+00:00"
     ]
   },
-  "superseded_local_artifacts": [
+  "canonical_agentic_crag": {
+    "file": "results/agentic_crag_summary.json",
+    "generator": "deepseek/deepseek-v4.1-flash",
+    "max_tokens": 4000,
+    "max_agent_hops": 2,
+    "judge_model": "perplexity/pplx-decider-flash-v1.2",
+    "judge_evaluation_mode": "openrouter_alpha_decisions",
+    "run_date_utc": "2026-11-20T11:05:46.728225+00:00"
+  },
+  "canonical_dspy_holdout": {
+    "file": "results/dspy_openrouter_summary.json",
+    "generator": "deepseek/deepseek-v4.1-flash",
+    "max_tokens": 4000,
+    "judge_model": "perplexity/pplx-decider-flash-v1.2",
+    "scope": "Quarantined 32-item test split (train/dev excluded from compile); retrieved hybrid top-4 vs oracle-context arms",
+    "run_date_utc": "2026-11-17"
+  },
+  "superseded_runs": [
     {
-      "status": "superseded",
-      "local_path": "reports/live/openrouter-tri-model-eval/20261029T210935_99f16f5.json",
-      "generator": "deepseek/deepseek-v4.1-flash",
-      "reason": "Initial live run used chat-style judging path; scores may reflect offline lexical fallback—not comparable JEV Decider metrics."
-    },
-    {
-      "status": "superseded",
-      "local_path": "reports/live/openrouter-tri-model-eval/20261029T211925_99f16f5.json",
-      "generator": "qwen/qwen3.7-flash",
-      "reason": "Same as above; use JEV re-judge or compare aggregates in openrouter_cohort_summary.json."
+      "period": "2026-10-29 to 2026-11-02",
+      "reason": "Used max_tokens=500 on reasoning models (truncating 11/80 DeepSeek static, 51/80 Qwen static, and 7/80 agentic outputs to empty strings), an un-rejudged lexical fallback report in the earlier paradigm table, and a Hop-2 grader slice bug (chunks[:4]). Superseded by the 2026-11-20 max_tokens=4000 runs."
     }
-  ],
-  "valid_local_workflow": [
-    "Run experiments/run_eval.py with configs/openrouter_cohort.yaml --mode live --stage full per generator.",
-    "Optional: scripts/rejudge_saved_reports.py --report <local_generator.json> for JEV-only rescoring.",
-    "Compare aggregate metrics to results/openrouter_cohort_summary.json.",
-    "DSPy compile/holdout: src/optimize/compile.py --mode live; publish results/dspy_openrouter_summary.json.",
-    "Optional audit: scripts/hash_local_reports.py <path> (SHA-256 to stdout, not committed)."
   ],
   "probe_labels_scope": {
     "file": "data/human_labels.jsonl",
     "count": 30,
     "annotators": "single author (repository author)",
-    "purpose": "In-sample regression guard for offline lexical judge—not independent multi-annotator consensus on live model outputs."
+    "purpose": "In-sample regression guard for offline lexical judge\u2014not independent multi-annotator consensus on live model outputs."
   }
 }

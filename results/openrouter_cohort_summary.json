@@ -1,11 +1,28 @@
 {
   "run_name": "openrouter-tri-model-eval",
-  "note": "Aggregate metrics only. Full per-query reports stay local under reports/ (gitignored).",
+  "note": "Aggregate metrics only (max_tokens=4000, n=61 answerable for IR & generation quality, n=19 adversarial negatives for refusal). Full per-query traces stay local under reports/ (gitignored).",
+  "max_tokens": 4000,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.6",
+    "machine": "arm64",
+    "packages": {
+      "chromadb": "1.5.9",
+      "mlflow": "3.17.2",
+      "sentence-transformers": "6.1.0",
+      "dspy": "3.4.1",
+      "langgraph": "1.2.16",
+      "rank-bm25": "0.2.2",
+      "torch": "2.14.1",
+      "scipy": "1.18.1",
+      "pydantic": "2.14.1"
+    }
+  },
   "generators": [
     {
       "model_id": "deepseek/deepseek-v4.1-flash",
-      "timestamp": "2026-10-29T21:09:35.477102+00:00",
-      "git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd",
+      "timestamp": "2026-11-20T10:43:41.663769+00:00",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
       "index_fingerprint": "aab84d8bac1d18ab",
       "metrics": {
         "k": 4,
@@ -33,20 +50,28 @@
             0.7404
           ]
         },
+        "all_hops_hit_rate": 0.7213,
+        "all_hops_context_recall": 0.6339,
+        "multi_hop_recall_at_k": 0.598,
+        "all_hops_multi_hop_recall": 0.598,
+        "factoid_correctness": 0.9042,
+        "multi_hop_correctness": 0.6674,
+        "multi_hop_grade": 3.76,
         "negative_refusal_rate": 1.0,
-        "p95_retrieval_latency_ms": 23.99,
-        "p95_generation_latency_ms": 3624.82,
-        "mean_faithfulness": 0.8898,
-        "mean_correctness": 0.8257,
-        "mean_rubric_grade": 4.36,
+        "mean_faithfulness": 0.9731,
+        "mean_correctness": 0.8382,
+        "mean_rubric_grade": 4.46,
+        "empty_answer_count": 0,
+        "p95_retrieval_latency_ms": 24.41,
+        "p95_generation_latency_ms": 5995.05,
         "judge_model": "perplexity/pplx-decider-flash-v1.2",
         "judge_evaluation_mode": "openrouter_alpha_decisions"
       }
     },
     {
       "model_id": "qwen/qwen3.7-flash",
-      "timestamp": "2026-10-29T21:19:25.092551+00:00",
-      "git_sha": "99f16f519dde2c1a9760cf6eb13a5e33bb286efd",
+      "timestamp": "2026-11-20T10:57:17.928112+00:00",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
       "index_fingerprint": "aab84d8bac1d18ab",
       "metrics": {
         "k": 4,
@@ -74,12 +99,20 @@
             0.7404
           ]
         },
-        "negative_refusal_rate": 0.3158,
-        "p95_retrieval_latency_ms": 27.03,
-        "p95_generation_latency_ms": 5913.96,
-        "mean_faithfulness": 0.6061,
-        "mean_correctness": 0.4806,
-        "mean_rubric_grade": 2.95,
+        "all_hops_hit_rate": 0.7213,
+        "all_hops_context_recall": 0.6339,
+        "multi_hop_recall_at_k": 0.598,
+        "all_hops_multi_hop_recall": 0.598,
+        "factoid_correctness": 0.9053,
+        "multi_hop_correctness": 0.682,
+        "multi_hop_grade": 3.76,
+        "negative_refusal_rate": 1.0,
+        "mean_faithfulness": 0.9729,
+        "mean_correctness": 0.8431,
+        "mean_rubric_grade": 4.46,
+        "empty_answer_count": 0,
+        "p95_retrieval_latency_ms": 23.35,
+        "p95_generation_latency_ms": 17429.36,
         "judge_model": "perplexity/pplx-decider-flash-v1.2",
         "judge_evaluation_mode": "openrouter_alpha_decisions"
       }

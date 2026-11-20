@@ -1,21 +1,10 @@
-# OpenRouter tri-model live evaluation
+# OpenRouter Live Cohort Evaluation
 
-Config: [`configs/openrouter_cohort.yaml`](../../../configs/openrouter_cohort.yaml).
+Config: [`configs/openrouter_cohort.yaml`](../../../configs/openrouter_cohort.yaml) (`max_tokens: 4000`, Hybrid RRF Top-4, Perplexity Decider judge).
 
-Full run JSON is **local-only** after you run eval (`reports/**/*.json` is gitignored).
+Full run JSON files stay **local-only** (`reports/**/*.json` is gitignored). Canonical aggregate metrics are committed in [`results/openrouter_cohort_summary.json`](../../../results/openrouter_cohort_summary.json) and tracked in [`results/live_run_lineage.json`](../../../results/live_run_lineage.json).
 
-## Local artifact status
-
-| Local file (if present) | Status | Use for public metrics? |
-| :--- | :--- | :---: |
-| `20261029T210935_99f16f5.json` | **superseded** | No — pre-JEV judge path |
-| `20261029T211925_99f16f5.json` | **superseded** | No — pre-JEV judge path |
-| `*_perplexity_judged.json` (local export) | **valid** (if JEV endpoint) | Yes — after verifying judge mode |
-| *(none)* | — | Use [`results/openrouter_cohort_summary.json`](../../../results/openrouter_cohort_summary.json) in git |
-
-Lineage detail: [`results/live_run_lineage.json`](../../../results/live_run_lineage.json).
-
-Re-score a local generator report with **JEV**:
+Re-score a saved local report with Perplexity Decider without regenerating answers:
 
 ```bash
 .venv/bin/python scripts/rejudge_saved_reports.py --report reports/live/openrouter-tri-model-eval/YOUR_RUN.json

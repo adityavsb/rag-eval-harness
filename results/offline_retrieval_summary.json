@@ -1,80 +1,186 @@
 {
-  "note": "Aggregate offline retrieval metrics only; full reports stay local under reports/ (gitignored).",
-  "git_sha": "d4ba471",
+  "note": "Aggregate offline retrieval metrics only (n=61 answerable, span-overlap >= 50%, B=2,000 bootstrap CIs). Full per-query traces stay local under reports/ (gitignored).",
+  "git_sha": "bb48ee3",
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.6",
+    "machine": "arm64",
+    "packages": {
+      "chromadb": "1.5.9",
+      "mlflow": "3.17.2",
+      "sentence-transformers": "6.1.0",
+      "dspy": "3.4.1",
+      "langgraph": "1.2.16",
+      "rank-bm25": "0.2.2",
+      "torch": "2.14.1",
+      "scipy": "1.18.1",
+      "pydantic": "2.14.1"
+    }
+  },
   "runs": [
     {
       "run_name": "baseline-naive-rag",
-      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
+      "index_fingerprint": "0fee629cad107456",
       "metrics": {
-        "hit_rate_at_k": 0.125,
-        "mrr_at_k": 0.0594,
-        "context_precision_at_k": 0.0583,
-        "context_recall_at_k": 0.0896,
-        "mean_faithfulness": 1.0,
-        "mean_correctness": 0.025,
-        "mean_rubric_grade": 1.1,
-        "p95_retrieval_latency_ms": 5.21,
-        "p95_generation_latency_ms": 0.02
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.9836,
+        "mrr_at_k": 0.9057,
+        "context_precision_at_k": 0.9016,
+        "context_recall_at_k": 0.9426,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.9508,
+            1.0
+          ],
+          "mrr_at_k": [
+            0.8484,
+            0.959
+          ],
+          "context_precision_at_k": [
+            0.8443,
+            0.9522
+          ],
+          "context_recall_at_k": [
+            0.8907,
+            0.9836
+          ]
+        },
+        "p95_retrieval_latency_ms": 5.49
       }
     },
     {
       "run_name": "chunk-optimized-rag",
-      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
+      "index_fingerprint": "aab84d8bac1d18ab",
       "metrics": {
-        "hit_rate_at_k": 0.75,
-        "mrr_at_k": 0.6458,
-        "context_precision_at_k": 0.6472,
-        "context_recall_at_k": 0.6833,
-        "mean_faithfulness": 0.9875,
-        "mean_correctness": 0.1344,
-        "mean_rubric_grade": 1.54,
-        "p95_retrieval_latency_ms": 4.02,
-        "p95_generation_latency_ms": 0.02
-      }
-    },
-    {
-      "run_name": "hybrid-rerank-rag",
-      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
-      "metrics": {
-        "hit_rate_at_k": 0.75,
-        "mrr_at_k": 0.7312,
-        "context_precision_at_k": 0.7073,
-        "context_recall_at_k": 0.7167,
-        "mean_faithfulness": 0.9833,
-        "mean_correctness": 0.1812,
-        "mean_rubric_grade": 1.73,
-        "p95_retrieval_latency_ms": 51.72,
-        "p95_generation_latency_ms": 0.03
-      }
-    },
-    {
-      "run_name": "hybrid-rrf-rag",
-      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
-      "metrics": {
-        "hit_rate_at_k": 0.7625,
-        "mrr_at_k": 0.6896,
-        "context_precision_at_k": 0.6802,
-        "context_recall_at_k": 0.7083,
-        "mean_faithfulness": 0.9833,
-        "mean_correctness": 0.15,
-        "mean_rubric_grade": 1.6,
-        "p95_retrieval_latency_ms": 10.66,
-        "p95_generation_latency_ms": 0.02
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.7377,
+        "mrr_at_k": 0.6434,
+        "context_precision_at_k": 0.6339,
+        "context_recall_at_k": 0.6311,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.623,
+            0.8361
+          ],
+          "mrr_at_k": [
+            0.5287,
+            0.75
+          ],
+          "context_precision_at_k": [
+            0.5219,
+            0.7404
+          ],
+          "context_recall_at_k": [
+            0.5219,
+            0.735
+          ]
+        },
+        "p95_retrieval_latency_ms": 4.37
       }
     },
     {
       "run_name": "rerank-two-stage-rag",
-      "git_sha": "d217df36a2d9d5bb9453426fa3e20af7c3d8076d",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
+      "index_fingerprint": "aab84d8bac1d18ab",
       "metrics": {
-        "hit_rate_at_k": 0.75,
-        "mrr_at_k": 0.7312,
-        "context_precision_at_k": 0.7073,
-        "context_recall_at_k": 0.7167,
-        "mean_faithfulness": 0.9802,
-        "mean_correctness": 0.1812,
-        "mean_rubric_grade": 1.73,
-        "p95_retrieval_latency_ms": 48.76,
-        "p95_generation_latency_ms": 0.02
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.7377,
+        "mrr_at_k": 0.6544,
+        "context_precision_at_k": 0.6416,
+        "context_recall_at_k": 0.6557,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.623,
+            0.8361
+          ],
+          "mrr_at_k": [
+            0.5423,
+            0.7609
+          ],
+          "context_precision_at_k": [
+            0.5314,
+            0.7441
+          ],
+          "context_recall_at_k": [
+            0.5437,
+            0.7596
+          ]
+        },
+        "p95_retrieval_latency_ms": 59.74
+      }
+    },
+    {
+      "run_name": "hybrid-rrf-rag",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
+      "index_fingerprint": "aab84d8bac1d18ab",
+      "metrics": {
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.7213,
+        "mrr_at_k": 0.6503,
+        "context_precision_at_k": 0.6393,
+        "context_recall_at_k": 0.6339,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.6066,
+            0.8361
+          ],
+          "mrr_at_k": [
+            0.5355,
+            0.7568
+          ],
+          "context_precision_at_k": [
+            0.526,
+            0.7446
+          ],
+          "context_recall_at_k": [
+            0.5246,
+            0.7404
+          ]
+        },
+        "p95_retrieval_latency_ms": 4.67
+      }
+    },
+    {
+      "run_name": "hybrid-rerank-rag",
+      "git_sha": "bb48ee3592cc22067ad1bc81d54c8f50dee89167",
+      "index_fingerprint": "aab84d8bac1d18ab",
+      "metrics": {
+        "k": 4,
+        "n_answerable": 61,
+        "n_negative": 19,
+        "hit_rate_at_k": 0.7377,
+        "mrr_at_k": 0.6544,
+        "context_precision_at_k": 0.6416,
+        "context_recall_at_k": 0.6557,
+        "ci95": {
+          "hit_rate_at_k": [
+            0.623,
+            0.8361
+          ],
+          "mrr_at_k": [
+            0.5423,
+            0.7609
+          ],
+          "context_precision_at_k": [
+            0.5314,
+            0.7441
+          ],
+          "context_recall_at_k": [
+            0.5437,
+            0.7596
+          ]
+        },
+        "p95_retrieval_latency_ms": 59.86
       }
     }
   ]
