@@ -7,7 +7,7 @@ import pytest
 from src.utils.release_metadata import read_project_version, user_agent
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-EXPECTED_VERSION = "0.2.1"
+EXPECTED_VERSION = "0.3.0"
 
 
 def _read_pyproject_version() -> str:

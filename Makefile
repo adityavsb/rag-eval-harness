@@ -18,6 +18,7 @@ help:
 	@echo "  make clean       Remove caches, local DBs, and temp files"
 
 install:
+	test -d $(VENV) || python3 -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.lock
 	$(PIP) install -e . --no-deps

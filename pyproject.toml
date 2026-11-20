@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag-eval-harness"
-version = "0.2.1"
-description = "Hybrid RAG evaluation harness: offline retrieval benchmarks and live OpenRouter generation with JEV (Decider) judging on an authored corpus."
+version = "0.3.0"
+description = "Evaluation harness for engineering-runbook RAG: hybrid search, cross-encoder reranking, DSPy compilation, LangGraph Corrective RAG, and LLM-as-a-Judge scoring."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }

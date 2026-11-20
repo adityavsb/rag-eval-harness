@@ -21,6 +21,7 @@ Declared in [`pyproject.toml`](pyproject.toml); pinned versions in [`requirement
 | litellm | see lock | MIT | https://pypi.org/project/litellm/ |
 | rank-bm25 | see lock | Apache-2.0 | https://pypi.org/project/rank-bm25/ |
 | dspy | see lock | MIT | https://pypi.org/project/dspy/ |
+| langgraph | see lock | MIT | https://pypi.org/project/langgraph/ |
 | scipy | see lock | BSD-3-Clause | https://pypi.org/project/scipy/ |
 
 Transitive dependencies are listed in `requirements.lock` and inherit their upstream licenses.
