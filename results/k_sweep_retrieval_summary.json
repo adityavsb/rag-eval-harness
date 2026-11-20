@@ -1,0 +1,164 @@
+{
+  "note": "Offline Hybrid RRF (BM25 + dense, recursive 400/50) retrieval sweep across K cutoffs (n=61 answerable, n=17 multi-hop, B=2,000 bootstrap CIs). Zero LLM API calls.",
+  "git_sha": "e0b20e9a42360023cc6115abe05648788e6dc021",
+  "index_fingerprint": "aab84d8bac1d18ab",
+  "total_chunks": 65,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.6",
+    "machine": "arm64",
+    "packages": {
+      "chromadb": "1.5.9",
+      "mlflow": "3.17.2",
+      "sentence-transformers": "6.1.0",
+      "dspy": "3.4.1",
+      "langgraph": "1.2.16",
+      "rank-bm25": "0.2.2",
+      "torch": "2.14.1",
+      "scipy": "1.18.1",
+      "pydantic": "2.14.1"
+    }
+  },
+  "sweep": [
+    {
+      "k": 4,
+      "corpus_pct_sent": 0.0615,
+      "approx_chars": 1600,
+      "n_answerable": 61,
+      "n_multi_hop": 17,
+      "hit_rate_at_k": 0.7213,
+      "mrr_at_k": 0.6503,
+      "context_precision_at_k": 0.6393,
+      "context_recall_at_k": 0.6339,
+      "multi_hop_recall_at_k": 0.598,
+      "ci95": {
+        "hit_rate_at_k": [
+          0.6066,
+          0.8361
+        ],
+        "mrr_at_k": [
+          0.5355,
+          0.7568
+        ],
+        "context_precision_at_k": [
+          0.526,
+          0.7446
+        ],
+        "context_recall_at_k": [
+          0.5246,
+          0.7404
+        ],
+        "multi_hop_recall_at_k": [
+          0.402,
+          0.7745
+        ]
+      },
+      "p95_retrieval_latency_ms": 5.73
+    },
+    {
+      "k": 6,
+      "corpus_pct_sent": 0.0923,
+      "approx_chars": 2400,
+      "n_answerable": 61,
+      "n_multi_hop": 17,
+      "hit_rate_at_k": 0.7705,
+      "mrr_at_k": 0.6555,
+      "context_precision_at_k": 0.644,
+      "context_recall_at_k": 0.6612,
+      "multi_hop_recall_at_k": 0.6961,
+      "ci95": {
+        "hit_rate_at_k": [
+          0.6557,
+          0.8689
+        ],
+        "mrr_at_k": [
+          0.5434,
+          0.7593
+        ],
+        "context_precision_at_k": [
+          0.5361,
+          0.7478
+        ],
+        "context_recall_at_k": [
+          0.5546,
+          0.7596
+        ],
+        "multi_hop_recall_at_k": [
+          0.5392,
+          0.8333
+        ]
+      },
+      "p95_retrieval_latency_ms": 5.03
+    },
+    {
+      "k": 8,
+      "corpus_pct_sent": 0.1231,
+      "approx_chars": 3200,
+      "n_answerable": 61,
+      "n_multi_hop": 17,
+      "hit_rate_at_k": 0.7705,
+      "mrr_at_k": 0.6568,
+      "context_precision_at_k": 0.6457,
+      "context_recall_at_k": 0.6612,
+      "multi_hop_recall_at_k": 0.6961,
+      "ci95": {
+        "hit_rate_at_k": [
+          0.6557,
+          0.8689
+        ],
+        "mrr_at_k": [
+          0.5448,
+          0.7607
+        ],
+        "context_precision_at_k": [
+          0.5377,
+          0.7495
+        ],
+        "context_recall_at_k": [
+          0.5546,
+          0.7596
+        ],
+        "multi_hop_recall_at_k": [
+          0.5392,
+          0.8333
+        ]
+      },
+      "p95_retrieval_latency_ms": 5.17
+    },
+    {
+      "k": 12,
+      "corpus_pct_sent": 0.1846,
+      "approx_chars": 4800,
+      "n_answerable": 61,
+      "n_multi_hop": 17,
+      "hit_rate_at_k": 0.7705,
+      "mrr_at_k": 0.6555,
+      "context_precision_at_k": 0.6361,
+      "context_recall_at_k": 0.694,
+      "multi_hop_recall_at_k": 0.7843,
+      "ci95": {
+        "hit_rate_at_k": [
+          0.6557,
+          0.8689
+        ],
+        "mrr_at_k": [
+          0.5431,
+          0.7601
+        ],
+        "context_precision_at_k": [
+          0.5282,
+          0.7409
+        ],
+        "context_recall_at_k": [
+          0.5901,
+          0.7951
+        ],
+        "multi_hop_recall_at_k": [
+          0.6275,
+          0.9118
+        ]
+      },
+      "p95_retrieval_latency_ms": 6.35
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "mode": "live",
-  "git_sha": "22edfc7506ba8a5d8a0dc7c8989f9c97632a96b1",
+  "git_sha": "e0b20e9a42360023cc6115abe05648788e6dc021",
   "provider": "openrouter",
   "model": "deepseek/deepseek-v4.1-flash",
   "judge_model": "perplexity/pplx-decider-flash-v1.2",
@@ -18,7 +18,7 @@
     "n_answerable": 24.0,
     "answer_correctness": 0.8415833333333333,
     "faithfulness": 0.96145,
-    "mean_latency_ms": 2.9122890941835067,
+    "mean_latency_ms": 1.7734570001266547,
     "multi_hop_correctness": 0.5952625,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
@@ -29,7 +29,7 @@
     "n_answerable": 24.0,
     "answer_correctness": 0.8899208333333334,
     "faithfulness": 0.9435625,
-    "mean_latency_ms": 1.7466171874502834,
+    "mean_latency_ms": 0.4759881874178973,
     "multi_hop_correctness": 0.8541875,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
@@ -40,7 +40,7 @@
     "n_answerable": 24.0,
     "answer_correctness": 0.7535124999999999,
     "faithfulness": 0.9435625,
-    "mean_latency_ms": 1.2008332811319633,
+    "mean_latency_ms": 0.5864153440597875,
     "multi_hop_correctness": 0.53155,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
@@ -51,12 +51,66 @@
     "n_answerable": 24.0,
     "answer_correctness": 0.7895625000000001,
     "faithfulness": 0.9618000000000001,
-    "mean_latency_ms": 1.2950233121955534,
+    "mean_latency_ms": 0.6424843440981931,
     "multi_hop_correctness": 0.6305000000000001,
     "n_multi_hop": 8.0,
     "negative_refusal_rate": 1.0,
     "n_negative": 8.0,
     "parse_failures": 0.0
+  },
+  "paired_delta_ci95": {
+    "oracle": {
+      "all_answerable": {
+        "n": 24,
+        "delta_correctness": 0.0483,
+        "ci95": [
+          -0.0866,
+          0.1763
+        ]
+      },
+      "factoid": {
+        "n": 16,
+        "delta_correctness": -0.057,
+        "ci95": [
+          -0.1818,
+          0.0087
+        ]
+      },
+      "multi_hop": {
+        "n": 8,
+        "delta_correctness": 0.2589,
+        "ci95": [
+          -0.0014,
+          0.5228
+        ]
+      }
+    },
+    "retrieved": {
+      "all_answerable": {
+        "n": 24,
+        "delta_correctness": 0.0361,
+        "ci95": [
+          -0.0301,
+          0.114
+        ]
+      },
+      "factoid": {
+        "n": 16,
+        "delta_correctness": 0.0046,
+        "ci95": [
+          -0.0078,
+          0.0225
+        ]
+      },
+      "multi_hop": {
+        "n": 8,
+        "delta_correctness": 0.099,
+        "ci95": [
+          -0.087,
+          0.3166
+        ]
+      }
+    }
   },
   "compile_prompt_tokens": 0,
   "compile_completion_tokens": 0,
