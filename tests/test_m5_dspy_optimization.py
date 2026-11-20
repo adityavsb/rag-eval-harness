@@ -106,6 +106,53 @@ def test_split_quarantine_integrity():
     assert len(train_ids.intersection(dev_ids)) == 0
 
 
+def test_oracle_context_resolves_from_ground_truth_spans():
+    """Every answerable DSPy example must receive chunks overlapping all its ground_truth_spans."""
+    import json
+
+    from src.eval.retrieval_metrics import is_chunk_relevant
+
+    chunk_map = build_chunk_map("data/raw")
+    train_exs, dev_exs, test_exs = load_dspy_splits("data/golden_qa.json", chunk_map)
+    ex_by_id = {ex.id: ex for ex in (*train_exs, *dev_exs, *test_exs)}
+    records = json.load(open("data/golden_qa.json", encoding="utf-8"))
+
+    for item in records:
+        ex = ex_by_id[item["id"]]
+        gt_spans = item.get("ground_truth_spans", [])
+        if not gt_spans:
+            assert ex.context == "No supporting context available."
+            assert ex.citations == "none"
+            continue
+
+        cited_ids = [cid.strip() for cid in ex.citations.split(",") if cid.strip()]
+        assert cited_ids, f"{item['id']} has no oracle chunk IDs"
+        assert ex.context != "No supporting context available."
+
+        # Every ground-truth span must be covered by at least one oracle chunk
+        for sp in gt_spans:
+            covered = any(
+                is_chunk_relevant(
+                    {
+                        "doc": chunk_map[cid].metadata.get("doc", cid.split("_c")[0]),
+                        "char_start": chunk_map[cid].metadata["char_start"],
+                        "char_end": chunk_map[cid].metadata["char_end"],
+                    },
+                    [sp],
+                    min_overlap=0.25,
+                )
+                for cid in cited_ids
+            )
+            assert covered, f"{item['id']} oracle chunks {cited_ids} missed span {sp}"
+
+    # Spot-check previously broken test items where old chunk_ids pointed to wrong passages
+    assert (
+        "PostgreSQL 16" in ex_by_id["qa_004"].context
+        or "patroni" in ex_by_id["qa_004"].context.lower()
+    )
+    assert "403" in ex_by_id["qa_014"].context or "RBAC" in ex_by_id["qa_014"].context
+
+
 def test_load_compiled_program_artifact(tmp_path):
     """Validates saving and reloading a compiled DSPy program."""
     configure_dspy_lm(mode="offline")

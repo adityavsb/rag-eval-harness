@@ -21,25 +21,67 @@ from src.optimize.dspy_program import (
     resolve_dspy_provider,
     sum_history_tokens,
 )
-from src.pipeline.ingestion import chunk_documents, load_raw_documents
+from src.pipeline.ingestion import DocumentChunk, chunk_documents, load_raw_documents
 from src.utils.config import ChunkingConfig
 
 
-def build_chunk_map(corpus_dir: str | Path) -> dict[str, str]:
-    """Chunks corpus documents and builds a lookup mapping of chunk_id -> content."""
+def build_chunk_map(corpus_dir: str | Path) -> dict[str, DocumentChunk]:
+    """Chunks corpus documents and builds a lookup mapping of chunk_id -> DocumentChunk."""
     raw_docs = load_raw_documents(corpus_dir, "*.md")
     chunk_cfg = ChunkingConfig(strategy="recursive", chunk_size=400, chunk_overlap=50)
     chunks = chunk_documents(raw_docs, chunk_cfg)
-    return {c.chunk_id: c.content for c in chunks}
+    return {c.chunk_id: c for c in chunks}
 
 
-def format_context_for_example(chunk_ids: list[str], chunk_map: dict[str, str]) -> str:
+def resolve_oracle_chunk_ids(
+    gt_spans: list[dict[str, Any]],
+    gt_context_ids: list[str],
+    chunk_map: dict[str, DocumentChunk] | dict[str, str],
+) -> list[str]:
+    """Resolves current chunk IDs covering ground_truth_spans (falls back to gt_context_ids)."""
+    if not gt_spans:
+        return list(gt_context_ids)
+
+    sample_val = next(iter(chunk_map.values()), None)
+    if sample_val is None or not hasattr(sample_val, "metadata"):
+        return list(gt_context_ids)
+
+    matched_ids: list[str] = []
+    seen: set[str] = set()
+    for sp in gt_spans:
+        target_doc = sp.get("doc")
+        s_start = int(sp.get("char_start", 0))
+        s_end = int(sp.get("char_end", 0))
+        for cid, chunk in chunk_map.items():
+            if not isinstance(chunk, DocumentChunk):
+                continue
+            c_doc = chunk.metadata.get("doc", cid.split("_c")[0])
+            if c_doc != target_doc:
+                continue
+            if s_end == -1:
+                if cid not in seen:
+                    seen.add(cid)
+                    matched_ids.append(cid)
+                continue
+            c_start = int(chunk.metadata.get("char_start", 0))
+            c_end = int(chunk.metadata.get("char_end", len(chunk.content)))
+            if min(c_end, s_end) - max(c_start, s_start) > 0 and cid not in seen:
+                seen.add(cid)
+                matched_ids.append(cid)
+
+    return matched_ids if matched_ids else list(gt_context_ids)
+
+
+def format_context_for_example(
+    chunk_ids: list[str], chunk_map: dict[str, DocumentChunk] | dict[str, str]
+) -> str:
     """Formats context passages with chunk ID headers."""
     if not chunk_ids:
         return "No supporting context available."
     pieces = []
     for cid in chunk_ids:
-        content = chunk_map.get(cid, "")
+        entry = chunk_map.get(cid)
+        content = entry.content if isinstance(entry, DocumentChunk) else str(entry or "")
         if content:
             pieces.append(f"[{cid}]\n{content}")
     return "\n\n".join(pieces) if pieces else "No supporting context available."
@@ -47,7 +89,7 @@ def format_context_for_example(chunk_ids: list[str], chunk_map: dict[str, str]) 
 
 def load_dspy_splits(
     golden_qa_path: str | Path,
-    chunk_map: dict[str, str],
+    chunk_map: dict[str, DocumentChunk] | dict[str, str],
 ) -> tuple[list[dspy.Example], list[dspy.Example], list[dspy.Example]]:
     """Loads golden dataset and creates dspy.Example objects for train, dev, and quarantined test splits."""
     path = Path(golden_qa_path)
@@ -66,10 +108,12 @@ def load_dspy_splits(
         query = item["query"]
         gt_answer = item["ground_truth_answer"]
         gt_context_ids = item.get("ground_truth_context_ids", [])
+        gt_spans = item.get("ground_truth_spans", [])
         split = item.get("split", "train")
 
-        context_str = format_context_for_example(gt_context_ids, chunk_map)
-        citations_str = ", ".join(gt_context_ids) if gt_context_ids else "none"
+        oracle_ids = resolve_oracle_chunk_ids(gt_spans, gt_context_ids, chunk_map)
+        context_str = format_context_for_example(oracle_ids, chunk_map)
+        citations_str = ", ".join(oracle_ids) if oracle_ids else "none"
 
         ex = dspy.Example(
             id=q_id,
@@ -466,6 +510,7 @@ def compile_dspy_pipeline(
             "n_demos_dropped": dropped,
             "candidate_dev_lexical_scores": candidate_scores,
             "test_split_quarantined": True,
+            "oracle_context_source": "ground_truth_spans",
             "optimizer_metric": "lexical_overlap_plus_citation",
             "published_judge": resolved_judge,
             "baseline_oracle": base_oracle,

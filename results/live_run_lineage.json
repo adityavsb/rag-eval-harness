@@ -34,13 +34,18 @@
     "generator": "deepseek/deepseek-v4.1-flash",
     "max_tokens": 4000,
     "judge_model": "perplexity/pplx-decider-flash-v1.2",
-    "scope": "Quarantined 32-item test split (train/dev excluded from compile); retrieved hybrid top-4 vs oracle-context arms",
-    "run_date_utc": "2026-11-17"
+    "oracle_context_source": "ground_truth_spans",
+    "scope": "Quarantined 32-item test split (train/dev excluded from compile); span-resolved oracle vs retrieved hybrid top-4 arms",
+    "run_date_utc": "2026-11-20"
   },
   "superseded_runs": [
     {
       "period": "2026-10-29 to 2026-11-02",
       "reason": "Used max_tokens=500 on reasoning models (truncating 11/80 DeepSeek static, 51/80 Qwen static, and 7/80 agentic outputs to empty strings), an un-rejudged lexical fallback report in the earlier paradigm table, and a Hop-2 grader slice bug (chunks[:4]). Superseded by the 2026-11-20 max_tokens=4000 runs."
+    },
+    {
+      "period": "2026-11-17",
+      "reason": "DSPy compile/holdout built oracle, train, and dev contexts from stale ground_truth_context_ids instead of ground_truth_spans (mismatching 20/24 test and 29/37 train/dev answerable items, dragging oracle correctness to 41.5%). Superseded by the 2026-11-20 span-resolved run."
     }
   ],
   "probe_labels_scope": {
