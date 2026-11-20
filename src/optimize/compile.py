@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import dspy
+import numpy as np
 from dspy.teleprompt import BootstrapFewShotWithRandomSearch
 from rich.console import Console
 from rich.table import Table
@@ -188,12 +189,54 @@ def demo_is_broken(demo: Any) -> bool:
     return answer[:1].islower() or answer.startswith("#")
 
 
+def compute_paired_bootstrap_ci(
+    base_records: list[dict[str, Any]],
+    comp_records: list[dict[str, Any]],
+    n_resamples: int = 2000,
+    seed: int = 0,
+) -> dict[str, Any]:
+    """Computes paired bootstrap 95% CIs for (compiled - baseline) on answerable DSPy records."""
+    base_by_id = {r["id"]: r for r in base_records if not r.get("is_negative")}
+    comp_by_id = {r["id"]: r for r in comp_records if not r.get("is_negative")}
+    common_ids = sorted(set(base_by_id).intersection(comp_by_id))
+    if not common_ids:
+        return {}
+
+    fact_ids = [qid for qid in common_ids if base_by_id[qid].get("query_type") == "factoid"]
+    mh_ids = [qid for qid in common_ids if base_by_id[qid].get("query_type") == "multi_hop"]
+    rng = np.random.default_rng(seed)
+
+    result: dict[str, Any] = {}
+    for label, subset in [
+        ("all_answerable", common_ids),
+        ("factoid", fact_ids),
+        ("multi_hop", mh_ids),
+    ]:
+        if not subset:
+            continue
+        diff = np.array(
+            [comp_by_id[q]["correctness"] - base_by_id[q]["correctness"] for q in subset],
+            dtype=float,
+        )
+        boots = [
+            float(np.mean(diff[rng.integers(0, len(diff), len(diff))])) for _ in range(n_resamples)
+        ]
+        lo, hi = np.percentile(boots, [2.5, 97.5])
+        result[label] = {
+            "n": len(subset),
+            "delta_correctness": round(float(np.mean(diff)), 4),
+            "ci95": [round(float(lo), 4), round(float(hi), 4)],
+        }
+    return result
+
+
 def evaluate_program_on_split(
     program: dspy.Module,
     examples: list[dspy.Example],
     judge: LLMJudge,
     retriever: Any | None = None,
-) -> dict[str, float]:
+    return_records: bool = False,
+) -> dict[str, float] | tuple[dict[str, float], list[dict[str, Any]]]:
     """Evaluates a DSPy module on answerable examples (correctness/faithfulness) and traps (refusal)."""
     correctness_scores = []
     faithfulness_scores = []
@@ -202,8 +245,11 @@ def evaluate_program_on_split(
     negative_total = 0
     negative_refused = 0
     parse_failures = 0
+    per_query_records: list[dict[str, Any]] = []
 
-    for ex in examples:
+    for idx, ex in enumerate(examples):
+        q_id = getattr(ex, "id", f"ex_{idx:03d}")
+        q_type = getattr(ex, "query_type", "")
         is_negative = "insufficient information" in ex.answer.lower()
         if retriever is not None:
             ret_chunks = retriever.retrieve(ex.question).chunks
@@ -222,21 +268,48 @@ def evaluate_program_on_split(
                 raise
             answer = ""
             parse_failures += 1
-            latencies.append((time.perf_counter() - start_t) * 1000.0)
+            lat_ms = (time.perf_counter() - start_t) * 1000.0
+            latencies.append(lat_ms)
             if is_negative:
                 negative_total += 1
             else:
                 correctness_scores.append(0.0)
                 faithfulness_scores.append(0.0)
-                if getattr(ex, "query_type", "") == "multi_hop":
+                if q_type == "multi_hop":
                     multi_hop_scores.append(0.0)
+            per_query_records.append(
+                {
+                    "id": q_id,
+                    "query_type": q_type,
+                    "is_negative": is_negative,
+                    "correctness": 0.0,
+                    "faithfulness": 0.0,
+                    "refused": False,
+                    "parse_failure": True,
+                    "latency_ms": round(lat_ms, 2),
+                }
+            )
             continue
-        latencies.append((time.perf_counter() - start_t) * 1000.0)
+        lat_ms = (time.perf_counter() - start_t) * 1000.0
+        latencies.append(lat_ms)
 
         if is_negative:
             negative_total += 1
-            if "insufficient information" in answer.lower():
+            refused = "insufficient information" in answer.lower()
+            if refused:
                 negative_refused += 1
+            per_query_records.append(
+                {
+                    "id": q_id,
+                    "query_type": q_type,
+                    "is_negative": True,
+                    "correctness": 1.0 if refused else 0.0,
+                    "faithfulness": 1.0 if refused else 0.0,
+                    "refused": refused,
+                    "parse_failure": False,
+                    "latency_ms": round(lat_ms, 2),
+                }
+            )
             continue
 
         if judge.mode == "live" and judge.is_decision_model:
@@ -249,10 +322,22 @@ def evaluate_program_on_split(
 
         correctness_scores.append(corr_eval.score)
         faithfulness_scores.append(faith_eval.score)
-        if getattr(ex, "query_type", "") == "multi_hop":
+        if q_type == "multi_hop":
             multi_hop_scores.append(corr_eval.score)
+        per_query_records.append(
+            {
+                "id": q_id,
+                "query_type": q_type,
+                "is_negative": False,
+                "correctness": corr_eval.score,
+                "faithfulness": faith_eval.score,
+                "refused": "insufficient information" in answer.lower(),
+                "parse_failure": False,
+                "latency_ms": round(lat_ms, 2),
+            }
+        )
 
-    return {
+    metrics = {
         "n_answerable": float(len(correctness_scores)),
         "answer_correctness": (
             sum(correctness_scores) / len(correctness_scores) if correctness_scores else 0.0
@@ -269,6 +354,9 @@ def evaluate_program_on_split(
         "n_negative": float(negative_total),
         "parse_failures": float(parse_failures),
     }
+    if return_records:
+        return metrics, per_query_records
+    return metrics
 
 
 DEFAULT_OPENROUTER_JUDGE = "perplexity/pplx-decider-flash-v1.2"
@@ -419,15 +507,24 @@ def compile_dspy_pipeline(
             f"with judge {resolved_judge}. Train and dev stay out of this table.[/bold]"
         )
 
-        base_oracle = evaluate_program_on_split(baseline_module, test_exs, judge)
-        comp_oracle = evaluate_program_on_split(compiled_module, test_exs, judge)
+        base_oracle, base_oracle_recs = evaluate_program_on_split(
+            baseline_module, test_exs, judge, return_records=True
+        )
+        comp_oracle, comp_oracle_recs = evaluate_program_on_split(
+            compiled_module, test_exs, judge, return_records=True
+        )
 
-        base_retrieved = evaluate_program_on_split(
-            baseline_module, test_exs, judge, retriever=retriever
+        base_retrieved, base_ret_recs = evaluate_program_on_split(
+            baseline_module, test_exs, judge, retriever=retriever, return_records=True
         )
-        comp_retrieved = evaluate_program_on_split(
-            compiled_module, test_exs, judge, retriever=retriever
+        comp_retrieved, comp_ret_recs = evaluate_program_on_split(
+            compiled_module, test_exs, judge, retriever=retriever, return_records=True
         )
+
+        paired_ci = {
+            "oracle": compute_paired_bootstrap_ci(base_oracle_recs, comp_oracle_recs),
+            "retrieved": compute_paired_bootstrap_ci(base_ret_recs, comp_ret_recs),
+        }
 
         table = Table(
             title="DSPy Generation Prompt Optimization Benchmark (Test Split Delta)",
@@ -525,6 +622,7 @@ def compile_dspy_pipeline(
             "compiled_oracle": comp_oracle,
             "baseline_retrieved": base_retrieved,
             "compiled_retrieved": comp_retrieved,
+            "paired_delta_ci95": paired_ci,
             "compile_prompt_tokens": compile_prompt,
             "compile_completion_tokens": compile_completion,
             "eval_prompt_tokens": eval_prompt,
@@ -544,7 +642,14 @@ def compile_dspy_pipeline(
             },
         }
         summary_file = Path(summary_path or "reports/live/dspy-compiled-rag/compile_summary.json")
-        _write_live_summary(summary_file, summary)
+        local_summary = dict(summary)
+        local_summary["records"] = {
+            "baseline_oracle": base_oracle_recs,
+            "compiled_oracle": comp_oracle_recs,
+            "baseline_retrieved": base_ret_recs,
+            "compiled_retrieved": comp_ret_recs,
+        }
+        _write_live_summary(summary_file, local_summary)
         _write_live_summary(Path("results/dspy_openrouter_summary.json"), summary)
         console.print(f"[bold green]Wrote live DSPy summary to {summary_file}[/bold green]")
     else:

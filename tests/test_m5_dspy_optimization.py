@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from src.eval.llm_judge import LLMJudge
 from src.optimize.compile import (
     build_chunk_map,
+    compute_paired_bootstrap_ci,
     demo_is_broken,
     evaluate_program_on_split,
     load_dspy_splits,
@@ -330,12 +331,36 @@ def test_evaluate_program_on_split_excludes_negatives_from_correctness():
         ).with_inputs("question", "context"),
     ]
 
-    metrics = evaluate_program_on_split(FixedModule(), examples, judge)
+    metrics, recs = evaluate_program_on_split(FixedModule(), examples, judge, return_records=True)
     assert metrics["n_answerable"] == 1.0
     assert metrics["n_negative"] == 1.0
     assert metrics["negative_refusal_rate"] == 1.0
     # If the negative refusal (1.0) were mixed in, correctness would be 0.5 instead of 0.0
     assert metrics["answer_correctness"] == 0.0
+    assert len(recs) == 2
+    assert recs[0]["is_negative"] is False and recs[1]["is_negative"] is True
+
+
+def test_compute_paired_bootstrap_ci_on_dspy_records():
+    """Validates paired bootstrap 95% CIs exclude negatives and stratify factoid vs multi-hop."""
+    base = [
+        {"id": "q1", "query_type": "factoid", "is_negative": False, "correctness": 0.5},
+        {"id": "q2", "query_type": "factoid", "is_negative": False, "correctness": 0.6},
+        {"id": "q3", "query_type": "multi_hop", "is_negative": False, "correctness": 0.2},
+        {"id": "q4", "query_type": "adversarial_negative", "is_negative": True, "correctness": 1.0},
+    ]
+    comp = [
+        {"id": "q1", "query_type": "factoid", "is_negative": False, "correctness": 0.7},
+        {"id": "q2", "query_type": "factoid", "is_negative": False, "correctness": 0.8},
+        {"id": "q3", "query_type": "multi_hop", "is_negative": False, "correctness": 0.6},
+        {"id": "q4", "query_type": "adversarial_negative", "is_negative": True, "correctness": 1.0},
+    ]
+    ci = compute_paired_bootstrap_ci(base, comp, n_resamples=500, seed=0)
+    assert ci["all_answerable"]["n"] == 3
+    assert ci["factoid"]["n"] == 2
+    assert ci["multi_hop"]["n"] == 1
+    assert ci["all_answerable"]["delta_correctness"] > 0.2
+    assert ci["all_answerable"]["ci95"][0] >= 0.2
 
 
 def test_demo_sanity_gate_rejects_fragments():
